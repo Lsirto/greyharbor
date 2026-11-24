@@ -1,0 +1,488 @@
+[
+  {
+    "id": "harold-ashby",
+    "nameZh": "哈罗德·阿什比",
+    "nameEn": "Harold Ashby",
+    "faction": "society",
+    "type": "leader",
+    "location": null,
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "主动技每夜一次：封印一张敌方卡直到下一夜并回复1理智",
+    "flavor": "灯亮着人就还没输"
+  },
+  {
+    "id": "nora-wells",
+    "nameZh": "诺拉·威尔斯",
+    "nameEn": "Nora Wells",
+    "faction": "society",
+    "type": "unit",
+    "location": "scene",
+    "reasonPower": 2,
+    "madnessPower": 4,
+    "keywords": [
+      "隐秘"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "盖牌入场翻开时查看对手一张手牌",
+    "flavor": "我只问几个问题顺便拍几张照片"
+  },
+  {
+    "id": "samuel-pike",
+    "nameZh": "派克医生",
+    "nameEn": "Dr. Samuel Pike",
+    "faction": "society",
+    "type": "unit",
+    "location": "scene",
+    "reasonPower": 4,
+    "madnessPower": 4,
+    "keywords": [
+      "封印"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "入场移除一个敌方腐化或封印一张战力4以下敌方卡",
+    "flavor": "死人不会说谎只会等人听懂"
+  },
+  {
+    "id": "edith-barrow",
+    "nameZh": "伊迪丝·巴罗",
+    "nameEn": "Edith Barrow",
+    "faction": "society",
+    "type": "unit",
+    "location": "archive",
+    "reasonPower": 2,
+    "madnessPower": 3,
+    "keywords": [
+      "连锁"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "档案位置每有一张己方卡自身+1",
+    "flavor": "所有答案都在纸上包括没人敢看的那页"
+  },
+  {
+    "id": "walter-morse",
+    "nameZh": "沃尔特·莫斯",
+    "nameEn": "Walter Morse",
+    "faction": "society",
+    "type": "unit",
+    "location": "archive",
+    "reasonPower": 3,
+    "madnessPower": 6,
+    "keywords": [
+      "理智反噬"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "疯狂面结算后扣1理智",
+    "flavor": "我破译了它也可能是它破译了我"
+  },
+  {
+    "id": "lucia-vaughn",
+    "nameZh": "露西娅·沃恩",
+    "nameEn": "Lucia Vaughn",
+    "faction": "society",
+    "type": "unit",
+    "location": "dream",
+    "reasonPower": 1,
+    "madnessPower": 7,
+    "keywords": [
+      "隐秘"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "可在梦境位置盖牌入场",
+    "flavor": "它们说话时我负责不尖叫"
+  },
+  {
+    "id": "frank-holt",
+    "nameZh": "霍尔特上尉",
+    "nameEn": "Capt. Frank Holt",
+    "faction": "society",
+    "type": "unit",
+    "location": "scene",
+    "reasonPower": 5,
+    "madnessPower": 5,
+    "keywords": [
+      "连锁"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "每有一张相邻己方卡+1上限+3",
+    "flavor": "我不信鬼但我信子弹和阵型"
+  },
+  {
+    "id": "arthur-pendleton",
+    "nameZh": "亚瑟·彭德尔顿",
+    "nameEn": "Arthur Pendleton",
+    "faction": "society",
+    "type": "unit",
+    "location": "archive",
+    "reasonPower": 3,
+    "madnessPower": 4,
+    "keywords": [
+      "隐秘"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "入场时随机展示对手一张手牌",
+    "flavor": "星星的位置不对已经三个月了"
+  },
+  {
+    "id": "abjuration",
+    "nameZh": "驱魔咒",
+    "nameEn": "Abjuration",
+    "faction": "society",
+    "type": "event",
+    "location": "any",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "移除一个腐化或环境效果",
+    "flavor": "退回去这里不欢迎你"
+  },
+  {
+    "id": "warding-rite",
+    "nameZh": "结界术",
+    "nameEn": "Warding Rite",
+    "faction": "society",
+    "type": "event",
+    "location": "row",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "目标排本夜免疫封印与腐化全体+1",
+    "flavor": "粉笔划的圈挡住了不该存在的东西"
+  },
+  {
+    "id": "silver-lantern",
+    "nameZh": "银灯",
+    "nameEn": "The Silver Lantern",
+    "faction": "society",
+    "type": "equipment",
+    "location": "attach",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "附属单位+2；单位将被摧毁或封印时弃掉银灯代替",
+    "flavor": "灯罩上的裂纹比任何报告都多"
+  },
+  {
+    "id": "old-library",
+    "nameZh": "旧图书馆",
+    "nameEn": "The Old Library",
+    "faction": "society",
+    "type": "location",
+    "location": "archive",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "档案位置己方卡不受腐化；在此打出的卡理智代价-1每夜一次",
+    "flavor": "门牌早就摘了灯却每晚都亮"
+  },
+  {
+    "id": "elias-thorne",
+    "nameZh": "伊莱亚斯·索恩",
+    "nameEn": "Elias Thorne",
+    "faction": "cult",
+    "type": "leader",
+    "location": null,
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "主动技每夜一次：献祭一张己方卡从牌堆直接打出一个异怪单位",
+    "flavor": "钟声一响就有人再也回不了家"
+  },
+  {
+    "id": "hooded-acolyte",
+    "nameZh": "蒙面信徒",
+    "nameEn": "Hooded Acolyte",
+    "faction": "cult",
+    "type": "unit",
+    "location": "scene",
+    "reasonPower": 2,
+    "madnessPower": 3,
+    "keywords": [
+      "献祭"
+    ],
+    "sanityCost": 0,
+    "copies": 2,
+    "effect": "可被献祭时代替任何己方卡被移除",
+    "flavor": "面罩之下没有脸只有潮声"
+  },
+  {
+    "id": "zealot",
+    "nameZh": "狂信徒",
+    "nameEn": "Zealot",
+    "faction": "cult",
+    "type": "unit",
+    "location": "scene",
+    "reasonPower": 3,
+    "madnessPower": 6,
+    "keywords": [
+      "理智反噬"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "疯狂面+3结算后扣1理智",
+    "flavor": "他笑着割开绳子船就沉了"
+  },
+  {
+    "id": "sea-priestess",
+    "nameZh": "海祭司",
+    "nameEn": "Sea Priestess",
+    "faction": "cult",
+    "type": "unit",
+    "location": "archive",
+    "reasonPower": 4,
+    "madnessPower": 5,
+    "keywords": [
+      "腐化"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "入场给敌方战力最高的卡附着腐化每夜-1",
+    "flavor": "海水从她嘴里说出来带着别人的名字"
+  },
+  {
+    "id": "gravedigger",
+    "nameZh": "掘墓人",
+    "nameEn": "Gravedigger",
+    "faction": "cult",
+    "type": "unit",
+    "location": "archive",
+    "reasonPower": 3,
+    "madnessPower": 4,
+    "keywords": [
+      "献祭"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "献祭一张己方卡后从深渊弃牌堆拉回一张单位",
+    "flavor": "他不挖坑他只是把门重新打开"
+  },
+  {
+    "id": "whisperer",
+    "nameZh": "低语者",
+    "nameEn": "The Whisperer",
+    "faction": "cult",
+    "type": "unit",
+    "location": "dream",
+    "reasonPower": 2,
+    "madnessPower": 7,
+    "keywords": [
+      "隐秘"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "盖牌入场翻开时对手扣1理智",
+    "flavor": "你听不见它直到它叫出你的乳名"
+  },
+  {
+    "id": "deep-one",
+    "nameZh": "深潜者",
+    "nameEn": "Deep One",
+    "faction": "cult",
+    "type": "unit",
+    "location": "dream",
+    "reasonPower": 5,
+    "madnessPower": 8,
+    "keywords": [
+      "理智反噬"
+    ],
+    "sanityCost": 1,
+    "copies": 1,
+    "effect": "疯狂面额外+3结算后扣1理智",
+    "flavor": "鳃一张一合念的是岸上的祷词"
+  },
+  {
+    "id": "bell-claw",
+    "nameZh": "钟爪怪",
+    "nameEn": "Bell-Claw",
+    "faction": "cult",
+    "type": "unit",
+    "location": "scene",
+    "reasonPower": 6,
+    "madnessPower": 6,
+    "keywords": [
+      "献祭"
+    ],
+    "sanityCost": 1,
+    "copies": 1,
+    "effect": "吞噬一张相邻己方卡永久获得其全部战力",
+    "flavor": "钟挂在它身上也长在它肉里"
+  },
+  {
+    "id": "seance",
+    "nameZh": "降灵会",
+    "nameEn": "Séance",
+    "faction": "cult",
+    "type": "ritual",
+    "location": "any",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "献祭一张己方卡从深渊拉回最多2张单位入手牌",
+    "flavor": "桌子震了三下然后多了一个人的呼吸"
+  },
+  {
+    "id": "tide-ritual",
+    "nameZh": "潮汐仪式",
+    "nameEn": "Tide Ritual",
+    "faction": "cult",
+    "type": "ritual",
+    "location": "dream",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "本夜梦境位置己方卡全体+3下夜复原",
+    "flavor": "月亮被水托着越升越低"
+  },
+  {
+    "id": "lunar-eclipse",
+    "nameZh": "月食",
+    "nameEn": "Lunar Eclipse",
+    "faction": "cult",
+    "type": "environment",
+    "location": "all",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "本夜全场理性面卡-1疯狂面卡+1",
+    "flavor": "狗先不叫了然后轮到人"
+  },
+  {
+    "id": "drowned-altar",
+    "nameZh": "溺钟祭坛",
+    "nameEn": "Drowned Bell Altar",
+    "faction": "cult",
+    "type": "location",
+    "location": "scene",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "在此献祭的卡不触发理智反噬；教团被动加成由+2变+3",
+    "flavor": "祭坛是湿的从来没干过"
+  },
+  {
+    "id": "finn-calloway",
+    "nameZh": "芬恩·卡洛威",
+    "nameEn": "Finn Calloway",
+    "faction": "neutral",
+    "type": "unit",
+    "location": "any",
+    "reasonPower": 3,
+    "madnessPower": 4,
+    "keywords": [
+      "连锁"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "每有一张相邻己方卡+1上限+2",
+    "flavor": "我不站队只站真相那边价钱好谈"
+  },
+  {
+    "id": "silas-gold",
+    "nameZh": "赛拉斯·戈尔德",
+    "nameEn": "Silas Gold",
+    "faction": "neutral",
+    "type": "unit",
+    "location": "archive",
+    "reasonPower": 2,
+    "madnessPower": 3,
+    "keywords": [
+      "隐秘"
+    ],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "入场弃一张手牌从牌堆翻3张选1张入手",
+    "flavor": "这东西不卖你可以拿秘密来换"
+  },
+  {
+    "id": "the-sleeper",
+    "nameZh": "沉睡之主",
+    "nameEn": "The Sleeper",
+    "faction": "neutral",
+    "type": "oldgod",
+    "location": "dream",
+    "reasonPower": 8,
+    "madnessPower": 12,
+    "keywords": [
+      "理智反噬"
+    ],
+    "sanityCost": 2,
+    "copies": 1,
+    "effect": "无法被封印入场扣2理智此后每夜再扣1",
+    "flavor": "它只是翻了个身城市就忘了自己的名字"
+  },
+  {
+    "id": "thousand-eyes",
+    "nameZh": "千瞳",
+    "nameEn": "Thousand Eyes",
+    "faction": "neutral",
+    "type": "oldgod",
+    "location": "archive",
+    "reasonPower": 7,
+    "madnessPower": 10,
+    "keywords": [
+      "封印"
+    ],
+    "sanityCost": 2,
+    "copies": 1,
+    "effect": "入场封印敌方领袖能力一夜；对手每有一张隐秘卡自身+1",
+    "flavor": "你看不见它的眼睛因为你已在它眼里"
+  },
+  {
+    "id": "stormy-night",
+    "nameZh": "暴雨夜",
+    "nameEn": "Stormy Night",
+    "faction": "neutral",
+    "type": "environment",
+    "location": "all",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "本夜双方现场位置卡全体-2",
+    "flavor": "雨冲掉了脚印也冲掉了理智"
+  },
+  {
+    "id": "unexpected-aid",
+    "nameZh": "意外援手",
+    "nameEn": "Unexpected Aid",
+    "faction": "neutral",
+    "type": "event",
+    "location": "any",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "目标己方卡+3并解除其封印或腐化",
+    "flavor": "门开了门外站着一个不该存在的人"
+  }
+]
