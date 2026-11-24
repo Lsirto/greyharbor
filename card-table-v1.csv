@@ -1,0 +1,31 @@
+id,nameZh,nameEn,faction,type,location,reasonPower,madnessPower,keywords,sanityCost,copies,effect,flavor
+harold-ashby,哈罗德·阿什比,Harold Ashby,society,leader,,,,,0,1,主动技每夜一次：封印一张敌方卡直到下一夜并回复1理智,灯亮着人就还没输
+nora-wells,诺拉·威尔斯,Nora Wells,society,unit,scene,2,4,隐秘,0,1,盖牌入场翻开时查看对手一张手牌,我只问几个问题顺便拍几张照片
+samuel-pike,派克医生,Dr. Samuel Pike,society,unit,scene,4,4,封印,0,1,入场移除一个敌方腐化或封印一张战力4以下敌方卡,死人不会说谎只会等人听懂
+edith-barrow,伊迪丝·巴罗,Edith Barrow,society,unit,archive,2,3,连锁,0,1,档案位置每有一张己方卡自身+1,所有答案都在纸上包括没人敢看的那页
+walter-morse,沃尔特·莫斯,Walter Morse,society,unit,archive,3,6,理智反噬,0,1,疯狂面结算后扣1理智,我破译了它也可能是它破译了我
+lucia-vaughn,露西娅·沃恩,Lucia Vaughn,society,unit,dream,1,7,隐秘,0,1,可在梦境位置盖牌入场,它们说话时我负责不尖叫
+frank-holt,霍尔特上尉,Capt. Frank Holt,society,unit,scene,5,5,连锁,0,1,每有一张相邻己方卡+1上限+3,我不信鬼但我信子弹和阵型
+arthur-pendleton,亚瑟·彭德尔顿,Arthur Pendleton,society,unit,archive,3,4,隐秘,0,1,入场时随机展示对手一张手牌,星星的位置不对已经三个月了
+abjuration,驱魔咒,Abjuration,society,event,any,,,,0,1,移除一个腐化或环境效果,退回去这里不欢迎你
+warding-rite,结界术,Warding Rite,society,event,row,,,,0,1,目标排本夜免疫封印与腐化全体+1,粉笔划的圈挡住了不该存在的东西
+silver-lantern,银灯,The Silver Lantern,society,equipment,attach,,,,0,1,附属单位+2；单位将被摧毁或封印时弃掉银灯代替,灯罩上的裂纹比任何报告都多
+old-library,旧图书馆,The Old Library,society,location,archive,,,,0,1,档案位置己方卡不受腐化；在此打出的卡理智代价-1每夜一次,门牌早就摘了灯却每晚都亮
+elias-thorne,伊莱亚斯·索恩,Elias Thorne,cult,leader,,,,,0,1,主动技每夜一次：献祭一张己方卡从牌堆直接打出一个异怪单位,钟声一响就有人再也回不了家
+hooded-acolyte,蒙面信徒,Hooded Acolyte,cult,unit,scene,2,3,献祭,0,2,可被献祭时代替任何己方卡被移除,面罩之下没有脸只有潮声
+zealot,狂信徒,Zealot,cult,unit,scene,3,6,理智反噬,0,1,疯狂面+3结算后扣1理智,他笑着割开绳子船就沉了
+sea-priestess,海祭司,Sea Priestess,cult,unit,archive,4,5,腐化,0,1,入场给敌方战力最高的卡附着腐化每夜-1,海水从她嘴里说出来带着别人的名字
+gravedigger,掘墓人,Gravedigger,cult,unit,archive,3,4,献祭,0,1,献祭一张己方卡后从深渊弃牌堆拉回一张单位,他不挖坑他只是把门重新打开
+whisperer,低语者,The Whisperer,cult,unit,dream,2,7,隐秘,0,1,盖牌入场翻开时对手扣1理智,你听不见它直到它叫出你的乳名
+deep-one,深潜者,Deep One,cult,unit,dream,5,8,理智反噬,1,1,疯狂面额外+3结算后扣1理智,鳃一张一合念的是岸上的祷词
+bell-claw,钟爪怪,Bell-Claw,cult,unit,scene,6,6,献祭,1,1,吞噬一张相邻己方卡永久获得其全部战力,钟挂在它身上也长在它肉里
+seance,降灵会,Séance,cult,ritual,any,,,,0,1,献祭一张己方卡从深渊拉回最多2张单位入手牌,桌子震了三下然后多了一个人的呼吸
+tide-ritual,潮汐仪式,Tide Ritual,cult,ritual,dream,,,,0,1,本夜梦境位置己方卡全体+3下夜复原,月亮被水托着越升越低
+lunar-eclipse,月食,Lunar Eclipse,cult,environment,all,,,,0,1,本夜全场理性面卡-1疯狂面卡+1,狗先不叫了然后轮到人
+drowned-altar,溺钟祭坛,Drowned Bell Altar,cult,location,scene,,,,0,1,在此献祭的卡不触发理智反噬；教团被动加成由+2变+3,祭坛是湿的从来没干过
+finn-calloway,芬恩·卡洛威,Finn Calloway,neutral,unit,any,3,4,连锁,0,1,每有一张相邻己方卡+1上限+2,我不站队只站真相那边价钱好谈
+silas-gold,赛拉斯·戈尔德,Silas Gold,neutral,unit,archive,2,3,隐秘,0,1,入场弃一张手牌从牌堆翻3张选1张入手,这东西不卖你可以拿秘密来换
+the-sleeper,沉睡之主,The Sleeper,neutral,oldgod,dream,8,12,理智反噬,2,1,无法被封印入场扣2理智此后每夜再扣1,它只是翻了个身城市就忘了自己的名字
+thousand-eyes,千瞳,Thousand Eyes,neutral,oldgod,archive,7,10,封印,2,1,入场封印敌方领袖能力一夜；对手每有一张隐秘卡自身+1,你看不见它的眼睛因为你已在它眼里
+stormy-night,暴雨夜,Stormy Night,neutral,environment,all,,,,0,1,本夜双方现场位置卡全体-2,雨冲掉了脚印也冲掉了理智
+unexpected-aid,意外援手,Unexpected Aid,neutral,event,any,,,,0,1,目标己方卡+3并解除其封印或腐化,门开了门外站着一个不该存在的人
