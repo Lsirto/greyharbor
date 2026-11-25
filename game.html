@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>灰港三夜 · Three Nights in Greyharbor</title>
+  <meta name="description" content="阶段 3.1 棋盘与卡牌渲染演示：真实 buildView 数据流，纯展示层。">
+
+  <link rel="stylesheet" href="./src/styles-v2/theme.css">
+  <link rel="stylesheet" href="./src/styles-v2/card.css">
+  <link rel="stylesheet" href="./src/styles-v2/board.css">
+  <link rel="stylesheet" href="./src/styles-v2/demo.css">
+
+  <!-- The v2 engine reads its card table with node:fs in Node.  This shim is
+       browser-only glue; the engine and card data themselves are untouched. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "node:fs": "./src/ui-v2/shims/fs-browser.mjs"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="gh2-app">
+    <div id="gh2-controls" class="gh2-demo-controls"></div>
+    <main id="gh2-board" class="gh2-board" aria-label="灰港三夜棋盘演示"></main>
+    <div class="gh2-legend" style="max-width:1600px;margin:0 auto">
+      <span>阶段 3.1 · 纯展示层</span>
+      <span>旧昆特牌界面完整保留：<a href="./index.html" style="color:var(--gh2-lamp)">返回 index.html</a></span>
+      <span>需要通过本地服务器打开：<code>npm start</code> → <code>/game.html</code></span>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createBoardRenderer } from './src/ui-v2/board-render.mjs';
+    import { createDemoController } from './src/ui-v2/demo-controller.mjs';
+
+    try {
+      const renderer = createBoardRenderer(document.getElementById('gh2-board'), { pov: 0 });
+      const demo = createDemoController({
+        renderer,
+        controlsRoot: document.getElementById('gh2-controls'),
+        seed: 'greyharbor-three-nights-demo',
+        pov: 0,
+        speed: 700,
+      });
+      demo.start();
+      window.__greyharborDemo = demo;
+    } catch (error) {
+      document.getElementById('gh2-board').innerHTML =
+        '<div class="gh2-status-note">演示初始化失败：' +
+        String(error && error.message ? error.message : error).replace(/[<>&"']/g, '') +
+        '。请使用 npm start 后访问 http://127.0.0.1:8788/game.html</div>';
+      console.error(error);
+    }
+  </script>
+</body>
+</html>

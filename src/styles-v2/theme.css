@@ -1,0 +1,107 @@
+/* ============================================================
+   styles-v2/theme.css — Greyharbor Gothic tokens (phase 3.1)
+   克苏鲁哥特暗色基调；society 暖银/灯色、cult 深海青绿、neutral 灰。
+   无外部字体、CDN、图片；图标全部由模板内联 SVG 提供。
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  --gh2-ink-0: #04080a;
+  --gh2-ink-1: #081012;
+  --gh2-ink-2: #0d181a;
+  --gh2-ink-3: #142426;
+  --gh2-ink-4: #1d3233;
+  --gh2-line: rgba(198, 183, 143, 0.22);
+  --gh2-line-soft: rgba(198, 183, 143, 0.11);
+
+  --gh2-silver: #d9d3c4;
+  --gh2-silver-dim: #a29d90;
+  --gh2-silver-faint: #6f726c;
+  --gh2-lamp: #e8c98a;
+  --gh2-lamp-dim: #a88a55;
+  --gh2-gold: #c8a252;
+
+  --gh2-society: #cabb96;
+  --gh2-society-glow: #f1dfb3;
+  --gh2-cult: #43a291;
+  --gh2-cult-glow: #92e3d1;
+  --gh2-neutral: #918e84;
+  --gh2-neutral-glow: #cec9bb;
+
+  --gh2-parchment: #e5d9bd;
+  --gh2-parchment-dim: #c7b793;
+  --gh2-abyss: #061915;
+  --gh2-abyss-mid: #0d2a25;
+  --gh2-abyss-deep: #04100e;
+  --gh2-danger: #bd6a5b;
+  --gh2-corruption: #8b7ab5;
+
+  --gh2-font-display: "Palatino Linotype", "Songti SC", "Noto Serif CJK SC", "STSong", Georgia, serif;
+  --gh2-font-ui: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI", system-ui, sans-serif;
+
+  --gh2-radius: 8px;
+  --gh2-shadow: 0 10px 26px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --gh2-glow-lamp: 0 0 16px rgba(232, 201, 138, 0.22);
+  --gh2-glow-cult: 0 0 16px rgba(67, 162, 145, 0.26);
+
+  --gh2-card-w-board: 54px;
+  --gh2-card-h-board: 76px;
+  --gh2-card-w-hand: 92px;
+  --gh2-card-h-hand: 128px;
+  --gh2-card-w-env: 58px;
+  --gh2-card-h-env: 80px;
+  --gh2-card-w-leader: 68px;
+  --gh2-card-h-leader: 94px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(110% 70% at 50% -12%, rgba(232, 201, 138, 0.07), transparent 58%),
+    radial-gradient(80% 70% at 8% 100%, rgba(67, 162, 145, 0.07), transparent 60%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.008) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, var(--gh2-ink-1), var(--gh2-ink-0));
+  color: var(--gh2-silver);
+  font-family: var(--gh2-font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+.gh2-app {
+  min-height: 100vh;
+  padding-bottom: 26px;
+}
+
+.gh2-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: 0 0 auto;
+  vertical-align: -0.12em;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+ul {
+  margin: 0;
+}
+
+button,
+select {
+  font: inherit;
+}

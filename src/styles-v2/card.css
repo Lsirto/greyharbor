@@ -1,0 +1,301 @@
+/* ============================================================
+   styles-v2/card.css — dual-face card visuals (pure CSS + inline SVG)
+   理性面：羊皮纸 / 暖银；疯狂面：深海暗绿 / 扭曲色调。
+   ============================================================ */
+
+.gh2-card {
+  --gh2-card-w: var(--gh2-card-w-board);
+  --gh2-card-h: var(--gh2-card-h-board);
+  --gh2-core: var(--gh2-neutral);
+  --gh2-core-glow: var(--gh2-neutral-glow);
+  --gh2-face-bg: var(--gh2-parchment);
+  --gh2-face-ink: #2b2419;
+  position: relative;
+  width: var(--gh2-card-w);
+  height: var(--gh2-card-h);
+  flex: 0 0 auto;
+  border-radius: 6px;
+  font-size: 7px;
+  line-height: 1.15;
+  isolation: isolate;
+  user-select: none;
+}
+
+.gh2-card--size-board { --gh2-card-w: var(--gh2-card-w-board); --gh2-card-h: var(--gh2-card-h-board); font-size: 7px; }
+.gh2-card--size-env { --gh2-card-w: var(--gh2-card-w-env); --gh2-card-h: var(--gh2-card-h-env); font-size: 7.5px; }
+.gh2-card--size-sm { --gh2-card-w: 60px; --gh2-card-h: 84px; font-size: 7px; }
+.gh2-card--size-hand { --gh2-card-w: var(--gh2-card-w-hand); --gh2-card-h: var(--gh2-card-h-hand); font-size: 10px; }
+.gh2-card--size-leader { --gh2-card-w: var(--gh2-card-w-leader); --gh2-card-h: var(--gh2-card-h-leader); font-size: 8.5px; }
+.gh2-card--size-xs { --gh2-card-w: 32px; --gh2-card-h: 45px; font-size: 5px; }
+
+/* 阵营色 */
+.gh2-card--faction-society { --gh2-core: var(--gh2-society); --gh2-core-glow: var(--gh2-society-glow); }
+.gh2-card--faction-cult { --gh2-core: var(--gh2-cult); --gh2-core-glow: var(--gh2-cult-glow); }
+.gh2-card--faction-neutral { --gh2-core: var(--gh2-neutral); --gh2-core-glow: var(--gh2-neutral-glow); }
+
+.gh2-card__surface {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  padding: 0.35em;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--gh2-core) 58%, #000);
+  border-left: 3px solid var(--gh2-core);
+  border-radius: inherit;
+  background: var(--gh2-face-bg);
+  color: var(--gh2-face-ink);
+  box-shadow: var(--gh2-shadow), inset 0 0 12px rgba(0, 0, 0, 0.28);
+}
+
+/* 理性面：羊皮纸 + 暖银 */
+.gh2-card--face-reason .gh2-card__surface {
+  background:
+    linear-gradient(158deg, rgba(255, 255, 255, 0.4), transparent 42%),
+    repeating-linear-gradient(0deg, rgba(80, 62, 36, 0.05) 0 1px, transparent 1px 4px),
+    linear-gradient(160deg, #eee3c9 0%, var(--gh2-parchment) 52%, var(--gh2-parchment-dim) 100%);
+}
+
+/* 疯狂面：深海暗绿 + 扭曲色调 */
+.gh2-card--face-madness .gh2-card__surface {
+  background:
+    repeating-linear-gradient(102deg, rgba(146, 227, 209, 0.05) 0 1px, transparent 1px 7px),
+    radial-gradient(120% 70% at 50% 8%, rgba(67, 162, 145, 0.28), transparent 58%),
+    linear-gradient(160deg, #12332d 0%, var(--gh2-abyss-mid) 55%, var(--gh2-abyss-deep) 100%);
+  color: #c7ece1;
+  border-color: rgba(146, 227, 209, 0.42);
+  box-shadow: var(--gh2-shadow), var(--gh2-glow-cult), inset 0 0 16px rgba(0, 0, 0, 0.5);
+}
+
+.gh2-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  min-height: 1.5em;
+}
+
+.gh2-card__power {
+  display: inline-flex;
+  gap: 0.2em;
+  align-items: center;
+  padding: 0.05em 0.4em;
+  border: 1px solid var(--gh2-core);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--gh2-core-glow);
+  font-family: var(--gh2-font-display);
+  font-size: 1.15em;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.gh2-card--face-madness .gh2-card__power {
+  background: rgba(4, 16, 14, 0.8);
+  text-shadow: 0 0 6px rgba(146, 227, 209, 0.6);
+}
+
+.gh2-card__power--none {
+  font-family: var(--gh2-font-ui);
+  font-size: 0.82em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--gh2-face-ink);
+  border-color: currentColor;
+}
+
+.gh2-card--face-madness .gh2-card__power--none { color: #c7ece1; }
+
+.gh2-card__cost {
+  display: inline-flex;
+  gap: 0.15em;
+  align-items: center;
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  background: rgba(120, 35, 35, 0.72);
+  color: #ffe3d4;
+  font-weight: 700;
+}
+
+.gh2-card__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 1 1 auto;
+  min-height: 1.8em;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  background:
+    radial-gradient(80% 60% at 50% 30%, color-mix(in srgb, var(--gh2-core) 26%, transparent), transparent 70%),
+    rgba(10, 18, 18, 0.28);
+  color: var(--gh2-core-glow);
+}
+
+.gh2-card--face-madness .gh2-card__art {
+  color: var(--gh2-cult-glow);
+  transform: skewX(-2deg);
+  background:
+    radial-gradient(70% 60% at 50% 30%, rgba(67, 162, 145, 0.34), transparent 72%),
+    rgba(2, 12, 10, 0.5);
+}
+
+.gh2-card__art > .gh2-icon {
+  width: 58%;
+  height: 58%;
+  opacity: 0.85;
+}
+
+.gh2-card__sigil {
+  position: absolute;
+  right: 0.15em;
+  bottom: -0.28em;
+  font-family: var(--gh2-font-display);
+  font-size: 2.8em;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.gh2-card--face-madness .gh2-card__sigil {
+  transform: rotate(-8deg) scaleY(1.2);
+  color: var(--gh2-cult-glow);
+}
+
+.gh2-card__plate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.15em 0.2em;
+  border-top: 1px solid var(--gh2-line);
+  border-bottom: 1px solid var(--gh2-line);
+  text-align: center;
+}
+
+.gh2-card__name-zh {
+  font-family: var(--gh2-font-display);
+  font-size: 1.05em;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.gh2-card__name-en {
+  font-size: 0.68em;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.gh2-card--face-madness .gh2-card__name-zh {
+  letter-spacing: 0.08em;
+  text-shadow: 1px 0 rgba(183, 100, 91, 0.7), -1px 0 rgba(67, 162, 145, 0.7);
+}
+
+.gh2-card__printed {
+  display: flex;
+  justify-content: space-around;
+  gap: 0.3em;
+  font-size: 0.78em;
+  opacity: 0.86;
+}
+
+.gh2-card__printed-face { display: inline-flex; align-items: center; gap: 0.12em; }
+.gh2-card__printed-face--reason { color: #6d5630; }
+.gh2-card__printed-face--madness { color: #3e9d8b; }
+.gh2-card--face-madness .gh2-card__printed-face--reason { color: #cfc4a9; }
+
+.gh2-card__keywords,
+.gh2-card__statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em;
+}
+
+.gh2-keyword,
+.gh2-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15em;
+  padding: 0.05em 0.3em;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.72em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.gh2-keyword { color: #5b4a2d; background: rgba(255, 255, 255, 0.28); }
+.gh2-card--face-madness .gh2-keyword { color: #9adfc9; background: rgba(2, 16, 13, 0.5); }
+.gh2-status { color: #6b2e2e; background: rgba(189, 106, 91, 0.12); }
+.gh2-card--face-madness .gh2-status { color: #d6a79c; background: rgba(189, 106, 91, 0.14); }
+.gh2-status--corruption { color: #6a568f; }
+.gh2-status--equipment { color: #77602f; }
+
+.gh2-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.2em;
+  margin-top: auto;
+  font-size: 0.72em;
+  opacity: 0.78;
+}
+
+.gh2-card__type-badge {
+  padding: 0.05em 0.35em;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--gh2-core) 26%, transparent);
+  color: var(--gh2-face-ink);
+}
+
+.gh2-card--face-madness .gh2-card__type-badge { color: #c7ece1; }
+
+.gh2-card.is-sealed .gh2-card__surface {
+  filter: saturate(0.55) brightness(0.86);
+  outline: 2px solid rgba(220, 210, 180, 0.5);
+  outline-offset: -3px;
+}
+
+.gh2-card.is-corrupted .gh2-card__surface {
+  box-shadow: var(--gh2-shadow), 0 0 10px rgba(139, 122, 181, 0.4), inset 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+.gh2-card.is-equipped .gh2-card__surface {
+  border-bottom: 2px solid var(--gh2-lamp);
+}
+
+/* 卡背：不渲染任何身份信息 */
+.gh2-card--back .gh2-card__back-frame {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  border: 2px solid rgba(201, 162, 82, 0.4);
+  border-radius: inherit;
+  background:
+    radial-gradient(70% 50% at 50% 45%, rgba(67, 162, 145, 0.2), transparent 72%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 6px),
+    linear-gradient(155deg, #102322, var(--gh2-abyss-deep));
+  color: var(--gh2-lamp-dim);
+  box-shadow: var(--gh2-shadow);
+}
+
+.gh2-card__back-sigil > .gh2-icon {
+  width: 3.4em;
+  height: 3.4em;
+  opacity: 0.85;
+}
+
+.gh2-card__back-label {
+  font-size: 0.66em;
+  letter-spacing: 0.1em;
+  color: var(--gh2-silver-faint);
+}
