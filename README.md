@@ -1,116 +1,130 @@
-# 昆特牌 · GWENT — Web Edition
+# 灰港三夜 · THREE NIGHTS IN GREYHARBOR
 
-> 🎮 **在线试玩（GitHub Pages）**：<https://weixshaw.github.io/gwent-web/>
->
-> 打开即玩，无需安装；第一次点击后解锁音效。
+> 原创设定：雾锁的灰港，三夜牌局。学会（Society）与教团（Cult）在灯火与深渊之间轮番落子；
+> 理智耗尽者坠入疯狂，先赢两夜者带走港口。双面卡牌在「理 / 狂」之间翻转，封印、腐化、献祭与
+> 地点结算共同构成一套**独立于《昆特牌》规则的原创玩法**。
 
-> 《巫师3：狂猎》昆特牌（含 石之心 / 血与酒 / 次世代 4.0 内容）的网页复刻：**完整规则、完整牌库**，并重新设计了牌面美术、交互与战斗特效。
-> 纯原生 ES Modules + HTML/CSS，**无构建步骤、无第三方运行时依赖、无外部图片/音频素材**。所有牌面插画由程序化 SVG 生成，音效由 WebAudio 实时合成。
+**《灰港三夜》是本项目的新版正式入口（`index.html`）。** 旧版《昆特牌》网页复刻完整保留在
+`gwent.html`，作为参考实现与遗留套件，不参与新版规则。
 
-![首页](screenshots/menu.png)
+## 技术栈
 
-## 快速开始
+- 原生 **ES Modules** + HTML + CSS，**零运行时依赖、零构建步骤、零外部资源**。
+- 测试只用 Node 内置 `node:test` / `node:assert`，浏览器侧无 jsdom、无 Playwright 运行依赖。
+- 引擎确定性：所有随机走注入式 rng，无 `Math.random`；卡面插画为内联 SVG，音效为 WebAudio 实时合成。
+- 静态服务器 `server.mjs` 仅用 Node 内置模块；默认监听 `127.0.0.1:8788`。
 
-### 方式一：在线玩（推荐）
+## 运行与入口
 
-直接打开 <https://weixshaw.github.io/gwent-web/>。
-
-### 方式二：本地运行
-
-```bash
-npm start          # 启动静态服务器 → http://127.0.0.1:8788
-npm test           # 运行全部单元测试（引擎/规则/数据/AI）
-node scripts/e2e.mjs --mode=full   # Playwright 浏览器端到端（需本机 Playwright/Chrome）
+```bat
+启动游戏.bat        :: 启动 server.mjs 并打开 http://127.0.0.1:8788/
 ```
 
-打开 <http://127.0.0.1:8788> 即可游玩（桌面端 Chrome/Safari/Edge，建议全屏 1280×720 以上）。
+或命令行：
 
-## 已实现内容
+```bash
+npm start                        # node server.mjs → http://127.0.0.1:8788/
+```
 
-### 规则（完全还原 W3 昆特牌）
-- 三局两胜 / 宝石制；平局双方掉宝石；尼弗迦德平局获胜；双方尼弗迦德按普通平局。
-- 开局 10 张手牌 + 换牌（至多 2 张）；**小局之间不抽牌**；先手规则（硬币 / 松鼠党指定 / 获胜方先手 / 平局原先后手）。
-- 三行战场（近战/远程/攻城）、天气（严寒冰霜/浓雾/暴雨/史凯利格风暴/晴朗）、号角、曼陀罗、诱饵、灼烧、间谍、医师、集结、紧缚、士气、灵巧、英雄、复仇者、狂战士变身等全部机制。
-- 5 大阵营被动：北方（胜局抽牌）、尼弗迦德（平局获胜）、松鼠党（决定先手）、怪物（随机留场）、史凯利格（第三局墓地复活 2 名非英雄）。
-- 22 位领袖与全部领袖能力（含被动：白焰取消、间谍翻倍、半天气、随机复活、多抽一张等）。
-- 牌组构筑：≥22 单位牌 / ≤10 特殊牌 / 1 领袖；只能使用本阵营 + 中立卡；份数受收藏限制。
-- 卡牌结算顺序、英雄免疫、天气/紧缚/士气/号角叠加等与 W3 原作一致，并有一份可审计的[规则文档](docs/GAME_RULES.md)。
+| 地址 | 内容 |
+|---|---|
+| `/` 或 `/index.html` | **v2 正式入口**：主菜单 → 阵营选择 → 人机对战（含氛围层） |
+| `/app.html` | 同款 app shell（阶段 3.3 入口，保留兼容） |
+| `/play.html` | 阶段 3.2 人机对战直入（固定种子） |
+| `/game.html` | 阶段 3.1 自动棋盘演示 |
+| `/gwent.html` | **旧版昆特牌**（原 `index.html`，路径相对引用保持可用） |
 
-### 牌库（163 张卡 + 22 领袖）
-- 怪物 35 / 尼弗迦德 29 / 北方领域 25 / 松鼠党 23 / 史凯利格 27，中立 24（含 5 张天气牌）。
-- 含《石之心》卡牌（冈特·欧迪姆、欧吉尔德的变体、蟾蜍王子、牛、牛之防御部队等）、《血与酒》史凯利格全套，以及次世代 4.0 的 Roach 与杰洛特/希里的集结。
-- 4 张召唤衍生物（牛之防御部队、赫姆达尔、变身维尔德卡、变身年轻维尔德卡）不可收藏、不可入组，但可被复仇者/曼陀罗召唤。
-- 每张卡含官方英文名、中文名、能力中英文、风味文本与程序化美术参数。
+> 页面必须通过本地服务器打开（`file://` 下模块与 fetch 会被浏览器拦截）。
 
-### 玩法与表现
-- **AI 对手**：简单 / 普通 / 困难三档。困难档对关键动作做 1-ply 模拟推演；会打间谍、按收益使用天气/号角/灼烧/医师/诱饵、管理手牌与宝石、决胜局抢分/无望局止损。
-- **组牌器**：5 阵营收藏、领袖选择、筛选/搜索/排序、份数控制、实时合法性校验、10 套预设、按阵营本地保存（localStorage）。
-- **牌库图鉴**：163 张卡 + 22 领袖 + 6 阵营卡背，可按阵营/类型/关键词筛选。
-- **牌面美术**：每张卡确定性生成独立插画（阵营纹章、剪影、场景、粒子、暗角），英雄金框 + foil 流光，六阵营卡背，五档尺寸，悬停 3D tilt 与高光。
-- **战斗特效**：出牌飞行拖尾、天气粒子（霜/雾/雨/风暴闪电）、号角金纹、灼烧火线、间谍烟雾、医师灵魂、集结分身、复仇者碎裂重生、小局/胜负横幅、胜利金雨等；粒子池封顶 800，尊重 `prefers-reduced-motion`。
-- **音效**：29 种 WebAudio 合成音效 + 低频环境音，支持静音；首次交互后解锁。
-- **其他**：中文 UI、卡牌详情 tooltip、对局日志、牌堆/弃牌堆检视、再来一局、规则提示。
+## 目录地图
 
-![对局](screenshots/match.png)
-![组牌器](screenshots/deckbuilder.png)
+```
+index.html / app.html / play.html / game.html / gwent.html
+server.mjs · 启动游戏.bat · README.md · LICENSE
+src/
+├─ engine/v2/       新版规则引擎：确定性状态机、效果 DSL、buildView、计分
+├─ ai/v2/           新版 AI（合法动作 + 启发式评估，注入式随机）
+├─ data/            卡表 / 领袖 / 阵营 / 预设牌组（唯一数值事实源）
+├─ ui-v2/           新版 UI
+│  ├─ menu/         app shell、菜单 / 阵营 / 结果模板
+│  ├─ templates/    纯字符串模板（data-uid / data-card-id / data-faction）
+│  ├─ fx/           view-diff、DOM 动画、粒子池、fx-controller
+│  ├─ audio/        WebAudio 合成引擎与事件→音色映射
+│  └─ shims/        浏览器侧 node:fs 兼容层
+├─ styles-v2/       theme / card / board / interaction / menu / screens / fx
+├─ engine/, ai/, ui/, styles/   旧版昆特牌参考实现（保留，勿改）
+└─ app.js / main.js 旧版入口（由 gwent.html 加载）
+tests/
+├─ v2/, ai-v2/      新版引擎 / AI 套件
+├─ ui-v2/           新版 UI、控制器、氛围层套件（注入假对象，无外部依赖）
+└─ *.test.mjs       旧版引擎 / 数据 / AI / E2E 遗留套件
+scripts/            自对弈、实验台、消融、E2E 等工具（零外部依赖）
+docs/               规则、架构、美术方向、平衡实验报告
+research/           来源数据、QA 记录与审计产物
+```
 
 ## 操作
 
-| 操作 | 说明 |
-|---|---|
-| 点击手牌 | 选出牌；灵巧/间谍/号角/曼陀罗/诱饵等会高亮可选行或目标，再点击行/目标确认 |
-| 点击「放弃本局」 | Pass（会二次确认） |
-| 点击领袖卡 | 使用领袖能力（可用时发光） |
-| 悬停卡牌 | 显示完整能力/风味 tooltip |
-| 点击牌堆/弃牌堆 | 查看剩余数量 / 弃牌堆内容 |
-| Esc | 取消选牌 / 返回 |
-| 右上角 ♪ / ☰ | 音效开关 / 对局菜单 |
+- 主菜单选择「开始对局」→ 阵营 + 固定/随机种子 → 进入对局。
+- 点击手牌 → 点击高亮落点出牌；可点击己方领袖、盖牌翻开、过牌；`Esc` 取消。
+- 换牌阶段点击手牌标记，再点「确认换牌」。教团领袖伊莱亚斯会打开步骤式编排弹层。
+- 操作台「♪ 音效 / ♪ 已静音」按钮切换声音；设置存 `localStorage`，首次用户手势才解锁音频。
+- `prefers-reduced-motion: reduce` 时粒子关闭、翻面/脉冲降级为瞬时淡入；静音按钮可完全关闭声音。
 
-## 技术结构
+## 氛围层（阶段 3.4）
 
+- `fx/view-diff.mjs` 纯函数比较前后 `buildView`：入场 uid、理↔狂翻面、理智变化、新封印/腐化、夜切换、终局。
+- `fx/dom-animations.mjs` 只加临时 CSS 类，带超时清理与异常兜底，不阻塞交互。
+- `fx/particles.mjs` 单 rAF + ≤300 固定粒子池的全屏 canvas；页面隐藏暂停，禁用时零发射，确定性 rng。
+- `fx/fx-controller.mjs` 经 `hooks.afterPaint` / `hooks.onEvents` 接入控制器，不写游戏状态。
+- `audio/audio-engine.mjs` 零音频资源、主音量/静音、首次手势 unlock、峰值压缩；`audio/sound-map.mjs` 纯映射事件→音色。
+
+## 测试
+
+```bash
+npm test                                            # 旧版遗留套件：106 项（104 通过 / 2 E2E 默认跳过）
+node --test 'tests/v2/*.test.mjs' 'tests/ai-v2/*.test.mjs'   # 新版引擎 / AI：92 项
+node --test 'tests/ui-v2/*.test.mjs'                # 新版 UI + 氛围层
+node --test 'tests/**/*.test.mjs'                   # 全量（含新增项）
+node scripts/e2e.mjs --mode=smoke                   # 可选：Playwright 浏览器冒烟
 ```
-index.html / server.mjs / src/
-├── data/      卡牌、领袖、阵营、预设牌组、牌组校验（163 张卡逐字段与参考数据一致）
-├── engine/    规则引擎（确定性，可 clone 推演）、AI、随机数、计分
-├── ui/        对局界面、菜单、卡牌渲染、程序化美术、特效、音效、组牌器、tooltip
-├── styles/    设计 token、对局/菜单布局、卡牌样式、特效样式、组牌器样式
-└── main.js / app.js  入口与控制流
-tests/         引擎/数据/AI 单测 + E2E 包装
-docs/          规则、架构、数据、美术方向、QA 审计
-research/      原始牌库数据抓取与参考 JSON（审计用）
-demo/          卡牌画廊、特效页、组牌器独立演示
-```
 
-- **规则引擎**（`src/engine/engine.js`）：DOM-free、确定性（seed 随机）、事件流驱动 UI/特效；支持 `clone()` 供 AI 推演。
-- **数据契约**：卡牌 id 与结构化能力（`ability: [{id:'muster',group:'Crone'}]` 等）是引擎/UI/AI/测试共同语言。
-- **可测试性**：共 106 个 Node 测试（其中 E2E 默认跳过）+ Playwright 全流程 E2E；E2E 报告见 `research/qa/e2e-report.json`。
+`npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。
+在 Windows PowerShell 中，npm 脚本里的单引号 glob 可能被原样传给 Node（导致匹配 0 项）；
+此时请直接运行不带引号的 `node --test tests/*.test.mjs` 或上面的全量命令。
+氛围层测试全部使用可注入的假 DOM / 假 AudioContext / 假调度器，不引入外部依赖。
 
-## 测试与验证状态
+## 数据驱动的平衡方法
 
-- `npm test` → 104 通过 / 2 跳过（E2E 默认跳过）/ 0 失败。
-- `node scripts/e2e.mjs --mode=full` → 首页 → 选阵营 → 开局 → 换牌 → 出牌/目标选择 → Pass → AI 回合 → 三小局 → 结算 → 结果页；控制台 0 error、0 pageerror、0 HTTP 4xx/5xx。
-- 数据独立审计：163 卡 / 22 领袖 / 10 套预设与参考数据逐字段 0 差异。
-- 规则审计：`docs/QA_RULES_AUDIT.md`（58 条逐条核对，全部裁定并落实）；独立引擎核验 23/23。
-- QA 最终验收：全流程 E2E + 双分辨率可玩性巡检 **26/26 通过**，无 console 错误/页面异常/资源 4xx；截图见 `research/qa/final/`。
+平衡不靠拍脑袋：先用脚本采集，再消融定位，最后用同种子大样本复核。
 
-## 关于还原度与版权
+1. **诊断 / 实验台**：`scripts/balance-diagnose.mjs`、`scripts/balance-experiment.mjs` 采集镜像对局、
+   交叉基线、逐卡打出率与入场有效战力（例：`--games=1000 --seed=balance-v1.2`）。
+2. **消融**：`scripts/balance-ablation.mjs` 把目标卡替换为同类型空白卡、或把阵营被动置 0，
+   同种子重打，用 `Δpp` 量化单卡/被动的真实贡献。
+3. **候选矩阵**：`scripts/balance-candidates.mjs` 同时跑 crossAB / crossBA / 两个镜像方向，
+   避免只调一个座位导致假平衡。
+4. **定稿口径**：`scripts/balance-final-check.mjs` 用 shipped defaults 跑 **同种子 2000 局**，
+   要求双方胜率落入 45–55%、镜像接近 50%、理智结束占比 ≥10%、卡牌/实例守恒 ok，且既有测试全绿。
+5. 实验期数值通过临时 `cardOverrides` / `ruleOverrides` 注入；定稿后钩子移除，数值只存在于
+   `src/data/card-table.normalized.json` 与引擎常量（单一事实源）。详见 `docs/BALANCE_PATCH_V1.1.md` /
+   `docs/BALANCE_PATCH_V1.2.md` 与 `docs/v12-*.json`。
 
-- 本项目为**非官方粉丝作品**，不包含《巫师》系列的官方美术、音频或文本资源；牌面插画与音效全部程序化生成。
-- 卡牌名称、数值、能力文本参考社区整理的《巫师3》昆特牌数据（witcher.fandom.com、aboe026/witcher-3-gwent-list 等），用于规则还原与研究目的。
-- 《巫师》系列、昆特牌相关商标与版权归 CD PROJEKT RED 所有，本项目与官方无关联。
+本阶段**未改动** `src/engine`、`src/ai`、`src/data`、卡面数值与规则；氛围层只读 `buildView` 与事件流。
 
-## 已知限制 / 后续可做
+## 来源致谢与许可
 
-- AI 为启发式 + 浅层推演，非顶尖博弈 AI；后续可做更强的搜索/自对弈调参。
-- 程序化美术同一 motif 内共享剪影原型（通过组合变化区分），若追求"每张独立构图"可继续扩展画师库。
-- 目前为单机 vs AI，不含联机/账号/战绩系统。
-- 音频需一次用户手势后解锁（浏览器自动播放策略）。
+- 旧版 `gwent.html` 及其引擎/UI/测试源自社区项目 **gwent-web**（原仓库入口 `index.html`），
+  用于复刻《巫师 3：狂猎》昆特牌的规则研究与参考实现。感谢该项目与相关社区数据整理者。
+- 《巫师》系列、昆特牌的商标、角色与卡牌名称版权归 **CD PROJEKT RED** 所有；本项目为
+  **非官方粉丝作品**，与官方无关联，不含官方美术/音频资源。
+- 新版《灰港三夜》的规则、设定、文案、卡面程序化图形与音效均为本项目原创实现。
+- 代码以 [MIT License](LICENSE) 开源（Copyright © 2026 William XIAO）；第三方参考数据的
+  原始副本位于 `research/`，仅作审计与溯源用途。
 
----
+## 已知限制
 
-**致谢**：CD PROJEKT RED 创造了昆特牌；社区 wiki 与开源数据整理者提供了可靠的牌库参考。愿昆特牌与你同在。
-
-## License
-
-代码以 [MIT License](LICENSE) 开源（Copyright © 2026 William XIAO）。
-《巫师》系列与昆特牌的商标、角色、卡牌名称与相关设定版权归 CD PROJEKT RED 所有；本项目为非官方粉丝作品，不含官方美术/音频资源。
+- 仅支持单机对 AI，没有联机、账号或战绩系统。
+- AI 是启发式评估，不做深度搜索。
+- 浏览器自动播放策略要求首次点击/按键后才会有声音；`file://` 直接打开不可用。
+- 粒子仅用于四类关键反馈（理智归零 / 腐化 / 封印 / 出牌），非全屏天气系统。

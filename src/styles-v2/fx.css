@@ -1,0 +1,184 @@
+/* ============================================================
+   styles-v2/fx.css — phase 3.4 atmosphere layer.
+   Pure CSS: keyframes, 3D card flips, overlay canvas and the
+   reduced-motion fallback.  Uses theme.css tokens only; no
+   external fonts, images or audio.  Animation classes never
+   change pointer-events, so the board stays fully interactive.
+   ============================================================ */
+
+/* ── overlay canvas ─────────────────────────────────────────── */
+
+.gh2-fx-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: block;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+/* ── shared card stage ──────────────────────────────────────── */
+
+.gh2-shell { perspective: 1100px; }
+.gh2-card { transform-style: preserve-3d; backface-visibility: hidden; }
+
+/* ── entering cards ─────────────────────────────────────────── */
+
+@keyframes gh2-fx-enter-kf {
+  0%   { opacity: 0; transform: translate3d(0, 16px, -40px) rotateX(12deg) scale(0.92); }
+  55%  { opacity: 1; transform: translate3d(0, -3px, 0) rotateX(0deg) scale(1.03); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) rotateX(0deg) scale(1); }
+}
+.gh2-fx-enter { animation: gh2-fx-enter-kf 620ms cubic-bezier(.18,.72,.28,1) both; }
+
+/* ── reason <-> madness flip ────────────────────────────────── */
+
+@keyframes gh2-fx-flip-kf {
+  0%   { transform: rotateY(0deg) scale(1); filter: brightness(1); }
+  45%  { transform: rotateY(92deg) scale(1.06); filter: brightness(1.5); }
+  100% { transform: rotateY(360deg) scale(1); filter: brightness(1); }
+}
+.gh2-fx-flip { animation: gh2-fx-flip-kf 760ms ease-in-out both; }
+
+/* ── sanity pulse ───────────────────────────────────────────── */
+
+@keyframes gh2-fx-sanity-kf {
+  0%, 100% { box-shadow: none; transform: translateY(0); }
+  35% { box-shadow: 0 0 22px rgba(189, 106, 91, 0.75); transform: translateY(-2px); }
+  70% { box-shadow: 0 0 12px rgba(232, 201, 138, 0.45); transform: translateY(0); }
+}
+.gh2-fx-sanity { animation: gh2-fx-sanity-kf 900ms ease-out both; }
+
+/* ── seal rune ──────────────────────────────────────────────── */
+
+@keyframes gh2-fx-seal-kf {
+  0%   { box-shadow: 0 0 0 0 rgba(232, 201, 138, 0.7), inset 0 0 0 rgba(232, 201, 138, 0); }
+  40%  { box-shadow: 0 0 26px 4px rgba(232, 201, 138, 0.5), inset 0 0 24px rgba(232, 201, 138, 0.38); }
+  100% { box-shadow: 0 0 0 0 rgba(232, 201, 138, 0), inset 0 0 14px rgba(232, 201, 138, 0.16); }
+}
+.gh2-fx-seal { animation: gh2-fx-seal-kf 1400ms ease-out both; }
+.gh2-fx-seal::after {
+  content: '⌾';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  color: var(--gh2-lamp);
+  font-size: 28px;
+  text-shadow: var(--gh2-glow-lamp);
+  pointer-events: none;
+  animation: gh2-fx-fade-kf 1400ms ease-out both;
+}
+
+/* ── corruption attachment ─────────────────────────────────── */
+
+@keyframes gh2-fx-corrupt-kf {
+  0%   { filter: saturate(1) hue-rotate(0deg); transform: translateX(0); }
+  30%  { filter: saturate(1.6) hue-rotate(28deg); transform: translateX(2px); }
+  60%  { filter: saturate(1.4) hue-rotate(-14deg); transform: translateX(-2px); }
+  100% { filter: saturate(1) hue-rotate(0deg); transform: translateX(0); }
+}
+.gh2-fx-corrupt { animation: gh2-fx-corrupt-kf 1200ms ease-in-out both; }
+.gh2-fx-corrupt::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: 4;
+  border: 1px dashed var(--gh2-corruption);
+  border-radius: inherit;
+  pointer-events: none;
+  animation: gh2-fx-fade-kf 1200ms ease-out both;
+}
+
+/* ── night change / final banner ───────────────────────────── */
+
+@keyframes gh2-fx-night-kf {
+  0%   { opacity: 0.42; filter: brightness(1.5); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+.gh2-fx-night { animation: gh2-fx-night-kf 1100ms ease-out both; }
+
+@keyframes gh2-fx-fade-kf {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.gh2-fx-fade { animation: gh2-fx-fade-kf 260ms ease-out both; }
+
+@keyframes gh2-fx-banner-kf {
+  0%   { opacity: 0; transform: translate(-50%, 12px) scale(0.94); }
+  18%  { opacity: 1; transform: translate(-50%, 0) scale(1.02); }
+  82%  { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -8px) scale(1); }
+}
+.gh2-fx-banner {
+  position: fixed;
+  top: 24%;
+  left: 50%;
+  z-index: 58;
+  padding: 12px 26px;
+  border: 1px solid var(--gh2-lamp-dim);
+  border-radius: var(--gh2-radius);
+  background: linear-gradient(180deg, rgba(232, 201, 138, 0.16), var(--gh2-ink-0));
+  box-shadow: var(--gh2-shadow), var(--gh2-glow-lamp);
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: clamp(18px, 3vw, 30px);
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: gh2-fx-banner-kf 2600ms ease-out both;
+}
+
+/* ── mute button ────────────────────────────────────────────── */
+
+.gh2-play-btn--mute { min-width: 92px; color: var(--gh2-cult-glow); border-color: var(--gh2-cult); }
+.gh2-play-btn--mute.is-muted { color: var(--gh2-silver-faint); border-color: var(--gh2-line); }
+
+/* ── small-window leader composer overflow fix ────────────── */
+
+.gh2-modal__panel--leader {
+  display: flex;
+  flex-direction: column;
+  max-height: min(78vh, 720px);
+  overflow: hidden;
+}
+.gh2-modal__panel--leader .gh2-leader-steps,
+.gh2-modal__panel--leader .gh2-modal__options {
+  min-height: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.gh2-modal__panel--leader .gh2-modal__foot {
+  flex: 0 0 auto;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+@media (max-height: 620px) {
+  .gh2-modal { padding: 8px; align-items: flex-start; }
+  .gh2-modal__panel--leader { max-height: calc(100vh - 16px); }
+  .gh2-modal__panel--leader .gh2-leader-steps,
+  .gh2-modal__panel--leader .gh2-modal__options { max-height: 34vh; }
+  .gh2-fx-banner { top: 12%; }
+}
+
+/* ── reduced motion: instant / fade-only degradation ──────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .gh2-fx-enter,
+  .gh2-fx-flip,
+  .gh2-fx-sanity,
+  .gh2-fx-seal,
+  .gh2-fx-corrupt,
+  .gh2-fx-night,
+  .gh2-fx-banner { animation: none !important; }
+  .gh2-fx-enter,
+  .gh2-fx-night { animation: gh2-fx-fade-kf 160ms linear both !important; }
+  .gh2-fx-fade { animation: gh2-fx-fade-kf 160ms linear both !important; }
+  .gh2-fx-seal::after,
+  .gh2-fx-corrupt::before { display: none; }
+  .gh2-fx-canvas { display: none; }
+}

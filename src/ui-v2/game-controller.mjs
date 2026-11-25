@@ -178,6 +178,10 @@ export function createGameController(options = {}) {
   let decorated = [];
   const toastTimers = new Set();
   let gameOverNotified = false;
+  // Optional atmosphere hooks.  They are best-effort: a broken FX/audio
+  // callback must never break an otherwise legal game action.
+  const hooks = asObject(opts.hooks);
+  let localMuted = false;
 
   const composer = createLeaderComposer({
     commit: (action) => commit(action),
@@ -211,6 +215,26 @@ export function createGameController(options = {}) {
   function say(text, tone = 'info') {
     message = String(text);
     toast(message, tone);
+  }
+
+  /** Invoke an optional atmosphere hook; failures are intentionally ignored. */
+  function callHook(name, payload) {
+    const fn = hooks[name];
+    if (typeof fn !== 'function') return;
+    try { fn(payload); } catch (_) { /* FX / audio must never block gameplay */ }
+  }
+
+  function audioStatus() {
+    if (typeof hooks.getAudioStatus === 'function') {
+      try {
+        const status = asObject(hooks.getAudioStatus());
+        return {
+          muted: status.muted === true,
+          label: typeof status.label === 'string' ? status.label : (status.muted === true ? '♪ 已静音' : '♪ 音效'),
+        };
+      } catch (_) { /* fall back to local state */ }
+    }
+    return { muted: localMuted, label: localMuted ? '♪ 已静音' : '♪ 音效' };
   }
 
   function newEngine() {
@@ -393,6 +417,13 @@ export function createGameController(options = {}) {
     setButton('reveal-all', mode === 'play' && !!revealAllAction && !inputLocked && !modal);
     setButton('cancel', !!modal || mode === 'leader-target' || !!selectedUid || (mode === 'mulligan' && selection.size > 0));
     setButton('restart', true);
+    const muteButton = controlButton('mute');
+    if (muteButton) {
+      const status = audioStatus();
+      muteButton.textContent = status.label;
+      muteButton.setAttribute('aria-pressed', status.muted ? 'true' : 'false');
+      muteButton.classList.toggle('is-muted', status.muted);
+    }
 
     if (modalEl) {
       if (!modal) {
@@ -457,6 +488,7 @@ export function createGameController(options = {}) {
     }
     decorateBoard();
     updateControls();
+    callHook('afterPaint', { view, mode, seed });
   }
 
   // ── derived UI state ────────────────────────────────────────────────
@@ -773,6 +805,7 @@ export function createGameController(options = {}) {
       }
       lastAction = describeHumanAction(action);
       recordEvents(outcome.events, '你');
+      callHook('onEvents', { events: asArray(outcome.events), who: '你', action });
       clearInteraction();
       mulliganPrepared = false;
       refresh();
@@ -832,6 +865,7 @@ export function createGameController(options = {}) {
     aiSteps += 1;
     lastAction = publicActionLabel(action);
     recordEvents(outcome.events, 'AI');
+    callHook('onEvents', { events: asArray(outcome.events), who: 'AI', action });
     if (aiSteps > maxAiSteps) {
       say(`对手步数超过 ${maxAiSteps}，已停止以防卡死`, 'error');
       inputLocked = false;
@@ -1304,6 +1338,12 @@ export function createGameController(options = {}) {
       case 'reveal-all': revealAll(); break;
       case 'cancel': cancel(); break;
       case 'restart': restart(); break;
+      case 'mute': {
+        localMuted = !audioStatus().muted;
+        callHook('onMuteToggle', localMuted);
+        updateControls();
+        break;
+      }
       case 'composer-skip': composerSkip(); break;
       case 'modal-cancel':
         if (modal?.kind === 'leader-compose') composerCancel();
@@ -1328,6 +1368,7 @@ export function createGameController(options = {}) {
         <button type="button" data-gh2="reveal-all" class="gh2-play-btn">全部翻开</button>
         <button type="button" data-gh2="cancel" class="gh2-play-btn">取消</button>
         <button type="button" data-gh2="restart" class="gh2-play-btn">再来一局</button>
+        <button type="button" data-gh2="mute" class="gh2-play-btn gh2-play-btn--mute" aria-pressed="false">♪ 音效</button>
       </div>
       <ul class="gh2-play-controls__log" data-gh2="log"></ul>
       <div class="gh2-modal" data-gh2="modal" hidden></div>
@@ -1410,6 +1451,7 @@ export function createGameController(options = {}) {
       toastTimers.clear();
       composer.cancel();
       modal = null;
+      callHook('onDestroy', {});
       if (controlsRoot) controlsRoot.removeEventListener('click', handleControlClick);
       if (boardRoot) boardRoot.removeEventListener('click', handleBoardClick);
       if (typeof document !== 'undefined') document.removeEventListener('keydown', handleKeyDown);

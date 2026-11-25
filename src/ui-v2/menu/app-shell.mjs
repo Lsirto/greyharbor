@@ -12,6 +12,7 @@
  */
 
 import { createGameController } from '../game-controller.mjs';
+import { createFxController } from '../fx/fx-controller.mjs';
 import {
   FACTION_CARDS,
   renderFactionSelect,
@@ -37,6 +38,7 @@ export function createAppShell(options = {}) {
   let seedMode = opts.seedMode === 'random' ? 'random' : 'fixed';
   let currentScreen = 'menu';
   let controller = null;
+  let fx = null;
 
   const el = document.createElement('div');
   el.className = 'gh2-app-shell';
@@ -103,6 +105,10 @@ export function createAppShell(options = {}) {
 
   function destroyController() {
     hideResult();
+    if (fx) {
+      try { fx.destroy(); } catch (_) { /* a half-built FX layer must not block routing */ }
+      fx = null;
+    }
     if (!controller) return;
     const old = controller;
     controller = null;
@@ -116,6 +122,7 @@ export function createAppShell(options = {}) {
 
   function startMatch() {
     destroyController();
+    fx = createFxController({ boardRoot, controlsRoot });
     controller = createGameController({
       boardRoot,
       controlsRoot,
@@ -123,6 +130,7 @@ export function createAppShell(options = {}) {
       baseSeed: opts.baseSeed,
       seedGenerator: opts.seedGenerator,
       matchConfig: { humanFaction: selectedFaction, seedMode },
+      hooks: fx.hooks,
       onGameOver: (info) => showResult(info),
     });
     if (typeof window !== 'undefined') window.__greyharborGame = controller;

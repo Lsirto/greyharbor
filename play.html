@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="./src/styles-v2/card.css">
   <link rel="stylesheet" href="./src/styles-v2/board.css">
   <link rel="stylesheet" href="./src/styles-v2/interaction.css">
+  <link rel="stylesheet" href="./src/styles-v2/fx.css">
 
   <!-- The v2 engine reads its card table with node:fs in Node.  This shim is
        browser-only glue; game.html uses the exact same import map. -->
@@ -28,20 +29,27 @@
     <div class="gh2-legend" style="max-width:1600px;margin:0 auto">
       <span>阶段 3.2 · 人机对战 · 固定种子</span>
       <span>点击手牌选择 → 点击高亮落点 → 领袖/过牌/盖牌均可操作</span>
-      <span><a href="./game.html" style="color:var(--gh2-lamp)">返回 3.1 展示演示</a> · <a href="./index.html" style="color:var(--gh2-lamp)">旧版界面</a></span>
+      <span><a href="./index.html" style="color:var(--gh2-lamp)">正式入口</a> · <a href="./game.html" style="color:var(--gh2-lamp)">自动演示</a> · <a href="./gwent.html" style="color:var(--gh2-lamp)">旧版昆特牌</a></span>
       <span>需通过本地服务器打开：<code>npm start</code> → <code>/play.html</code></span>
     </div>
   </div>
 
   <script type="module">
     import { createGameController } from './src/ui-v2/game-controller.mjs';
+    import { createFxController } from './src/ui-v2/fx/fx-controller.mjs';
 
     try {
+      const fx = createFxController({
+        boardRoot: document.getElementById('gh2-board'),
+        controlsRoot: document.getElementById('gh2-controls'),
+      });
       const controller = createGameController({
         boardRoot: document.getElementById('gh2-board'),
         controlsRoot: document.getElementById('gh2-controls'),
         aiDelay: 460,
+        hooks: fx.hooks,
       });
+      window.__greyharborFx = fx;
       window.__greyharborGame = controller;
     } catch (error) {
       document.getElementById('gh2-board').innerHTML =
