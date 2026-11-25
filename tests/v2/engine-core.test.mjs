@@ -73,7 +73,9 @@ function endNight(engine, night) {
 // ── setup / mulligan ────────────────────────────────────────────────────
 
 test('setup: 20-card presets, 8-card opening hands, mulligan up to 2', () => {
-  const engine = createGame({ seed: 42 });
+  // v1 setup contract: opt out of the v1.1 default (extraMulligan=2). The
+  // shipped default is asserted separately in compensation.test.mjs.
+  const engine = createGame({ seed: 42, firstPlayerCompensation: { extraMulligan: 0 } });
 
   assert.equal(engine.phase, 'mulligan');
   assert.equal(engine.night, 0);

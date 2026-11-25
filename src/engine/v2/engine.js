@@ -136,6 +136,43 @@ function resolveDeckSpec(spec, cardIndex) {
   };
 }
 
+const COMPENSATION_KEYS = Object.freeze([
+  'extraMulligan',
+  'extraStartingCard',
+  'night1Sanity',
+]);
+
+/**
+ * Balance-patch v1.1 hooks. All values are non-negative integers; 0 means the
+ * mechanism is disabled.
+ *
+ * During the experiment all three defaults were 0 (pre-patch behaviour). The
+ * v1.1 final rule enables extraMulligan=2 for the night-1 first player, the
+ * only candidate inside the pre-registered 45–55% first-player band with no
+ * material sanity-ending shift. Explicit options still override it.
+ */
+const COMPENSATION_DEFAULTS = Object.freeze({
+  extraMulligan: 2,
+  extraStartingCard: 0,
+  night1Sanity: 0,
+});
+
+function normalizeCompensation(raw = {}) {
+  if (raw === null || raw === undefined) raw = {};
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('firstPlayerCompensation must be an object');
+  }
+  const out = {};
+  for (const key of COMPENSATION_KEYS) {
+    const value = raw[key] ?? COMPENSATION_DEFAULTS[key];
+    if (!Number.isInteger(value) || value < 0) {
+      throw new Error(`${key} must be a non-negative integer`);
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
 function normalizeOptions(options = {}) {
   const seed = options.seed ?? 'greyharbor';
   const cardIndex = makeCardIndex(options.cardPool ?? CARDS);
@@ -174,6 +211,7 @@ function normalizeOptions(options = {}) {
     startingSanity,
     maxNights,
     names: names.map(String),
+    compensation: normalizeCompensation(options.firstPlayerCompensation),
   };
 }
 
@@ -187,6 +225,9 @@ function createInitialState(config) {
     night: 0,
     maxNights: config.maxNights,
     firstPlayer: null,
+    // Night-1 coin is drawn during setup (after both decks are shuffled) so
+    // compensation can identify its recipient before the mulligan batch.
+    night1FirstPlayer: null,
     current: null,
     passed: [false, false],
     mulliganDone: [false, false],
@@ -229,6 +270,23 @@ function createInitialState(config) {
       newInstance(`p${p}-${index + 1}`, cardId, p, face),
     );
     state.players[p].deck = shuffle(state, instances);
+  }
+
+  // The coin is the same seeded randInt(2) as the pre-patch night-1 start,
+  // simply resolved one batch earlier so the mulligan limit and the sanity
+  // bonus can be attached to the same player.
+  state.night1FirstPlayer = randInt(state, 2);
+
+  const sanityBonus = config.compensation.night1Sanity;
+  if (sanityBonus > 0) {
+    const p = state.night1FirstPlayer;
+    const player = state.players[p];
+    const boosted = clampSanity(player.sanity + sanityBonus);
+    if (boosted !== player.sanity) {
+      player.sanity = boosted;
+      const face = faceForSanity(boosted);
+      for (const inst of player.deck) inst.face = face;
+    }
   }
 
   return state;
@@ -337,6 +395,17 @@ export class EngineV2 {
       this._emit({ type: 'deal', player: p, count });
     }
     for (const p of [0, 1]) this._syncHandFaces(p);
+
+    const comp = this.config.compensation;
+    if (comp.extraMulligan || comp.extraStartingCard || comp.night1Sanity) {
+      this._emit({
+        type: 'firstPlayerCompensation',
+        firstPlayer: state.night1FirstPlayer,
+        extraMulligan: comp.extraMulligan,
+        extraStartingCard: comp.extraStartingCard,
+        night1Sanity: comp.night1Sanity,
+      });
+    }
   }
 
   // ── action dispatch ─────────────────────────────────────────────────
@@ -371,7 +440,8 @@ export class EngineV2 {
 
     const uids = action.uids ?? [];
     if (!Array.isArray(uids)) return fail('mulligan uids must be an array');
-    if (uids.length > 2) return fail('mulligan allows at most 2 cards');
+    const limit = this._mulliganLimit(p);
+    if (uids.length > limit) return fail(`mulligan allows at most ${limit} cards`);
     if (new Set(uids).size !== uids.length) return fail('mulligan uids must be unique');
 
     const player = state.players[p];
@@ -1731,8 +1801,9 @@ export class EngineV2 {
       }
     }
 
-    // 3. First player.
-    if (night === 1) state.firstPlayer = randInt(state, 2);
+    // 3. First player. The night-1 coin is the setup-time randInt(2);
+    //    nights 2/3 keep the inherited "loser goes first" rotation (§2.3).
+    if (night === 1) state.firstPlayer = state.night1FirstPlayer ?? randInt(state, 2);
     state.current = state.firstPlayer;
     state.passed = [false, false];
     state.turnActionTaken = false;
@@ -1749,10 +1820,16 @@ export class EngineV2 {
     // 5. Sanity check after the whole batch.
     if (this._checkSanityZero()) return;
 
-    // 6. Night 2/3 draw.
+    // 6. Night 2/3 draw. On night 1 the compensated first player draws N
+    //    through this same batch; _draw already applies §2.4 (deck exhaustion).
     const draws = [0, 0];
     if (night > 1) {
       for (const p of [0, 1]) draws[p] = this._draw(p, 2);
+    } else if (this.config.compensation.extraStartingCard > 0) {
+      draws[state.firstPlayer] = this._draw(
+        state.firstPlayer,
+        this.config.compensation.extraStartingCard,
+      );
     }
     for (const p of [0, 1]) this._syncHandFaces(p);
 
@@ -2069,27 +2146,36 @@ export class EngineV2 {
 
   // ── action generation ───────────────────────────────────────────────
 
+  /** v1 default is 2; only the night-1 coin winner may get the extra bonus. */
+  _mulliganLimit(p) {
+    return 2 + (p === this.state.night1FirstPlayer
+      ? this.config.compensation.extraMulligan
+      : 0);
+  }
+
   _mulliganActions(p) {
     const hand = this.state.players[p].hand;
     const uids = hand.map((inst) => inst.uid);
+    const limit = Math.min(this._mulliganLimit(p), uids.length);
     const actions = [{ type: 'mulligan', player: p, uids: [], label: 'Keep hand' }];
-    for (let i = 0; i < uids.length; i++) {
-      actions.push({
-        type: 'mulligan',
-        player: p,
-        uids: [uids[i]],
-        label: 'Mulligan 1 card',
-      });
-    }
-    for (let i = 0; i < uids.length; i++) {
-      for (let j = i + 1; j < uids.length; j++) {
-        actions.push({
-          type: 'mulligan',
-          player: p,
-          uids: [uids[i], uids[j]],
-          label: 'Mulligan 2 cards',
-        });
-      }
+    for (let count = 1; count <= limit; count++) {
+      const emit = (start, chosen) => {
+        if (chosen.length === count) {
+          actions.push({
+            type: 'mulligan',
+            player: p,
+            uids: chosen.map((i) => uids[i]),
+            label: `Mulligan ${count} cards`,
+          });
+          return;
+        }
+        for (let i = start; i <= uids.length - (count - chosen.length); i++) {
+          chosen.push(i);
+          emit(i + 1, chosen);
+          chosen.pop();
+        }
+      };
+      emit(0, []);
     }
     return actions;
   }
