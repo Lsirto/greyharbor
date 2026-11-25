@@ -705,7 +705,9 @@ export function createGameController(options = {}) {
       return false;
     }
     if (result.done) {
-      modal = null;
+      // If the commit ended the game (e.g. sanity hit zero), refresh already
+      // opened the result modal; keep it instead of wiping it.
+      if (view?.phase !== 'gameOver') modal = null;
       message = '领袖技已发动';
       return true;
     }
@@ -721,7 +723,7 @@ export function createGameController(options = {}) {
       say(result.error, 'warn');
       return false;
     }
-    modal = null;
+    if (view?.phase !== 'gameOver') modal = null;
     message = '领袖技已发动（未替换信徒）';
     return true;
   }
@@ -914,7 +916,7 @@ export function createGameController(options = {}) {
               result: result ? { ...result } : null,
               nightHistory: asArray(view.history).map((entry) => asObject(entry)).map((entry) => ({
                 night: safeInt(entry.night, 0),
-                scores: asArray(entry.scores).map((score) => safeInt(asObject(score).total, 0)),
+                scores: asArray(entry.scores).map((score) => ({ ...asObject(score) })),
                 winner: entry.winner ?? null,
                 tie: entry.tie === true,
                 nightWins: asArray(entry.nightWins).slice(),

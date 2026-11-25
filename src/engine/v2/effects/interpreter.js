@@ -315,6 +315,13 @@ function runOperation(engine, ctx, effectDef, choice, operation) {
       engine._shuffleDeck(ctx.controller);
       return;
     }
+    case 'discover': {
+      // The chosen deck card (primary target) moves to hand; the other two
+      // stay on the deck top in their original order.
+      const uid = ctx.choice?.targetUid ?? null;
+      if (uid) engine._moveDeckToHand(ctx.controller, uid);
+      return;
+    }
     case 'addAura': {
       for (const target of operationTargets(engine, ctx, effectDef, choice, operation)) {
         engine._addAura({
@@ -461,12 +468,20 @@ export function enumerateEffectChoices(engine, ctx, effectDef) {
       );
       for (const secondary of secondaries) {
         for (const replaceWithUid of replacements) {
+          let optionLabel = choice.label ?? choice.id;
+          // Discover-style choices append the target card's public name so the
+          // modal can distinguish otherwise identical options.
+          if (choice.labelWithTarget === true && primary) {
+            const targetCard = engine.cardIndex[primary.cardId];
+            const targetName = targetCard?.nameZh ?? targetCard?.name ?? primary.cardId;
+            optionLabel = `${optionLabel} · ${targetName}`;
+          }
           out.push({
             mode: choice.id,
             targetUid: primary?.uid ?? null,
             secondaryUids: secondary.map((entry) => entry.uid),
             replaceWithUid,
-            label: choice.label ?? choice.id,
+            label: optionLabel,
           });
         }
       }

@@ -99,6 +99,7 @@ function emptyDiff(view) {
     entered: Object.freeze([]),
     flipped: Object.freeze([]),
     sanity: Object.freeze([]),
+    objectives: Object.freeze([]),
     sealed: Object.freeze([]),
     corrupted: Object.freeze([]),
     nightChanged: false,
@@ -147,6 +148,14 @@ export function diffViews(previous, next) {
     sanity.push(Object.freeze({ player, from, to, delta: to - from }));
   }
 
+  const objectives = [];
+  for (let player = 0; player < 2; player += 1) {
+    const from = numberOrNull(asObject(oldPlayers[player]).objective);
+    const to = numberOrNull(asObject(newPlayers[player]).objective);
+    if (from === null || to === null || to <= from) continue;
+    objectives.push(Object.freeze({ player, from, to, delta: to - from }));
+  }
+
   const sealed = [];
   const corrupted = [];
   for (const [uid, card] of after.states) {
@@ -175,6 +184,7 @@ export function diffViews(previous, next) {
     entered: Object.freeze(entered),
     flipped: Object.freeze(flipped),
     sanity: Object.freeze(sanity),
+    objectives: Object.freeze(objectives),
     sealed: Object.freeze(sealed),
     corrupted: Object.freeze(corrupted),
     nightChanged,
@@ -190,6 +200,7 @@ export function hasChanges(diff) {
   return data.entered?.length > 0
     || data.flipped?.length > 0
     || data.sanity?.length > 0
+    || data.objectives?.length > 0
     || data.sealed?.length > 0
     || data.corrupted?.length > 0
     || data.nightChanged === true

@@ -8,6 +8,7 @@ import { asObject, escapeHtml, safeInt } from '../utils.mjs';
 
 import { icon } from './icons.mjs';
 import { renderSanityMeter } from './sanity.mjs';
+import { renderObjectiveTrack } from './objective.mjs';
 
 function pile(label, kind, count) {
   return `<span class="gh2-pile" title="${escapeHtml(label)}">${icon(kind)}<span class="gh2-pile__num">${escapeHtml(Math.max(0, safeInt(count, 0)))}</span></span>`;
@@ -43,6 +44,7 @@ export function renderPlayerBar(player, options = {}) {
       ${pile('牌堆', 'deck', data.deckCount)}
       <span class="gh2-player-bar__wins" title="夜胜场">${icon('moon')}<span>${escapeHtml(nightWins)} 胜</span></span>
       ${renderSanityMeter(data.sanity, { compact: true })}
+      ${renderObjectiveTrack(data, { compact: true })}
     </div>
     <div class="gh2-player-bar__score" aria-label="当前夜分">
       <span class="gh2-player-bar__score-label">夜分 SCORE</span>

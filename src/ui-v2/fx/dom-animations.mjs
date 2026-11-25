@@ -16,6 +16,7 @@ export const FX_CLASSES = Object.freeze({
   enter: 'gh2-fx-enter',
   flip: 'gh2-fx-flip',
   sanity: 'gh2-fx-sanity',
+  objective: 'is-gained',
   seal: 'gh2-fx-seal',
   corrupt: 'gh2-fx-corrupt',
   night: 'gh2-fx-night',
@@ -27,6 +28,7 @@ export const ANIMATION_MS = Object.freeze({
   enter: 620,
   flip: 760,
   sanity: 900,
+  objective: 520,
   seal: 1400,
   corrupt: 1200,
   night: 1100,
@@ -140,6 +142,12 @@ export function createDomAnimations(options = {}) {
       }
       for (const change of asArray(data.sanity)) {
         pulsePlayer(asObject(change).player, FX_CLASSES.sanity, durations.sanity);
+      }
+      for (const change of asArray(data.objectives)) {
+        const player = asObject(change).player;
+        for (const element of query(`[data-player="${player}"] .gh2-objective`)) {
+          addClass(element, FX_CLASSES.objective, durations.objective);
+        }
       }
       for (const uid of asArray(data.sealed)) {
         for (const element of byUid(uid)) addClass(element, FX_CLASSES.seal, durations.seal);

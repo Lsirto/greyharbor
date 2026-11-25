@@ -145,7 +145,7 @@ function conservation(engine, sizes) {
 
 // ── lucia-vaughn: dream-native stealth (§4.4 / §6.1) ──────────────────────
 
-test('lucia-vaughn: dream-native stealth enters the dream face-down with no enter effect', () => {
+test('lucia-vaughn: dream-native stealth enters the dream face-down, and discovers on reveal', () => {
   const engine = setup({
     seed: 201,
     p0: { leader: 'harold-ashby', cards: ['lucia-vaughn', 'finn-calloway', 'finn-calloway'] },
@@ -166,8 +166,9 @@ test('lucia-vaughn: dream-native stealth enters the dream face-down with no ente
   assert.equal(engine.state.players[0].board.dream[0].faceDown, true);
   assert.equal(engine.state.players[0].flags.dreamEntries, 1);
 
-  // Lucia's printed text is dream admission only; the keyword covers it.
-  assert.equal(effectsFor('lucia-vaughn'), null);
+  // v1.3: Lucia registers a Discover effect that fires on reveal, while the
+  // dream stealth face-down admission stays an engine primitive.
+  assert.ok(Array.isArray(effectsFor('lucia-vaughn')), 'Lucia registers a discover effect');
   conservation(engine, [3, 2]);
 });
 
@@ -221,7 +222,11 @@ test('arthur-pendleton: reveal peeks the opponent hand publicly', () => {
   assert.ok(reveal);
   const result = engine.apply(reveal);
   assert.equal(result.ok, true, result.error);
-  assert.deepEqual(result.events.map((event) => event.type), ['reveal', 'peek']);
+  // v1.3: a reveal also draws a chaos token (and may trigger anomaly events),
+  // so assert the key events exist rather than an exact ordered list.
+  const eventTypes = result.events.map((event) => event.type);
+  assert.ok(eventTypes.includes('reveal'), 'the reveal event is emitted');
+  assert.ok(eventTypes.includes('peek'), 'the peek event is emitted');
   const peek = result.events.find((event) => event.type === 'peek');
   assert.equal(peek.private, false, "Arthur's reveal is public");
   assert.equal(engine.state.players[0].privateNotes.length, 0);
@@ -548,13 +553,16 @@ test('stormy-night: this night scene -2 for both players', () => {
     p0: { leader: 'elias-thorne', cards: ['stormy-night', 'zealot', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
-  putUnit(engine, 0, 'zealot', 'scene', 0);
-  putUnit(engine, 1, 'finn-calloway', 'scene', 0);
+  const zealotInst = putUnit(engine, 0, 'zealot', 'scene', 0);
+  const finnInst = putUnit(engine, 1, 'finn-calloway', 'scene', 0);
+  // Capture power before the environment (includes chaos token + anomaly).
+  const before0 = currentUnitPower(engine.state, 0, zealotInst, 'scene', 0);
+  const before1 = currentUnitPower(engine.state, 1, finnInst, 'scene', 0);
   const played = play(engine, 0, 'stormy-night');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
-  // v1.2: zealot reasonPower 3 -> 2, Stormy Night scene -2 unchanged; finn unaffected.
-  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.scene[0], 'scene', 0), 0);
-  assert.equal(currentUnitPower(engine.state, 1, engine.state.players[1].board.scene[0], 'scene', 0), 1);
+  // Stormy Night applies a this-night scene -2 on top of every other modifier.
+  assert.equal(currentUnitPower(engine.state, 0, zealotInst, 'scene', 0), Math.max(0, before0 - 2));
+  assert.equal(currentUnitPower(engine.state, 1, finnInst, 'scene', 0), Math.max(0, before1 - 2));
 });
 
 // ── drowned-altar: scene sacrifice immunity + cult echo +3 ─────────────────
@@ -584,7 +592,7 @@ test('drowned-altar: scene sacrifices skip backlash and the cult echo is +1', ()
   assert.equal(result.ok, true, result.error);
   assert.deepEqual(
     result.events.map((event) => event.type),
-    ['leaderSkill', 'sacrifice', 'cultEcho', 'playFromDeck', 'backlash', 'sanityChange'],
+    ['leaderSkill', 'sacrifice', 'objectiveGain', 'cultEcho', 'playFromDeck', 'backlash', 'sanityChange'],
   );
   // v1.2: §7.2 echo +2/altar +3 -> +1/altar +1; the altar still suppresses backlash.
   assert.equal(result.events.find((event) => event.type === 'cultEcho').bonus, 1, 'v1.2 echo is +1 with or without the altar');
@@ -676,7 +684,16 @@ test('unexpected-aid: permanent +3 plus remove all seals and corruption', () => 
   assert.equal(finn.sealed, false);
   assert.equal(finn.corruptionTokens.length, 0);
   assert.equal(finn.corruptionLoss, 0);
-  assert.equal(currentUnitPower(engine.state, 0, finn, 'scene', 0), 6, 'permanent +3 applied on top of printed power');
+  // Printed 3 + permanent 3 + chaos token + any scene anomaly power.
+  const anomalyBonus = engine.state.anomaly?.location === 'scene'
+    ? (engine.state.anomaly.power ?? 0)
+    : 0;
+  const expectedAid = 3 + 3 + (finn.chaosToken?.modifier ?? 0) + anomalyBonus;
+  assert.equal(
+    currentUnitPower(engine.state, 0, finn, 'scene', 0),
+    Math.max(0, expectedAid),
+    'permanent +3 applied on top of printed power',
+  );
 });
 
 // ── the-sleeper: seal immunity, entry cost, nightly drain ───────────────────

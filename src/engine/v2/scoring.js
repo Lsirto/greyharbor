@@ -197,14 +197,23 @@ export function auraPowerBonus(state, p, inst, location, card) {
   return bonus;
 }
 
+/** Active anomaly's location-wide power modifier (0 if none at this location). */
+export function anomalyPowerBonus(state, location) {
+  const anomaly = state.anomaly;
+  if (!anomaly || anomaly.location !== location) return 0;
+  return anomaly.power ?? 0;
+}
+
 /**
  * Seal immunity.  The Sleeper is immune by card text; Warding Rite grants it
  * to every own card in the chosen location (including the location card).
+ * A seal-immunity anomaly blocks new seals for its whole location.
  * Existing seals are not cleared by immunity.
  */
 export function isSealImmune(state, p, inst, location) {
   if (!inst) return false;
   if (isSealImmuneCard(inst.cardId)) return true;
+  if (state.anomaly?.sealImmune && state.anomaly.location === location) return true;
   const card = state.cardIndex?.[inst.cardId];
   for (const aura of state.effects ?? []) {
     if (!aura.modifiers?.sealImmune) continue;
@@ -291,6 +300,8 @@ export function currentUnitPower(state, p, inst, location, slot) {
   power += equipmentBonus(state, inst);
   power += thisNightBonus(state, p, inst);
   power += auraPowerBonus(state, p, inst, location, card);
+  power += anomalyPowerBonus(state, location);
+  power += inst.chaosToken?.modifier ?? 0;
   power += conditionalSelfPower(state, p, inst, location);
   power += chainCount(state, p, inst, location, slot);
   return Math.max(0, power);

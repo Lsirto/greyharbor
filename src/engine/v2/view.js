@@ -12,6 +12,7 @@ import {
   printedPower,
   scorePlayer,
 } from './scoring.js';
+import { objectiveTypeForFaction } from './objectives.js';
 
 function fullCardView(inst, card, {
   onBoard = false,
@@ -43,6 +44,9 @@ function fullCardView(inst, card, {
         corruptionLoss: inst.corruptionLoss ?? 0,
         permanentPower: inst.permanentPower ?? 0,
         thisNightPower: inst.thisNightPower ?? 0,
+        chaos: inst.chaosToken
+          ? { id: inst.chaosToken.id, modifier: inst.chaosToken.modifier }
+          : null,
         equipment: inst.equipment
           ? fullCardView(inst.equipment, cardIndex?.[inst.equipment.cardId], { cardIndex })
           : null,
@@ -139,6 +143,9 @@ export function buildView(engine, pov) {
         }
         : null,
       sanity: player.sanity,
+      objective: player.objective ?? 0,
+      objectiveType: objectiveTypeForFaction(player.faction),
+      objectiveThreshold: engine.config.objectiveThreshold,
       hand,
       handCount: player.hand.length,
       deckCount: player.deck.length,
@@ -175,6 +182,7 @@ export function buildView(engine, pov) {
     })),
     pending: engine.pending,
     players,
+    anomaly: state.anomaly ? { ...state.anomaly } : null,
     scores: players.map((p) => p.score.total),
     events: state.events.map((event) => sanitizeEvent(event, viewer)),
     // A spectator must never receive action lists: mulligan actions contain

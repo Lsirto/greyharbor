@@ -26,6 +26,32 @@ function sumColumn(board) {
   return Math.max(0, Math.trunc(total));
 }
 
+/** Short Chinese effect text for the active anomaly. */
+export function describeAnomaly(anomaly) {
+  const a = asObject(anomaly);
+  if (!a.id) return '';
+  if (Number.isFinite(a.power)) return `战力 ${a.power > 0 ? '+' : ''}${a.power}`;
+  if (Number.isFinite(a.entryCorruption) && a.entryCorruption) return `入场腐化 +${a.entryCorruption}`;
+  if (Number.isFinite(a.entrySanity) && a.entrySanity) return `入场理智 ${a.entrySanity > 0 ? '+' : ''}${a.entrySanity}`;
+  if (a.sealImmune) return '免疫封印';
+  if (a.leaderBlocked) return '领袖禁入';
+  if (a.environmentBlocked) return '环境禁用';
+  return '';
+}
+
+function renderAnomalyBanner(anomaly, location) {
+  const a = asObject(anomaly);
+  if (!a.id) return '';
+  // Global anomaly (location null) shows on every column; otherwise only on its location.
+  if (a.location !== null && a.location !== location) return '';
+  const effect = describeAnomaly(a);
+  const name = a.nameZh || a.id;
+  return `<div class="gh2-anomaly" data-anomaly="${escapeHtml(a.id)}" title="${escapeHtml(a.nameEn || a.id)}">
+    <span class="gh2-anomaly__mark">${icon('night')}</span>
+    <span class="gh2-anomaly__text"><b>${escapeHtml(name)}</b><i>${escapeHtml(effect)}</i></span>
+  </div>`;
+}
+
 export function renderLocationColumn(options = {}) {
   const opts = asObject(options);
   const location = LOCATION_ORDER.includes(opts.location) ? opts.location : 'scene';
@@ -41,6 +67,7 @@ export function renderLocationColumn(options = {}) {
   const locationCard = opts.locationCard && typeof opts.locationCard === 'object'
     ? renderCard(opts.locationCard, { size: 'env' })
     : '<span class="gh2-location__slot-empty">地点位 · 空</span>';
+  const anomalyBanner = renderAnomalyBanner(opts.anomaly, location);
 
   const cards = Array.from({ length: slots }, (_, index) => {
     const entry = board[index];
@@ -56,6 +83,7 @@ export function renderLocationColumn(options = {}) {
       <h4 class="gh2-location__name">${escapeHtml(label)}<small>${escapeHtml(location.toUpperCase())}</small></h4>
       <span class="gh2-location__capacity">${escapeHtml(slots)} 槽</span>
     </header>
+    ${anomalyBanner}
     <div class="gh2-location__card-slot">${locationCard}</div>
     <div class="gh2-location__slots">${cards}</div>
     <footer class="gh2-location__foot"><span>小计 SUBTOTAL</span><strong>${escapeHtml(subtotal)}</strong></footer>
@@ -75,6 +103,7 @@ export function renderLocationGrid(player, options = {}) {
     board: board[location],
     locationCard: locations[location],
     subtotal: scoreLocations[location],
+    anomaly: opts.anomaly ?? null,
   })).join('');
 
   return `<div class="gh2-location-grid" data-player="${playerIndex}">${columns}</div>`;

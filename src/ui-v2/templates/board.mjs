@@ -1,6 +1,9 @@
 /**
  * templates/board.mjs — composes the whole board from buildView() data.
  * Pure: takes a view fragment + options, returns one HTML string.
+ *
+ * Compact one-screen layout: masthead → opponent row → midline → viewer row,
+ * with the viewer's hand docked at the bottom so no page scrolling is needed.
  */
 
 import { asArray, asObject, escapeHtml, safeInt } from '../utils.mjs';
@@ -100,8 +103,8 @@ export function renderBoardMarkup(view, options = {}) {
   const nightWins = asArray(data.nightWins);
   const result = asObject(data.result);
 
-  return `<section class="gh2-shell" data-phase="${escapeHtml(phase)}" data-night="${night}" data-pov="${pov}">
-    <header class="gh2-masthead">
+  return `<section class="gh2-shell gh2-shell--compact" data-phase="${escapeHtml(phase)}" data-night="${night}" data-pov="${pov}">
+    <header class="gh2-masthead gh2-masthead--compact">
       <div class="gh2-masthead__brand">
         <span class="gh2-masthead__seal">${icon('night')}</span>
         <div><h1>灰港三夜</h1><p>THREE NIGHTS IN GREYHARBOR</p></div>
@@ -116,58 +119,59 @@ export function renderBoardMarkup(view, options = {}) {
 
     ${renderStatusNotes(data, pov)}
 
-    <div class="gh2-side gh2-side--opponent" data-side="opponent">
-      <aside class="gh2-side__rail">
-        ${renderPlayerBar(foe, {
-          role: '对手 · AI',
-          current: data.current === 1 - pov,
-          passed: asArray(data.passed)[1 - pov] === true,
-          handCount: foe.handCount,
-          score: scoreFoe,
-        })}
-        ${renderLeaderZone(foe.leader, { playerIndex: 1 - pov, label: '对手领袖' })}
-      </aside>
-      ${renderLocationGrid(foe, { playerIndex: 1 - pov })}
-      ${renderHandZone({ visible: false, count: foe.handCount, label: '对手手牌' })}
+    <div class="gh2-table">
+      <div class="gh2-table__side gh2-table__side--opponent" data-side="opponent">
+        <div class="gh2-table__main">
+          ${renderLocationGrid(foe, { playerIndex: 1 - pov, anomaly: data.anomaly })}
+        </div>
+        <aside class="gh2-table__rail">
+          ${renderPlayerBar(foe, {
+            role: '对手 · AI',
+            current: data.current === 1 - pov,
+            passed: asArray(data.passed)[1 - pov] === true,
+            handCount: foe.handCount,
+            score: scoreFoe,
+          })}
+          ${renderLeaderZone(foe.leader, { playerIndex: 1 - pov, label: '对手领袖' })}
+          ${renderHandZone({ visible: false, count: foe.handCount, label: '对手手牌' })}
+        </aside>
+      </div>
+
+      <div class="gh2-midline gh2-midline--compact">
+        <div class="gh2-midline__dial">
+          <span>${icon('moon')} NIGHT ${escapeHtml(night)}</span>
+          <strong>${escapeHtml(scoreMe)} <em>:</em> ${escapeHtml(scoreFoe)}</strong>
+          <span>当前夜分 · LIVE SCORE</span>
+        </div>
+        ${renderEnvironmentRow(data.environments)}
+        <div class="gh2-history">
+          <h3>${icon('archive')} 夜结算记录</h3>
+          <ul>${renderHistory(data.history, pov)}</ul>
+        </div>
+      </div>
+
+      <div class="gh2-table__side gh2-table__side--viewer" data-side="viewer">
+        <aside class="gh2-table__rail">
+          ${renderPlayerBar(me, {
+            role: '你 · P' + pov,
+            current: data.current === pov,
+            passed: asArray(data.passed)[pov] === true,
+            handCount: me.handCount,
+            score: scoreMe,
+          })}
+          ${renderLeaderZone(me.leader, { playerIndex: pov, label: '己方领袖' })}
+        </aside>
+        <div class="gh2-table__main">
+          ${renderLocationGrid(me, { playerIndex: pov, anomaly: data.anomaly })}
+        </div>
+      </div>
     </div>
 
-    <div class="gh2-midline">
-      <div class="gh2-midline__dial">
-        <span>${icon('moon')} NIGHT ${escapeHtml(night)}</span>
-        <strong>${escapeHtml(scoreMe)} <em>:</em> ${escapeHtml(scoreFoe)}</strong>
-        <span>当前夜分 · LIVE SCORE</span>
-      </div>
-      ${renderEnvironmentRow(data.environments)}
-      <div class="gh2-history">
-        <h3>${icon('archive')} 夜结算记录</h3>
-        <ul>${renderHistory(data.history, pov)}</ul>
-      </div>
-    </div>
-
-    <div class="gh2-side gh2-side--viewer" data-side="viewer">
-      <aside class="gh2-side__rail">
-        ${renderPlayerBar(me, {
-          role: '你 · P' + pov,
-          current: data.current === pov,
-          passed: asArray(data.passed)[pov] === true,
-          handCount: me.handCount,
-          score: scoreMe,
-        })}
-        ${renderLeaderZone(me.leader, { playerIndex: pov, label: '己方领袖' })}
-      </aside>
-      ${renderLocationGrid(me, { playerIndex: pov })}
+    <div class="gh2-hand-dock">
       ${renderHandZone({ visible: true, cards: me.hand, count: me.handCount, label: '己方手牌' })}
     </div>
 
-    <footer class="gh2-legend">
-      <span>${icon('eye')} 理智 ≤3 手牌翻疯狂面</span>
-      <span>${icon('seal')} 封印</span>
-      <span>${icon('corruption')} 腐化</span>
-      <span>${icon('stealth')} 隐秘</span>
-      <span>${icon('equipment')} 装备</span>
-      <span class="gh2-legend__note">纯展示层 · UI 只消费 buildView 数据</span>
-      ${result.winner !== undefined ? `<span class="gh2-legend__result">结果：${escapeHtml(result.reason ?? '对局结束')}</span>` : ''}
-    </footer>
+    ${result.winner !== undefined ? `<div class="gh2-legend__result">结果：${escapeHtml(result.reason ?? '对局结束')}</div>` : ''}
   </section>`;
 }
 

@@ -169,6 +169,40 @@
 .gh2-sanity--compact { gap: 4px; font-size: 10px; }
 .gh2-sanity--compact .gh2-sanity__cell { width: 8px; height: 11px; }
 
+/* ── v1.4 objective track (Society clue / Cult doom) ─────── */
+.gh2-objective { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.gh2-objective__label { display: inline-flex; align-items: center; gap: 3px; color: var(--gh2-silver-dim); }
+.gh2-objective__pips { display: inline-flex; gap: 3px; }
+.gh2-objective__pip {
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(217, 211, 196, 0.34);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.45);
+  transform: rotate(45deg);
+}
+.gh2-objective__value { color: var(--gh2-silver-dim); font-variant-numeric: tabular-nums; }
+.gh2-objective--compact { gap: 4px; font-size: 10px; }
+.gh2-objective--compact .gh2-objective__pip { width: 7px; height: 7px; }
+/* Society clue: antique gold. */
+.gh2-objective--clue .gh2-objective__pip.is-lit {
+  background: linear-gradient(180deg, #f4e0ab, #b99a58);
+  box-shadow: 0 0 6px rgba(232, 201, 138, 0.55);
+  border-color: var(--gh2-lamp);
+}
+/* Cult doom: muted crimson. */
+.gh2-objective--doom .gh2-objective__pip.is-lit {
+  background: linear-gradient(180deg, #d98a7c, #9c4a3d);
+  box-shadow: 0 0 6px rgba(189, 106, 91, 0.55);
+  border-color: var(--gh2-danger);
+}
+/* Brief pulse when a pip is gained (fx controller toggles the class). */
+.gh2-objective.is-gained .gh2-objective__pip.is-lit { animation: gh2-objective-pulse 0.5s ease-out; }
+@keyframes gh2-objective-pulse {
+  0% { transform: rotate(45deg) scale(1.6); }
+  100% { transform: rotate(45deg) scale(1); }
+}
+
 /* ── leader zone ────────────────────────────────────────── */
 .gh2-leader-zone {
   display: flex;
@@ -246,6 +280,32 @@
   color: var(--gh2-silver-faint);
 }
 .gh2-location__foot strong { font-family: var(--gh2-font-display); font-size: 17px; color: var(--gh2-lamp); }
+
+/* v1.3 anomaly banner */
+.gh2-anomaly {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0;
+  padding: 4px 6px;
+  border: 1px solid rgba(200, 162, 82, 0.4);
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(200, 162, 82, 0.14), rgba(6, 12, 14, 0.6));
+}
+.gh2-anomaly__mark { font-size: 13px; color: var(--gh2-lamp); }
+.gh2-anomaly__text { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.gh2-anomaly__text b {
+  font-family: var(--gh2-font-display);
+  font-size: 11px;
+  color: var(--gh2-lamp);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gh2-anomaly__text i { font-size: 9px; font-style: normal; color: var(--gh2-silver-dim); }
+.gh2-location--dream .gh2-anomaly { border-color: rgba(67, 162, 145, 0.45); }
+.gh2-location--dream .gh2-anomaly__mark,
+.gh2-location--dream .gh2-anomaly__text b { color: #7fc7b8; }
 
 /* ── midline ────────────────────────────────────────────── */
 .gh2-midline {

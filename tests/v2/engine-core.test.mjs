@@ -282,6 +282,8 @@ test('scoring, night winner, and loser-goes-first rotation', () => {
     seed: 3,
     cardPool: [card('five', { reasonPower: 5, madnessPower: 8 })],
     decks: [deckOf('five'), deckOf('five')],
+    // Isolate the rotation rule: no anomaly/chaos perturbation.
+    mechanics: { anomaly: false, chaosBag: false },
   });
   keepHands(engine);
 
@@ -398,6 +400,8 @@ test('three nights: loser starts next night, tie keeps priority, final tiebreak 
     cardPool: cards,
     decks: [p0Deck, p1Deck],
     startingHand: 19,
+    // Isolate the rotation/tiebreak rule: no anomaly/chaos perturbation.
+    mechanics: { anomaly: false, chaosBag: false },
   });
   keepHands(engine);
 

@@ -191,8 +191,30 @@ export const EFFECT_REGISTRY = Object.freeze({
       kind: 'backlash',
     }),
   ]),
-  // Lucia / Frank / Finn are keyword-only cards; see the explicit null notes.
-  'lucia-vaughn': null,
+  // Lucia discovers on reveal (her dream stealth entry is face-down).
+  'lucia-vaughn': Object.freeze([
+    Object.freeze({
+      id: 'lucia-discover',
+      trigger: TRIGGER.ON_REVEAL,
+      choices: [
+        {
+          id: 'discover',
+          label: '发掘：牌堆顶 3 选 1 入手',
+          labelWithTarget: true,
+          targetKey: 'targetUid',
+          target: selector({
+            side: SIDE.OWN,
+            zones: [ZONE.DECK],
+            topN: 3,
+            count: 1,
+            required: false,
+          }),
+          operations: [{ op: 'discover' }],
+        },
+      ],
+      operations: [],
+    }),
+  ]),
   'frank-holt': null,
   'arthur-pendleton': Object.freeze([
     Object.freeze(
@@ -496,8 +518,30 @@ export const EFFECT_REGISTRY = Object.freeze({
   ]),
 
   // ── neutral ─────────────────────────────────────────────────────────
-  /** Finn is keyword-only (chain, adjacent, cap 2); see the null note below. */
-  'finn-calloway': null,
+  /** Finn keeps his chain keyword (engine rule) and now discovers on play. */
+  'finn-calloway': Object.freeze([
+    Object.freeze({
+      id: 'finn-discover',
+      trigger: TRIGGER.ON_PLAY,
+      choices: [
+        {
+          id: 'discover',
+          label: '发掘：牌堆顶 3 选 1 入手',
+          labelWithTarget: true,
+          targetKey: 'targetUid',
+          target: selector({
+            side: SIDE.OWN,
+            zones: [ZONE.DECK],
+            topN: 3,
+            count: 1,
+            required: false,
+          }),
+          operations: [{ op: 'discover' }],
+        },
+      ],
+      operations: [],
+    }),
+  ]),
   'silas-gold': Object.freeze([
     Object.freeze({
       id: 'silas-gold',
@@ -677,9 +721,7 @@ export const EFFECT_REGISTRY = Object.freeze({
 
 /** Cards whose entire text is a keyword rule already implemented below. */
 export const KEYWORD_ONLY_CARDS = Object.freeze({
-  'lucia-vaughn': 'dream-native stealth must enter face-down; no reveal text (§4.4/§11.1)',
   'frank-holt': 'chain: adjacent own cards, cap +3 (scoring.chainCount via KEYWORD_SPECS)',
-  'finn-calloway': 'chain: adjacent own cards, cap +2 (scoring.chainCount via KEYWORD_SPECS)',
 });
 
 /**

@@ -53,7 +53,9 @@ function fakeRoot(elements = []) {
       const player = /\[data-player="(\d+)"\]/.exec(selector)?.[1];
       if (player !== undefined) {
         return elements.filter((el) => String(el.dataset.player) === player
-          && (el.dataset.sanity !== undefined || el.classList.contains('gh2-player-bar')));
+          && (el.dataset.sanity !== undefined
+            || el.classList.contains('gh2-player-bar')
+            || el.classList.contains('gh2-objective')));
       }
       const cls = /^\.([\w-]+)$/.exec(selector)?.[1];
       if (cls) return elements.filter((el) => el.classList.contains(cls));
@@ -189,9 +191,31 @@ test('DOM 动画加临时类，并由定时器兜底清理', () => {
   animations.destroy();
 });
 
+test('目标增益在非降级模式施加 is-gained 脉冲类，定时器兜底清理', () => {
+  const objective = fakeElement({ player: 0 });
+  objective.classList.add('gh2-objective');
+  const root = fakeRoot([objective]);
+  const timers = [];
+  const animations = createDomAnimations({
+    root,
+    document: fakeDocument(),
+    schedule(fn) { timers.push(fn); return timers.length; },
+    cancel() {},
+    isReducedMotion: () => false,
+  });
+  animations.apply({ objectives: [{ player: 0, from: 0, to: 1, delta: 1 }] });
+  assert.ok(objective.classList.contains(FX_CLASSES.objective), '缺少目标脉冲类 is-gained');
+
+  for (const timer of timers) timer();
+  assert.equal(objective.classList.contains(FX_CLASSES.objective), false);
+  animations.destroy();
+});
+
 test('reduced-motion 降级为淡入，不施加翻面/脉冲/符文类', () => {
   const card = fakeElement({ uid: 'u1' });
-  const root = fakeRoot([card]);
+  const objective = fakeElement({ player: 0 });
+  objective.classList.add('gh2-objective');
+  const root = fakeRoot([card, objective]);
   const animations = createDomAnimations({
     root,
     document: fakeDocument(),
@@ -201,12 +225,15 @@ test('reduced-motion 降级为淡入，不施加翻面/脉冲/符文类', () => 
   });
   animations.apply({
     entered: ['u1'], flipped: [{ uid: 'u1' }], sealed: ['u1'],
-    corrupted: [{ uid: 'u1' }], sanity: [{ player: 0 }], nightChanged: true, gameOver: false,
+    corrupted: [{ uid: 'u1' }], sanity: [{ player: 0 }],
+    objectives: [{ player: 0, from: 0, to: 1 }],
+    nightChanged: true, gameOver: false,
   });
   assert.equal(card.classList.contains(FX_CLASSES.enter), false);
   assert.equal(card.classList.contains(FX_CLASSES.flip), false);
   assert.equal(card.classList.contains(FX_CLASSES.seal), false);
   assert.equal(card.classList.contains(FX_CLASSES.corrupt), false);
+  assert.equal(objective.classList.contains(FX_CLASSES.objective), false, '降级时不施加目标脉冲');
   animations.destroy();
 });
 

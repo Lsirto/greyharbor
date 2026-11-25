@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 
 import { renderCard, renderCardBack } from '../../src/ui-v2/templates/card.mjs';
 import { renderSanityMeter } from '../../src/ui-v2/templates/sanity.mjs';
+import { renderObjectiveTrack } from '../../src/ui-v2/templates/objective.mjs';
 import { renderLocationColumn, renderLocationGrid } from '../../src/ui-v2/templates/location-column.mjs';
 import { renderHandZone } from '../../src/ui-v2/templates/hand.mjs';
 import { renderEnvironmentRow } from '../../src/ui-v2/templates/environment.mjs';
@@ -104,7 +105,8 @@ test('卡牌模板字段齐全且做 HTML 转义', () => {
 
   assert.match(html, /&lt;img src=x onerror=&quot;boom\(\)&quot;&gt;诺拉/);
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;Nora/);
-  assert.ok(!html.includes('<img'), '原始 img 标签不得进入 HTML');
+  // The template's own art <img> is allowed; injected payloads must still be escaped.
+  assert.ok(!html.includes('<img src=x'), '原始 img 标签不得进入 HTML');
   assert.ok(!html.includes('<script'), '原始 script 标签不得进入 HTML');
   assert.match(html, /data-card-id="nora-wells"/);
   assert.match(html, /data-uid="p0-1"/);
@@ -198,6 +200,27 @@ test('理智计量条按数值渲染 6 格，坏值钳制', () => {
   assert.ok(!renderSanityMeter(5).includes('is-madness'));
 });
 
+test('目标进度轨按阵营渲染线索/末日，pips 与阈值一致且坏值钳制', () => {
+  const clue = renderObjectiveTrack({ objectiveType: 'clue', objective: 3, objectiveThreshold: 7 });
+  assert.match(clue, /gh2-objective--clue/);
+  assert.match(clue, /data-type="clue"/);
+  assert.match(clue, /线索 CLUE/);
+  assert.equal(countMatches(clue, /gh2-objective__pip(?: is-lit)?"/g), 7);
+  assert.equal(countMatches(clue, /gh2-objective__pip is-lit"/g), 3);
+  assert.match(clue, /3\/7/);
+
+  const doom = renderObjectiveTrack({ objectiveType: 'doom', objective: 6, objectiveThreshold: 7 }, { compact: true });
+  assert.match(doom, /gh2-objective--doom/);
+  assert.match(doom, /gh2-objective--compact/);
+  assert.match(doom, /末日 DOOM/);
+  assert.equal(countMatches(doom, /gh2-objective__pip is-lit"/g), 6);
+
+  // Missing type defaults to clue; over-threshold and bad values clamp.
+  assert.match(renderObjectiveTrack({ objective: 99, objectiveThreshold: 7 }), /gh2-objective--clue/);
+  assert.equal(countMatches(renderObjectiveTrack({ objective: 99, objectiveThreshold: 7 }), /gh2-objective__pip is-lit"/g), 7);
+  assert.match(renderObjectiveTrack({ objectiveType: 'doom', objective: -4, objectiveThreshold: 7 }), /0\/7/);
+});
+
 test('地点列小计由视图卡牌战力求和，空槽与盖牌计 0', () => {
   const html = renderLocationColumn({
     location: 'scene',
@@ -222,6 +245,35 @@ test('地点列小计由视图卡牌战力求和，空槽与盖牌计 0', () => 
 
   const grid = renderLocationGrid(player());
   assert.equal(countMatches(grid, /data-location="/g), 3);
+});
+
+test('异变徽标只在对应地点列显示，全局异变每列都显示', () => {
+  const sceneAnomaly = {
+    id: 'echoes-of-old-harbor', nameZh: '旧港回声', nameEn: 'Echoes of the Old Harbor',
+    location: 'scene', power: 1,
+  };
+  const scene = renderLocationColumn({ location: 'scene', board: [], anomaly: sceneAnomaly });
+  const archive = renderLocationColumn({ location: 'archive', board: [], anomaly: sceneAnomaly });
+  assert.match(scene, /data-anomaly="echoes-of-old-harbor"/);
+  assert.match(scene, /旧港回声/);
+  assert.ok(!archive.includes('gh2-anomaly'), '非目标地点不显示徽标');
+
+  const globalAnomaly = {
+    id: 'windless-night', nameZh: '无风之夜', nameEn: 'Windless Night',
+    location: null, environmentBlocked: true,
+  };
+  for (const location of ['scene', 'archive', 'dream']) {
+    const html = renderLocationColumn({ location, board: [], anomaly: globalAnomaly });
+    assert.match(html, /data-anomaly="windless-night"/);
+    assert.match(html, /环境禁用/);
+  }
+});
+
+test('混沌代币在卡面显示带正负号的徽标', () => {
+  const blessed = renderCard(unit({ chaos: { id: 'bless', modifier: 2 } }));
+  const cursed = renderCard(unit({ chaos: { id: 'doom', modifier: -2 } }));
+  assert.match(blessed, /代币 \+2/);
+  assert.match(cursed, /代币 -2/);
 });
 
 test('对手手牌只输出数量，己方手牌输出卡牌', () => {

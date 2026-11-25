@@ -57,8 +57,10 @@ function driveHumanAction(controller, action) {
         const slot = controller.getView().players[0].board[location]
           .findIndex((card) => card?.uid === action.uids[0]);
         if (slot >= 0) {
-          controller.clickSlot(location, slot, 0);
-          return chooseAction(controller, action);
+          const clicked = controller.clickSlot(location, slot, 0);
+          // A single legal reveal commits directly; only resolve a modal when one opens.
+          if (controller.getUiState().modal) return chooseAction(controller, action);
+          return clicked === true;
         }
       }
       return false;

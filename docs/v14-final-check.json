@@ -1,0 +1,74 @@
+{
+  "ok": true,
+  "games": 2000,
+  "seedPrefix": "v14-objectives-final",
+  "engineVersion": "v1.4 objectives final (shipped defaults, threshold 7)",
+  "groups": [
+    {
+      "label": "crossAB (P0 Society / P1 Cult)",
+      "games": 2000,
+      "p0WinRate": 0.53,
+      "p1WinRate": 0.47,
+      "draws": 0,
+      "firstPlayerWinRate": 0.504,
+      "objectiveEndingRatio": 0.2855,
+      "sanityEndingRatio": 0.2725,
+      "reasons": {
+        "objective": 571,
+        "nightWins": 883,
+        "sanity": 545,
+        "tiebreak": 1
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "crossBA (P0 Cult / P1 Society)",
+      "games": 2000,
+      "p0WinRate": 0.4695,
+      "p1WinRate": 0.5305,
+      "draws": 0,
+      "firstPlayerWinRate": 0.5195,
+      "objectiveEndingRatio": 0.285,
+      "sanityEndingRatio": 0.2685,
+      "reasons": {
+        "nightWins": 891,
+        "objective": 570,
+        "sanity": 537,
+        "tiebreak": 2
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "cult mirror",
+      "games": 1200,
+      "p0WinRate": 0.465,
+      "p1WinRate": 0.5158,
+      "draws": 23,
+      "firstPlayerWinRate": 0.5267,
+      "objectiveEndingRatio": 0.1092,
+      "sanityEndingRatio": 0.735,
+      "reasons": {
+        "objective": 131,
+        "nightWins": 187,
+        "sanity": 882
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "society mirror",
+      "games": 1200,
+      "p0WinRate": 0.4808,
+      "p1WinRate": 0.5192,
+      "draws": 0,
+      "firstPlayerWinRate": 0.5025,
+      "objectiveEndingRatio": 0.51,
+      "sanityEndingRatio": 0,
+      "reasons": {
+        "objective": 612,
+        "nightWins": 582,
+        "tiebreak": 6
+      },
+      "conservation": "ok"
+    }
+  ]
+}

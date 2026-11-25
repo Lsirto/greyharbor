@@ -1,0 +1,279 @@
+/* ============================================================
+   styles-v2/layout.css — one-screen compact game layout.
+   Goal: the whole match (opponent board, midline, my board, hand,
+   controls) fits inside 100dvh with no page scrolling.
+   ============================================================ */
+
+/* Keep app content above the body vignette. */
+.gh2-app { position: relative; z-index: 1; padding-bottom: 0; }
+
+/* ── app-shell in-game screen ─────────────────────────────── */
+.gh2-screen--game.is-active {
+  height: 100dvh;
+  max-width: 1720px;
+  padding: 5px 14px 8px;
+  gap: 4px;
+  overflow: hidden;
+}
+.gh2-game-top { padding: 0; gap: 10px; }
+.gh2-back-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--gh2-line);
+  border-radius: 4px;
+  background: rgba(4, 8, 10, 0.7);
+  color: var(--gh2-silver-dim);
+  cursor: pointer;
+  font-size: 12px;
+}
+.gh2-back-btn:hover { border-color: var(--gh2-lamp); color: var(--gh2-lamp); }
+
+/* Standalone play.html: same vertical discipline. */
+body:has(.gh2-play-controls-host) { overflow: hidden; }
+.gh2-app:has(> .gh2-play-controls-host) {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 14px;
+}
+.gh2-app:has(> .gh2-play-controls-host) > .gh2-legend { display: none; }
+/* game.html demo page: hide the legacy footer so the demo fits one screen. */
+.gh2-app:has(> .gh2-demo-controls) {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 14px;
+}
+.gh2-app:has(> .gh2-demo-controls) > .gh2-legend { display: none; }
+.gh2-app:has(> .gh2-demo-controls) > .gh2-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+body:has(.gh2-demo-controls) { overflow: hidden; }
+
+/* ── compact shell ────────────────────────────────────────── */
+.gh2-shell--compact {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+
+/* ── masthead ─────────────────────────────────────────────── */
+.gh2-masthead--compact {
+  flex: 0 0 auto;
+  padding: 4px 14px;
+  gap: 10px;
+}
+.gh2-masthead--compact .gh2-masthead__seal { width: 27px; height: 27px; font-size: 14px; }
+.gh2-masthead--compact h1 { font-size: 17px; letter-spacing: 0.14em; }
+.gh2-masthead--compact .gh2-masthead__brand p { display: none; }
+.gh2-masthead--compact .gh2-masthead__round { gap: 12px; font-size: 12px; }
+.gh2-masthead--compact .gh2-masthead__night { font-size: 15px; }
+
+/* Status notes: single slim line. */
+.gh2-shell--compact .gh2-status-notes {
+  flex: 0 0 auto;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.gh2-shell--compact .gh2-status-note {
+  padding: 1px 7px;
+  font-size: 10px;
+  flex: 0 0 auto;
+}
+
+/* ── table ────────────────────────────────────────────────── */
+.gh2-table {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gh2-table__side {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 218px;
+  gap: 8px;
+}
+.gh2-table__side--viewer { grid-template-columns: 218px minmax(0, 1fr); }
+.gh2-table__main { min-width: 0; min-height: 0; display: flex; }
+.gh2-table__main > .gh2-location-grid { flex: 1 1 auto; min-width: 0; min-height: 0; gap: 7px; }
+.gh2-table__rail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── compact locations ────────────────────────────────────── */
+.gh2-table .gh2-location {
+  padding: 6px 6px 5px;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+}
+.gh2-table .gh2-location__head { gap: 4px; }
+.gh2-table .gh2-location__icon { font-size: 13px; }
+.gh2-table .gh2-location__name { font-size: 12px; }
+.gh2-table .gh2-location__name small { display: none; }
+.gh2-table .gh2-location__capacity { font-size: 9px; }
+.gh2-table .gh2-location__card-slot { min-height: 0; }
+.gh2-table .gh2-location__card-slot .gh2-card {
+  width: 44px;
+  height: 60px;
+  font-size: 6px;
+}
+.gh2-table .gh2-location__slots { gap: 3px; min-height: 0; }
+.gh2-table .gh2-location__slot { min-height: 0; min-width: 0; }
+.gh2-table .gh2-location__slot .gh2-card {
+  max-width: 52px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 54 / 76;
+}
+.gh2-table .gh2-location__slot--empty {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 2px;
+  font-size: 10px;
+}
+.gh2-table .gh2-location--dream .gh2-location__slot--empty { min-height: 0; }
+.gh2-table .gh2-location__foot { padding-top: 3px; font-size: 9px; }
+.gh2-table .gh2-location__foot strong { font-size: 14px; }
+
+/* ── rail widgets ─────────────────────────────────────────── */
+.gh2-table__rail .gh2-player-bar {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  gap: 5px;
+}
+.gh2-table__rail .gh2-player-bar__name { font-size: 13px; }
+.gh2-table__rail .gh2-player-bar__score-value { font-size: 22px; }
+.gh2-table__rail .gh2-player-bar__resources { gap: 5px 8px; }
+
+.gh2-table__rail .gh2-leader-zone {
+  flex: 0 0 auto;
+  padding: 5px 6px;
+  gap: 3px;
+}
+.gh2-table__rail .gh2-leader-zone__title { font-size: 9px; }
+.gh2-table__rail .gh2-leader-zone .gh2-card--size-leader {
+  --gh2-card-w: 54px;
+  --gh2-card-h: 75px;
+  font-size: 7px;
+}
+.gh2-table__rail .gh2-leader-zone__status { font-size: 9px; padding: 1px 6px; }
+.gh2-table__rail .gh2-leader-zone__empty { padding: 8px; font-size: 10px; }
+
+/* Opponent hand stack: mini card pile. */
+.gh2-table__rail .gh2-hand--opponent {
+  flex: 0 0 auto;
+  padding: 4px;
+  align-items: center;
+}
+.gh2-table__rail .gh2-hand__head { display: none; }
+.gh2-table__rail .gh2-hand__stack { height: 44px; align-self: center; }
+.gh2-table__rail .gh2-hand__stack .gh2-card--size-xs {
+  --gh2-card-w: 26px;
+  --gh2-card-h: 37px;
+}
+.gh2-table__rail .gh2-hand__count { font-size: 10px; }
+
+/* ── midline ──────────────────────────────────────────────── */
+.gh2-midline--compact {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 200px;
+  gap: 12px;
+  padding: 3px 12px;
+  align-items: center;
+}
+.gh2-midline--compact .gh2-midline__dial { gap: 1px; font-size: 9px; }
+.gh2-midline--compact .gh2-midline__dial strong { font-size: 17px; }
+.gh2-midline--compact .gh2-history { font-size: 10px; }
+.gh2-midline--compact .gh2-history h3 { font-size: 10px; }
+.gh2-midline--compact .gh2-env__cards { gap: 4px; }
+
+/* ── hand dock ────────────────────────────────────────────── */
+.gh2-hand-dock {
+  flex: 0 0 auto;
+  padding: 4px 10px 5px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: linear-gradient(180deg, rgba(13, 24, 26, 0.94), rgba(4, 8, 10, 0.94));
+  box-shadow: var(--gh2-shadow);
+}
+.gh2-hand-dock .gh2-hand--viewer { gap: 3px; }
+.gh2-hand-dock .gh2-hand__head { display: none; }
+.gh2-hand-dock .gh2-hand__cards {
+  min-height: 0;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px;
+  scrollbar-width: thin;
+}
+.gh2-hand-dock .gh2-card--size-hand {
+  --gh2-card-w: 68px;
+  --gh2-card-h: 94px;
+  font-size: 8px;
+}
+.gh2-hand-dock .gh2-card--size-hand:hover { transform: translateY(-6px); }
+
+/* ── slim control console ─────────────────────────────────── */
+.gh2-play-controls {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+}
+.gh2-play-controls__head { display: none; }
+.gh2-play-controls__status { display: none; }
+.gh2-play-controls__buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.gh2-play-btn {
+  min-height: 24px;
+  padding: 2px 9px;
+  font-size: 11.5px;
+}
+.gh2-play-controls__log { display: none; }
+
+/* ── narrow windows ───────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .gh2-table__side,
+  .gh2-table__side--viewer { grid-template-columns: minmax(0, 1fr) 170px; }
+  .gh2-midline--compact { grid-template-columns: 120px minmax(0, 1fr) 170px; }
+  .gh2-table__rail { gap: 4px; }
+  .gh2-table__rail .gh2-player-bar { display: none; }
+}
+@media (max-width: 900px) {
+  .gh2-table__side,
+  .gh2-table__side--viewer { grid-template-columns: minmax(0, 1fr) 120px; }
+  .gh2-midline--compact { grid-template-columns: 105px minmax(0, 1fr); }
+  .gh2-midline--compact .gh2-history { display: none; }
+  .gh2-table__rail .gh2-leader-zone .gh2-card--size-leader {
+    --gh2-card-w: 46px;
+    --gh2-card-h: 64px;
+  }
+  .gh2-table__rail .gh2-hand__stack { height: 38px; }
+}

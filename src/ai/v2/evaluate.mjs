@@ -76,6 +76,11 @@ function findBoardUnit(board, uid) {
   return null;
 }
 
+/** Active anomaly's power modifier at a location (0 when none applies). */
+function anomalyPowerAt(anomaly, location) {
+  return anomaly && anomaly.location === location ? (anomaly.power ?? 0) : 0;
+}
+
 function findViewUnit(view, player, uid) {
   if (!uid) return null;
   for (const location of LOCATIONS) {
@@ -113,13 +118,16 @@ function conditionalBonus(unit, otherBoard) {
 }
 
 /** 单个单位的投影战力；正面且非 raw 时直接信任引擎给的数值。 */
-function estimateUnitPower(unit, board, otherBoard) {
+function estimateUnitPower(unit, board, otherBoard, anomaly = null) {
   if (!unit) return 0;
   if (!unit.faceDown && !unit.raw) return Math.max(0, unit.power);
 
+  // The engine power of trusted units already includes the anomaly; raw and
+  // face-down units are estimated here, so add the location bonus explicitly.
   let power = unit.faceDown
     ? (unit.cardId ? printedForView(unit) : CONFIG.hidden.opponentFaceDownEstimate)
     : (unit.power || printedForView(unit));
+  power += anomalyPowerAt(anomaly, unit.location);
 
   // 盖牌在夜末必须翻开（§9.6），所以投影时计入其解锁后的连锁/ conditional。
   // 对手盖牌身份不可见（cardId 为 null），不参与这类计算。
@@ -136,17 +144,19 @@ function estimateUnitPower(unit, board, otherBoard) {
   return Math.max(0, power);
 }
 
-function sumBoard(board, otherBoard) {
+function sumBoard(board, otherBoard, anomaly) {
   let total = 0;
   for (const location of LOCATIONS) {
-    for (const unit of board[location]) total += estimateUnitPower(unit, board, otherBoard);
+    for (const unit of board[location]) {
+      total += estimateUnitPower(unit, board, otherBoard, anomaly);
+    }
   }
   return total;
 }
 
 function refreshPower(pos) {
-  pos.myPower = sumBoard(pos.myBoard, pos.oppBoard);
-  pos.oppPower = sumBoard(pos.oppBoard, pos.myBoard);
+  pos.myPower = sumBoard(pos.myBoard, pos.oppBoard, pos.anomaly ?? null);
+  pos.oppPower = sumBoard(pos.oppBoard, pos.myBoard, pos.anomaly ?? null);
 }
 
 /** 手牌中一张卡的资源价值（自己的手牌总是可见的）。 */
@@ -175,6 +185,7 @@ export function buildPosition(view, me) {
     opp,
     night: view.night ?? 1,
     maxNights: view.maxNights ?? 3,
+    anomaly: view.anomaly ?? null,
     mySanity: view.players[me]?.sanity ?? 0,
     oppSanity: view.players[opp]?.sanity ?? 0,
     mySanityWeight: view.players[me]?.faction === 'cult'
@@ -185,6 +196,9 @@ export function buildPosition(view, me) {
       : CONFIG.sanity.factionWeight.societyOpp,
     myNightWins: view.nightWins?.[me] ?? 0,
     oppNightWins: view.nightWins?.[opp] ?? 0,
+    myObjective: view.players[me]?.objective ?? 0,
+    oppObjective: view.players[opp]?.objective ?? 0,
+    objectiveThreshold: view.players[me]?.objectiveThreshold ?? 7,
     myPassed: !!view.passed?.[me],
     oppPassed: !!view.passed?.[opp],
     myHandCount: myHand.length,
@@ -232,6 +246,15 @@ export function evaluate(pos) {
   if (pos.myNightWins + (lead > 0 ? 1 : 0) >= 2) score += CONFIG.night.matchWinBonus;
   if (pos.oppNightWins + (lead < 0 ? 1 : 0) >= 2) score += CONFIG.night.matchLossPenalty;
 
+  // v1.4 objective race: stored progress (escalating near the threshold) and
+  // immediate objective victory/ defeat once the projected count reaches it.
+  const threshold = pos.objectiveThreshold;
+  const near = (count) => Math.max(0, count - (threshold - CONFIG.objectives.nearThresholdWindow));
+  score += (pos.myObjective - pos.oppObjective) * CONFIG.objectives.progressWeight;
+  score += (near(pos.myObjective) - near(pos.oppObjective)) * CONFIG.objectives.nearThresholdExtraWeight;
+  if (pos.myObjective >= threshold) score += CONFIG.night.matchWinBonus;
+  if (pos.oppObjective >= threshold) score += CONFIG.night.matchLossPenalty;
+
   if (pos.mySanity <= 0) score += CONFIG.sanity.zeroMatchLossPenalty;
   if (pos.oppSanity <= 0) score += CONFIG.sanity.zeroMatchWinBonus;
   score += pos.mySanity * pos.mySanityWeight - pos.oppSanity * pos.oppSanityWeight;
@@ -266,6 +289,12 @@ function bump(pos, side, unit, delta) {
   if (!unit) return;
   if (!unit.faceDown && !unit.raw) unit.power += delta;
   else unit.thisNightPower += delta;
+}
+
+/** v1.4: add objective progress to a side during action simulation. */
+function bumpObjective(pos, side, amount) {
+  if (side === 'my') pos.myObjective += amount;
+  else pos.oppObjective += amount;
 }
 
 function sacrificeUnit(pos, side, uid) {
@@ -424,6 +453,7 @@ function applyPlayEffect(pos, view, card, action, face) {
       bump(pos, 'my', source?.unit, estimateUnitPower(target, pos.myBoard, pos.oppBoard));
       applyBacklash(pos, target, target.face);
       applyCultEcho(pos, view, me);
+      bumpObjective(pos, 'my', 1); // cult sacrifice → doom
       break;
     }
     case 'gravedigger':
@@ -432,6 +462,7 @@ function applyPlayEffect(pos, view, card, action, face) {
       if (!target) break;
       applyBacklash(pos, target, target.face);
       applyCultEcho(pos, view, me);
+      bumpObjective(pos, 'my', 1); // cult sacrifice → doom
       const abyss = view.players[me]?.abyss ?? [];
       const candidates = abyss
         .filter((entry) => entry.uid !== target.uid)
@@ -494,12 +525,43 @@ function simulatePlayCard(view, base, action) {
         * (1 - Math.abs(action.slot - center) / center);
     }
     if (!action.faceDown) applyBacklash(next, unit, face);
+    // v1.4: a Society unit entering the archive face-up gains a clue.
+    if (!action.faceDown && action.location === 'archive'
+      && view.players[me]?.faction === 'society') {
+      bumpObjective(next, 'my', 1);
+    }
   } else {
     if (card.location === 'dream') next.myFutureBonus += CONFIG.locations.dreamHiddenBonus;
   }
 
+  // v1.4: casting a Cult ritual adds 1 doom.
+  if (card.type === 'ritual') bumpObjective(next, 'my', 1);
+
   if (hasKeyword(card, 'backlash') && !isUnit && face === 'madness') {
     applyBacklash(next, { cardId: card.cardId, keywords: card.keywords }, face);
+  }
+
+  // v1.3: anomaly entry effects (sanity/corruption) at the placed location.
+  const anomaly = view.anomaly ?? null;
+  if (isUnit && anomaly && anomaly.location === action.location) {
+    if (anomaly.entrySanity) {
+      next.mySanity += anomaly.entrySanity;
+      next.myFutureBonus += anomaly.entrySanity * CONFIG.mechanics.anomaly.entrySanityWeight;
+    }
+    if (anomaly.entryCorruption && !action.faceDown) {
+      next.myFutureBonus -= CONFIG.mechanics.anomaly.entryCorruptionPenalty;
+    }
+  }
+
+  // v1.3: chaos bag — expected elder-sign sanity cost on a face-up unit play.
+  if (isUnit && !action.faceDown) {
+    next.mySanity -= CONFIG.mechanics.chaos.elderSignProbability
+      * CONFIG.mechanics.chaos.elderSignSanity;
+  }
+
+  // v1.3: discover moves one chosen deck card into hand (tempo +1).
+  if (isUnit && action.choice?.mode === 'discover' && action.choice.targetUid) {
+    next.myHandCount += 1;
   }
 
   applyPlayEffect(next, view, card, action, face);
@@ -525,6 +587,7 @@ function simulateUseLeader(view, base, action) {
     if (sacrificed) {
       applyBacklash(next, sacrificed, sacrificed.face);
       applyCultEcho(next, view, me);
+      bumpObjective(next, 'my', 1); // cult leader sacrifice → doom
     }
     const match = /:\s*([a-z-]+)\s+@/.exec(action.label ?? '');
     const summonedId = match?.[1] ?? null;
@@ -563,6 +626,7 @@ function simulateReveal(view, base, action) {
     const found = findBoardUnit(next.myBoard, uid);
     if (!found || !found.unit.faceDown) continue;
     const unit = found.unit;
+    const revealLocation = found.location;
     unit.faceDown = false;
     next.myFaceDownCount = Math.max(0, next.myFaceDownCount - 1);
     if (unit.cardId === 'whisperer') next.oppSanity -= CONFIG.effects.whispererDrain;
@@ -573,6 +637,20 @@ function simulateReveal(view, base, action) {
     if (unit.cardId === 'nora-wells' || unit.cardId === 'arthur-pendleton') {
       next.myHandValue += CONFIG.effects.infoPeek;
     }
+    // v1.3: anomaly entry effects now that the card is face-up.
+    const anomaly = view.anomaly ?? null;
+    if (anomaly && anomaly.location === revealLocation) {
+      if (anomaly.entrySanity) {
+        next.mySanity += anomaly.entrySanity;
+        next.myFutureBonus += anomaly.entrySanity * CONFIG.mechanics.anomaly.entrySanityWeight;
+      }
+      if (anomaly.entryCorruption) next.myFutureBonus -= CONFIG.mechanics.anomaly.entryCorruptionPenalty;
+    }
+    // v1.3: chaos token drawn on reveal — expected elder-sign sanity cost.
+    next.mySanity -= CONFIG.mechanics.chaos.elderSignProbability
+      * CONFIG.mechanics.chaos.elderSignSanity;
+    // v1.3: Lucia discovers a deck card into hand on reveal.
+    if (unit.cardId === 'lucia-vaughn') next.myHandCount += 1;
     applyBacklash(next, unit, unit.face);
   }
   refreshPower(next);

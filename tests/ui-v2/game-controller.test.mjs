@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 
 import { countCards } from '../../src/engine/v2/index.js';
 import { createGameController } from '../../src/ui-v2/game-controller.mjs';
+import { renderResultPanel } from '../../src/ui-v2/menu/templates/result-panel.mjs';
 
 function makeQueueController(seed) {
   const queue = [];
@@ -221,6 +222,47 @@ test('10 局脚本化完整人机对战：无卡死、无拒绝、守恒 ok', ()
     modalKinds: [...stats.modalKinds],
     reasons: [...stats.reasons],
   }));
+});
+
+test('onGameOver 回传的夜分可被终局面板渲染（不再显示 0:0）', () => {
+  let captured = null;
+  const queue = [];
+  const controller = createGameController({
+    seed: 'result-panel-history-shape',
+    aiDelay: 0,
+    renderer: { render() {} },
+    schedule(fn) { queue.push(fn); return queue.length; },
+    cancel() {},
+    toast() {},
+    onGameOver(info) { captured = info; },
+  });
+
+  let steps = 0;
+  while (controller.getView().phase !== 'gameOver') {
+    if (steps >= 300) throw new Error('step limit exceeded');
+    const view = controller.getView();
+    const action = view.phase === 'mulligan'
+      ? view.actions.find((entry) => entry.type === 'mulligan' && entry.uids.length === 0)
+      : view.actions.find((entry) => entry.type === 'pass') ?? pickHumanAction(view, 0);
+    driveHumanAction(controller, action);
+    drain(queue);
+    steps += 1;
+  }
+
+  assert.ok(captured, '必须触发 onGameOver 回调');
+  assert.ok(captured.nightHistory.length >= 1);
+  for (const entry of captured.nightHistory) {
+    for (const score of entry.scores) {
+      assert.equal(typeof score, 'object', '夜分必须保持对象形状');
+      assert.equal(typeof score.total, 'number');
+    }
+  }
+  // The panel must render the real totals rather than 0 : 0.
+  const panelHtml = renderResultPanel(captured);
+  assert.ok(!/0 : 0/.test(panelHtml), '终局面板不应渲染 0:0');
+  const first = captured.nightHistory[0];
+  assert.match(panelHtml, new RegExp(`${first.scores[0].total} : ${first.scores[1].total}`));
+  controller.destroy();
 });
 
 test('choice 弹层取消可回到选牌态，重新选择才提交动作', () => {

@@ -70,24 +70,27 @@ test('真实 view.actions：单位卡在各地点槽位严格匹配且引用一�
 });
 
 test('隐秘单位明暗放：必须带 faceDown 才能消歧，且返回同一对象', () => {
-  const group = new Map();
-  for (const { view, action } of ALL) {
-    if (action?.type !== 'playCard' || !Number.isInteger(action.slot) || !action.location) continue;
-    if (action.faceDown !== true && action.faceDown !== false) continue;
-    if (action.choice) continue;
-    const key = `${view.actions.indexOf(action)}:${action.uid}:${action.location}:${action.slot}`;
-    // group by uid+placement inside one action list
-    const stableKey = `${action.uid}|${action.location}|${action.slot}`;
-    if (!group.has(stableKey)) group.set(stableKey, []);
-    const list = group.get(stableKey);
-    if (!list.includes(action)) list.push(action);
-    void key;
+  // The matcher always works inside one view's action list, so the face-up /
+  // face-down pair must be found within a single snapshot rather than by
+  // accumulating structurally equal actions across many turns.
+  let pair = null;
+  let owner = null;
+  for (const view of SNAPSHOTS) {
+    const group = new Map();
+    for (const action of view.actions) {
+      if (action?.type !== 'playCard' || !Number.isInteger(action.slot) || !action.location) continue;
+      if (action.faceDown !== true && action.faceDown !== false) continue;
+      if (action.choice) continue;
+      const stableKey = `${action.uid}|${action.location}|${action.slot}`;
+      if (!group.has(stableKey)) group.set(stableKey, []);
+      group.get(stableKey).push(action);
+    }
+    pair = [...group.values()].find((list) =>
+      list.length === 2 && list.some((a) => a.faceDown === true) && list.some((a) => a.faceDown === false),
+    );
+    if (pair) { owner = view; break; }
   }
-  const pair = [...group.values()].find((list) =>
-    list.length === 2 && list.some((a) => a.faceDown === true) && list.some((a) => a.faceDown === false),
-  );
   assert.ok(pair, '真实对局应出现隐秘卡的明/暗放两个动作');
-  const owner = SNAPSHOTS.find((view) => view.actions.includes(pair[0]));
   assert.ok(owner);
   assert.strictEqual(
     matchAction(owner.actions, {

@@ -147,6 +147,28 @@
   opacity: 0.85;
 }
 
+/* Card illustration: fills the art frame, painterly crop. */
+.gh2-card__art-img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+.gh2-card__art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, transparent 30%, transparent 62%, rgba(0, 0, 0, 0.42) 100%),
+    inset 0 0 8px rgba(0, 0, 0, 0.5);
+}
+.gh2-card__art > .gh2-card__sigil { z-index: 3; }
+
 .gh2-card__sigil {
   position: absolute;
   right: 0.15em;
@@ -235,6 +257,7 @@
 .gh2-card--face-madness .gh2-status { color: #d6a79c; background: rgba(189, 106, 91, 0.14); }
 .gh2-status--corruption { color: #6a568f; }
 .gh2-status--equipment { color: #77602f; }
+.gh2-status--chaos { color: #4f8f86; background: rgba(67, 162, 145, 0.12); }
 
 .gh2-card__footer {
   display: flex;

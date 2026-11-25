@@ -44,6 +44,13 @@ import {
   runTrigger,
 } from './effects/interpreter.js';
 import { enumerateCandidates, resolveTargetByUid } from './effects/targets.js';
+import { drawAnomaly } from './anomalies.js';
+import { drawChaosToken } from './chaos-bag.js';
+import {
+  OBJECTIVE_THRESHOLD,
+  objectiveMetaForFaction,
+  objectiveTypeForFaction,
+} from './objectives.js';
 import { buildView } from './view.js';
 
 const ENGINE_VERSION = '2.2';
@@ -75,6 +82,7 @@ function newInstance(uid, cardId, owner, face) {
     equipment: null,
     attachedTo: null,
     enteredNight: null,
+    chaosToken: null,
   };
 }
 
@@ -200,6 +208,13 @@ function normalizeOptions(options = {}) {
     throw new Error('maxNights must be a positive integer');
   }
 
+  // Experiment hook (defaults to the shipped constant in objectives.js) so a
+  // diagnostic can sweep thresholds without editing the single source of truth.
+  const objectiveThreshold = options.objectiveThreshold ?? OBJECTIVE_THRESHOLD;
+  if (!Number.isInteger(objectiveThreshold) || objectiveThreshold < 1) {
+    throw new Error('objectiveThreshold must be a positive integer');
+  }
+
   const names = options.names ?? ['P0', 'P1'];
   if (!Array.isArray(names) || names.length !== 2) throw new Error('names must contain two strings');
 
@@ -210,8 +225,28 @@ function normalizeOptions(options = {}) {
     startingHand,
     startingSanity,
     maxNights,
+    objectiveThreshold,
     names: names.map(String),
     compensation: normalizeCompensation(options.firstPlayerCompensation),
+    mechanics: normalizeMechanics(options.mechanics),
+  };
+}
+
+/**
+ * v1.3 mechanics toggles. Both default to ON (shipped game). Deterministic
+ * tests that isolate another rule can turn them off.
+ */
+const MECHANICS_DEFAULTS = Object.freeze({ anomaly: true, chaosBag: true, objectives: true });
+
+function normalizeMechanics(raw = {}) {
+  if (raw === null || raw === undefined) raw = {};
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('mechanics must be an object');
+  }
+  return {
+    anomaly: raw.anomaly ?? MECHANICS_DEFAULTS.anomaly,
+    chaosBag: raw.chaosBag ?? MECHANICS_DEFAULTS.chaosBag,
+    objectives: raw.objectives ?? MECHANICS_DEFAULTS.objectives,
   };
 }
 
@@ -242,6 +277,7 @@ function createInitialState(config) {
       leaderUsedThisNight: false,
       leaderSealed: false,
       sanity: config.startingSanity[p],
+      objective: 0,
       deck: [],
       hand: [],
       discard: [],
@@ -261,6 +297,8 @@ function createInitialState(config) {
     environments: [],
     effects: [],
     events: [],
+    anomaly: null,
+    mechanics: config.mechanics,
     result: null,
   };
 
@@ -561,7 +599,13 @@ export class EngineV2 {
       });
 
       if (!faceDown) {
+        // v1.4: a Society unit entering the archive gathers 1 clue.
+        if (location === 'archive' && player.faction === 'society') {
+          this._gainObjective(p, 1, 'archiveEntry');
+        }
+        this._drawChaosFor(p, inst);
         this._runOnPlay(p, inst, card, action.choice ?? null);
+        this._applyAnomalyEntry(p, inst, location);
         this._maybeBacklash(p, inst, card, { context: 'entry' });
       }
     } else if (plan.kind === 'event' || plan.kind === 'ritual') {
@@ -578,6 +622,8 @@ export class EngineV2 {
         faceDown: false,
         sanityCost,
       });
+      // v1.4: casting a Cult ritual adds 1 doom.
+      if (card.type === 'ritual') this._gainObjective(p, 1, 'ritual');
       this._runOnPlay(p, inst, card, action.choice ?? null);
       this._discardInstance(p, inst, 'resolved', { emit: true });
     } else if (plan.kind === 'equipment') {
@@ -891,6 +937,10 @@ export class EngineV2 {
       via,
     });
     const card = this.cardIndex[inst.cardId];
+    // A face-down unit draws its chaos token and settles location anomaly
+    // entry effects only when it becomes face-up.
+    this._drawChaosFor(p, inst);
+    this._applyAnomalyEntry(p, inst, location);
     this._runOnReveal(p, inst, choice);
     this._maybeBacklash(p, inst, card, { context: 'reveal' });
   }
@@ -931,7 +981,9 @@ export class EngineV2 {
       slot: null,
       inst: null,
     }, { trigger: TRIGGER.LEADER_ACTIVE });
-    const targets = effectDef.target ? enumerateCandidates(this, ctx, effectDef.target) : [];
+    const blockedLocation = this._leaderBlockedLocation();
+    const targets = (effectDef.target ? enumerateCandidates(this, ctx, effectDef.target) : [])
+      .filter((target) => !blockedLocation || target.location !== blockedLocation);
     return targets.map((target) => ({
       type: 'useLeader',
       player: p,
@@ -964,10 +1016,11 @@ export class EngineV2 {
       for (const acolyte of this._replacementCandidates(p, sacrifice.inst.uid)) {
         replacementOptions.push(acolyte.uid);
       }
+      const blockedLocation = this._leaderBlockedLocation();
       for (const aberration of aberrations) {
         const placements = this._legalEffectPlacements(p, aberration.cardId, {
           requireFaceUp: true,
-        });
+        }).filter((placement) => !blockedLocation || placement.location !== blockedLocation);
         for (const placement of placements) {
           for (const replaceWithUid of replacementOptions) {
             actions.push({
@@ -1152,6 +1205,7 @@ export class EngineV2 {
       face: inst.face,
       byLeader,
     });
+    this._applyAnomalyEntry(p, inst, placement.location);
     this._runOnPlay(p, inst, card, this._autoChoice(p, inst, card));
     this._maybeBacklash(p, inst, card, { context: 'entry' });
   }
@@ -1270,6 +1324,8 @@ export class EngineV2 {
       abyss: true,
     });
 
+    // v1.4: a Cult sacrifice (devour also routes through here) adds 1 doom.
+    if (player.faction === 'cult') this._gainObjective(p, 1, 'sacrifice');
     this._maybeBacklash(p, sacrificed, card, { context: 'sacrifice', fromLocation, sealed: wasSealed });
     this._triggerCultEcho(p);
     return sacrificed;
@@ -1553,6 +1609,7 @@ export class EngineV2 {
     const inst = player.abyss.splice(index, 1)[0];
     inst.zone = 'hand';
     inst.faceDown = false;
+    inst.chaosToken = null;
     inst.face = faceForSanity(player.sanity);
     player.hand.push(inst);
     this._emit({ type: 'abyssToHand', player: p, uid: inst.uid, cardId: inst.cardId });
@@ -1786,6 +1843,18 @@ export class EngineV2 {
     const state = this.state;
     state.night = night;
 
+    // 0. Draw and publicly reveal tonight's location anomaly before any
+    //    player action so entry effects can reference it.
+    if (state.mechanics.anomaly) {
+      state.anomaly = drawAnomaly(state);
+      this._emit({
+        type: 'anomalyRevealed',
+        anomaly: { ...state.anomaly },
+      });
+    } else {
+      state.anomaly = null;
+    }
+
     // 1. Expire "until next night" effects.
     this._expireSeals();
     this._expireAuras('untilNextNight');
@@ -1932,6 +2001,50 @@ export class EngineV2 {
     void p;
   }
 
+  // ── v1.3 anomaly entry effects + chaos bag ─────────────────────────
+
+  /** Apply the active anomaly's on-entry effects when a unit is face-up. */
+  _applyAnomalyEntry(p, inst, location) {
+    const anomaly = this.state.anomaly;
+    if (!anomaly || anomaly.location !== location) return;
+    if (anomaly.entryCorruption) {
+      this._applyCorruption(
+        p,
+        { kind: 'unit', uid: inst.uid, inst, player: p, location, slot: inst.slot },
+        anomaly.entryCorruption,
+        null,
+      );
+    }
+    if (anomaly.entrySanity) {
+      this._changeSanity(p, anomaly.entrySanity, 'anomaly');
+    }
+  }
+
+  /** Location that leader skills may not target tonight (null if none). */
+  _leaderBlockedLocation() {
+    const anomaly = this.state.anomaly;
+    return anomaly?.leaderBlocked ? anomaly.location : null;
+  }
+
+  /** Draw a chaos token for a hand-played unit becoming face-up. */
+  _drawChaosFor(p, inst) {
+    if (!this.state.mechanics.chaosBag) return;
+    const token = drawChaosToken(this.state);
+    inst.chaosToken = {
+      id: token.id,
+      modifier: token.modifier,
+      sanity: token.sanity,
+    };
+    this._emit({
+      type: 'chaosDraw',
+      player: p,
+      uid: inst.uid,
+      token: token.id,
+      modifier: token.modifier,
+    });
+    if (token.sanity) this._changeSanity(p, token.sanity, 'chaosElderSign');
+  }
+
   _endNight() {
     const state = this.state;
     if (state.phase !== 'play') return;
@@ -2007,6 +2120,17 @@ export class EngineV2 {
 
     // 3. Sanity zero takes precedence over a second night win.
     if (this._checkSanityZero()) return;
+
+    // 3b. v1.4: a Society player with strictly higher archive power gathers a
+    // clue from controlling the archive tonight (independent of the night win).
+    for (const p of [0, 1]) {
+      const player = state.players[p];
+      if (player.faction !== 'society') continue;
+      if (scores[p].locations.archive > scores[1 - p].locations.archive) {
+        this._gainObjective(p, 1, 'archiveControl');
+      }
+    }
+    if (state.phase === 'gameOver') return;
 
     // 4. Match win.
     if (winner !== null && state.nightWins[winner] >= 2) {
@@ -2127,6 +2251,43 @@ export class EngineV2 {
       this._gameOver(0, 'sanity');
     }
     return true;
+  }
+
+  /** True when either player is already at the sanity floor (0). */
+  _sanityAtZero() {
+    return this.state.players.some((pl) => pl.sanity <= SANITY_MIN);
+  }
+
+  /**
+   * Add progress to a player's faction objective (Society clue / Cult doom).
+   * Returns true when this gain reached the threshold and ended the game.
+   * Sanity-zero takes precedence: if anyone is already at 0 sanity the progress
+   * is still recorded, but no objective victory is declared (the sanity check
+   * at the end of the action resolves it).
+   */
+  _gainObjective(p, amount, source) {
+    const state = this.state;
+    if (!state.mechanics.objectives) return false;
+    if (state.phase === 'gameOver') return false;
+    const player = state.players[p];
+    const objectiveType = objectiveTypeForFaction(player.faction);
+    if (!objectiveType || amount <= 0) return false;
+
+    player.objective += amount;
+    this._emit({
+      type: 'objectiveGain',
+      player: p,
+      objectiveType,
+      source,
+      amount,
+      total: player.objective,
+    });
+
+    if (player.objective >= this.config.objectiveThreshold && !this._sanityAtZero()) {
+      this._gameOver(p, 'objective', { objectiveType });
+      return true;
+    }
+    return false;
   }
 
   _draw(p, count, emit = true) {
@@ -2393,6 +2554,8 @@ export class EngineV2 {
       }
 
       if (card.type === 'environment') {
+        // v1.3 Windless Night: environments cannot be played.
+        if (this.state.anomaly?.environmentBlocked) continue;
         actions.push({
           type: 'playCard',
           player: p,

@@ -15,24 +15,18 @@ const cardTable = JSON.parse(
 const cardIds = cardTable.map((entry) => entry.id);
 
 /**
- * Explicit null whitelist.  Each card's printed text is *already completely
+ * Explicit null whitelist.  A card's printed text is *already completely
  * covered* by an engine primitive, so a DSL effect array would only duplicate
- * the shared implementation.  Every id carries its own reason:
+ * the shared implementation.
  *
- * - lucia-vaughn: 引擎原语已完整覆盖——梦境原生隐秘的「必须盖牌进入梦境」由
- *   dream admission / stealth 引擎原语实现（§4.4、§11.1）；卡面文字只是准入
- *   提示，没有额外的翻开时效果。
  * - frank-holt: 引擎原语已完整覆盖——「每有 1 张相邻己方卡 +1，上限 +3」完全
- *   由共享的 KEYWORD_SPECS.chain + scoring.chainCount 原语实现（§6.5、§11.1），
- *   没有专属操作。
- * - finn-calloway: 引擎原语已完整覆盖——「每有 1 张相邻己方卡 +1，上限 +2」
- *   同样由 chain 原语实现（§6.5、§11.3）；不带隐秘所以不能主动进梦境，也由
- *   梦境准入原语覆盖。
+ *   由共享的 KEYWORD_SPECS.chain + scoring.chainCount 原语实现（§6.5、§11.1）。
+ *
+ * v1.3 note: lucia-vaughn and finn-calloway now register a Discover effect;
+ * their chain/stealth engine rules remain active.
  */
 const NULL_WHITELIST = Object.freeze({
-  'lucia-vaughn': '引擎原语已完整覆盖：梦境原生隐秘的盖牌入场由 dream admission / stealth 原语实现；无额外翻开效果（§4.4/§11.1）',
   'frank-holt': '引擎原语已完整覆盖：相邻己方卡连锁 +1 上限 +3 由 KEYWORD_SPECS.chain + scoring.chainCount 共享原语实现（§6.5/§11.1）',
-  'finn-calloway': '引擎原语已完整覆盖：相邻己方卡连锁 +1 上限 +2 由同一 chain 原语实现；不带隐秘不能主动进梦境（§6.5/§11.3）',
 });
 
 test('card table declares exactly 30 unique card ids', () => {
@@ -65,11 +59,11 @@ test('all 30 cards are covered by a non-empty effect array or the explicit null 
   }
 });
 
-test('the null whitelist is exactly the three documented engine-primitive cards', () => {
+test('the null whitelist is exactly the documented engine-primitive cards', () => {
   assert.deepEqual(
     Object.keys(NULL_WHITELIST).sort(),
-    ['finn-calloway', 'frank-holt', 'lucia-vaughn'],
-    'only these three cards may be registered as null',
+    ['frank-holt'],
+    'only these cards may be registered as null',
   );
   assert.deepEqual(
     Object.keys(NULL_WHITELIST).sort(),

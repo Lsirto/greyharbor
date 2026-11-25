@@ -81,6 +81,9 @@ export function renderCard(card, options = {}) {
     ? `<span class="gh2-card__cost" title="理智代价">${icon('eye')}${escapeHtml(view.sanityCost)}</span>`
     : '';
   const artIcon = hasIcon(`art-${view.type}`) ? icon(`art-${view.type}`) : icon('art-unit');
+  const artImg = view.cardId
+    ? `<img class="gh2-card__art-img" src="./assets/art/${encodeURIComponent(view.cardId)}.jpg" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : '';
   const locationTag = view.boardLocation && view.slot !== null
     ? `<span class="gh2-card__location">${escapeHtml(view.boardLocation)} #${escapeHtml(view.slot + 1)}</span>`
     : '';
@@ -99,6 +102,7 @@ export function renderCard(card, options = {}) {
       </div>
       <div class="gh2-card__art">
         ${artIcon}
+        ${artImg}
         <span class="gh2-card__sigil">${escapeHtml(String(nameZh).slice(0, 1) || '灰')}</span>
       </div>
       <div class="gh2-card__plate">

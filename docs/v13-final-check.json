@@ -1,0 +1,93 @@
+{
+  "ok": true,
+  "games": 2000,
+  "seedPrefix": "v13-final-fixed",
+  "engineVersion": "v1.2 final (shipped defaults)",
+  "groups": [
+    {
+      "label": "crossAB (P0 Society / P1 Cult)",
+      "games": 2000,
+      "p0Wins": 993,
+      "p1Wins": 1007,
+      "draws": 0,
+      "p0WinRate": 0.4965,
+      "p1WinRate": 0.5035,
+      "firstPlayerWinRate": 0.531,
+      "sanityEndingRatio": 0.3325,
+      "reasons": {
+        "sanity": 665,
+        "nightWins": 1331,
+        "tiebreak": 4
+      },
+      "endingNight": {
+        "1": 42,
+        "2": 1604,
+        "3": 354
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "crossBA (P0 Cult / P1 Society)",
+      "games": 2000,
+      "p0Wins": 992,
+      "p1Wins": 1008,
+      "draws": 0,
+      "p0WinRate": 0.496,
+      "p1WinRate": 0.504,
+      "firstPlayerWinRate": 0.5345,
+      "sanityEndingRatio": 0.339,
+      "reasons": {
+        "sanity": 678,
+        "nightWins": 1320,
+        "tiebreak": 2
+      },
+      "endingNight": {
+        "1": 39,
+        "2": 1637,
+        "3": 324
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "cult mirror",
+      "games": 1200,
+      "p0Wins": 591,
+      "p1Wins": 585,
+      "draws": 24,
+      "p0WinRate": 0.4925,
+      "p1WinRate": 0.4875,
+      "firstPlayerWinRate": 0.53,
+      "sanityEndingRatio": 0.805,
+      "reasons": {
+        "sanity": 966,
+        "nightWins": 234
+      },
+      "endingNight": {
+        "1": 273,
+        "2": 851,
+        "3": 76
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "society mirror",
+      "games": 1200,
+      "p0Wins": 595,
+      "p1Wins": 601,
+      "draws": 4,
+      "p0WinRate": 0.4958,
+      "p1WinRate": 0.5008,
+      "firstPlayerWinRate": 0.485,
+      "sanityEndingRatio": 0,
+      "reasons": {
+        "tiebreak": 46,
+        "nightWins": 1154
+      },
+      "endingNight": {
+        "2": 884,
+        "3": 316
+      },
+      "conservation": "ok"
+    }
+  ]
+}

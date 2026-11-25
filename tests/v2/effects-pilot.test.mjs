@@ -172,11 +172,19 @@ test('nora-wells: face-down stealth is hidden, unselectable, and peeks privately
   assert.ok(reveal);
   const revealed = engine.apply(reveal);
   assert.equal(revealed.ok, true, revealed.error);
-  assert.deepEqual(revealed.events.map((event) => event.type), ['reveal', 'peek']);
+  // v1.3: a reveal also draws a chaos token; assert the key events exist.
+  const revealTypes = revealed.events.map((event) => event.type);
+  assert.ok(revealTypes.includes('reveal'));
+  assert.ok(revealTypes.includes('peek'));
 
   assert.equal(nora.faceDown, false);
   assert.equal(engine.viewFor(1).players[0].board.scene[0].cardId, 'nora-wells');
-  assert.equal(engine.viewFor(1).players[0].board.scene[0].power, 2);
+  // Printed 2 + chaos token + any scene anomaly power.
+  const noraAnomaly = engine.state.anomaly?.location === 'scene'
+    ? (engine.state.anomaly.power ?? 0)
+    : 0;
+  const noraExpected = Math.max(0, 2 + (nora.chaosToken?.modifier ?? 0) + noraAnomaly);
+  assert.equal(engine.viewFor(1).players[0].board.scene[0].power, noraExpected);
 
   const ownPeek = engine.viewFor(0).events.find((event) => event.type === 'peek');
   const opponentPeek = engine.viewFor(1).events.find((event) => event.type === 'peek');
@@ -293,12 +301,16 @@ test('sea-priestess: the applier chooses among tied highest-power legal targets'
     p0: { leader: 'elias-thorne', cards: ['sea-priestess', 'abjuration'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'walter-morse'] },
   });
-  // An empty slot between them breaks Finn's adjacency bonus, leaving both
-  // units at power 3 so the applier genuinely has a tie to resolve.
+  // An empty slot between them breaks Finn's adjacency bonus. Equalize the
+  // random chaos modifiers so the two units genuinely tie for highest power;
+  // a scene anomaly (if drawn) affects both equally.
   const finn = putUnit(engine, 1, 'finn-calloway', 'scene', 0);
   const walter = putUnit(engine, 1, 'walter-morse', 'scene', 2);
-  assert.equal(currentUnitPower(engine.state, 1, finn, 'scene', 0), 3);
-  assert.equal(currentUnitPower(engine.state, 1, walter, 'scene', 2), 3);
+  finn.chaosToken = null;
+  walter.chaosToken = null;
+  const tiedPower = currentUnitPower(engine.state, 1, finn, 'scene', 0);
+  assert.equal(tiedPower, currentUnitPower(engine.state, 1, walter, 'scene', 2), 'the two units are tied');
+  assert.ok(Number.isFinite(tiedPower) && tiedPower >= 0, 'both share one power value; a scene anomaly may shift it together');
 
   const choices = new Set(
     engine.getActions()
@@ -362,7 +374,7 @@ test('elias + hooded-acolyte: replacement sacrifices the Acolyte, keeps the targ
   assert.equal(result.ok, true, result.error);
   assert.deepEqual(
     result.events.map((event) => event.type),
-    ['leaderSkill', 'sacrifice', 'cultEcho', 'playFromDeck'],
+    ['leaderSkill', 'sacrifice', 'objectiveGain', 'cultEcho', 'playFromDeck'],
   );
 
   assert.equal(engine.state.players[0].board.scene[0].uid, zealot.uid, 'original target stays');

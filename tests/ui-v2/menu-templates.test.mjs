@@ -95,6 +95,21 @@ test('终局面板：胜负原因、夜分历史、再来一局与返回主菜�
   assert.match(renderResultPanel({ matchConfig: { seedMode: 'fixed' } }), /沿用同一固定种子/);
 });
 
+test('终局面板：目标胜利按阵营显示真相大白/旧神降临', () => {
+  const clue = renderResultPanel({ result: { winner: 0, reason: 'objective', objectiveType: 'clue' } });
+  assert.match(clue, /你获胜/);
+  assert.match(clue, /真相大白/);
+  assert.ok(!clue.includes('旧神降临'));
+
+  const doom = renderResultPanel({ result: { winner: 1, reason: 'objective', objectiveType: 'doom' } });
+  assert.match(doom, /对手获胜/);
+  assert.match(doom, /旧神降临/);
+  assert.ok(!doom.includes('真相大白'));
+
+  // Unknown objective type still falls back to a readable generic reason.
+  assert.match(renderResultPanel({ result: { winner: 0, reason: 'objective' } }), /目标达成/);
+});
+
 test('HTML 转义：动态文本中的标签与引号不能进入 DOM 结构', () => {
   const injected = '<img src=x onerror="alert(1)">';
   const menu = renderMainMenu({ title: injected });

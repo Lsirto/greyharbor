@@ -148,6 +148,30 @@ export const CONFIG = deepFreeze({
     drownedAltar: 1.2,
   },
 
+  /** v1.3 新机制：地点异变与混沌袋的期望参数（只使用 view 公开字段）。 */
+  mechanics: {
+    anomaly: {
+      entrySanityWeight: 3.0,   // 入场理智变化的折算（乘 delta）
+      entryCorruptionPenalty: 1.0, // 入场即腐化的未来惩罚
+    },
+    chaos: {
+      // 抽后放回：旧神之印仅 −3 战力（v1.3 平衡后不再扣理智，否则该伤害
+      // 对无法回理智的教团不对称）；战力期望修正 ≈ 0。
+      elderSignProbability: 1 / 19,
+      elderSignSanity: 0,
+      expectedPower: 0,
+    },
+  },
+
+  /** v1.4 双目标：学会线索 / 教团末日（只使用 view 公开字段）。 */
+  objectives: {
+    progressWeight: 6,            // 每个已积累目标点相对对手的基础价值
+    nearThresholdExtraWeight: 4, // 临近阈值时每个目标点的追加价值
+    nearThresholdWindow: 2,     // 距阈值在此范围内视为"临近"
+    /** Cult 仪式卡（type==='ritual' 的卡，公开信息）。 */
+    ritualCardIds: ['seance', 'tide-ritual'],
+  },
+
   /** 规则书/卡面公开的数值表（非启发式权重）。 */
   power: {
     madnessBonus: {

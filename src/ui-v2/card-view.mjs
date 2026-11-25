@@ -79,6 +79,10 @@ export function normalizeCardView(raw, options = {}) {
   const equipmentName = cleanString(rawEquipment.nameZh)
     || cleanString(rawEquipment.name)
     || cleanString(rawEquipment.cardId);
+  const rawChaos = asObject(card.chaos);
+  const chaos = !hidden && rawChaos.id && Number.isFinite(rawChaos.modifier)
+    ? { id: cleanString(rawChaos.id), modifier: safeInt(rawChaos.modifier, 0) }
+    : null;
 
   return {
     hidden,
@@ -103,6 +107,7 @@ export function normalizeCardView(raw, options = {}) {
     permanentPower: hidden ? 0 : safeInt(card.permanentPower, 0),
     thisNightPower: hidden ? 0 : safeInt(card.thisNightPower, 0),
     equipment: hidden || !equipmentName ? null : { name: equipmentName },
+    chaos,
     size: SIZES.has(options.size) ? options.size : 'board',
   };
 }
@@ -168,6 +173,11 @@ export function statusBadges(card) {
     out.push({ id: 'corruption', icon: 'corruption', label: `腐化 ×${view.corruption}${loss}` });
   }
   if (view.equipment) out.push({ id: 'equipment', icon: 'equipment', label: `装备·${view.equipment.name}` });
+  if (view.chaos) {
+    const mod = view.chaos.modifier;
+    const sign = mod > 0 ? `+${mod}` : `${mod}`;
+    out.push({ id: 'chaos', icon: 'moon', label: `代币 ${sign}` });
+  }
   if (view.permanentPower > 0) out.push({ id: 'permanent', icon: 'plus', label: `永久 +${view.permanentPower}` });
   if (view.thisNightPower !== 0) {
     out.push({
