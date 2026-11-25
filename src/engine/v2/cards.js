@@ -1,125 +1,136 @@
 /**
- * Greyharbor v2.1 — static card data.
+ * Greyharbor v2.2 — canonical card data + preset decks.
  *
- * Phase 2.1 is a rules skeleton: abilities are intentionally NOT implemented.
- * Only the fields the skeleton needs are kept here.  Power values and deck
- * lists mirror docs/GREYHARBOR_RULES_V1.md §10.
+ * The single source of truth for numbers / types / keywords is
+ * `src/data/card-table.normalized.json`.  This module loads it once, maps the
+ * Chinese keyword labels to the canonical English ids used by the engine, and
+ * assembles the two v1 preset decks exactly as listed in rules §10.
  *
- * Keywords use canonical English ids:
- *   stealth, seal, chain, backlash, corruption, sacrifice
- * The only keyword the skeleton reacts to is `stealth` (face-down entry).
+ * Browsers are not a target of the v2 headless engine; Node's fs is used so
+ * that the JSON stays the only source of truth (no duplicated card table).
  */
 
-const def = (
-  id,
-  name,
-  faction,
-  type,
-  location,
-  reasonPower,
-  madnessPower,
-  keywords = [],
-  sanityCost = 0,
-) => ({
-  id,
-  name,
-  faction,
-  type,
-  location,
-  reasonPower,
-  madnessPower,
-  keywords,
-  sanityCost,
+import { readFileSync } from 'node:fs';
+
+const DATA_URL = new URL('../../data/card-table.normalized.json', import.meta.url);
+
+const KEYWORD_MAP = Object.freeze({
+  隐秘: 'stealth',
+  封印: 'seal',
+  连锁: 'chain',
+  理智反噬: 'backlash',
+  腐化: 'corruption',
+  献祭: 'sacrifice',
 });
 
-export const CARDS = Object.freeze({
-  // ── Leaders (never in the 19-card deck) ──────────────────────────────
-  'harold-ashby': def('harold-ashby', 'Harold Ashby', 'society', 'leader', null, null, null),
-  'elias-thorne': def('elias-thorne', 'Elias Thorne', 'cult', 'leader', null, null, null),
+const RAW_CARDS = JSON.parse(readFileSync(DATA_URL, 'utf8'));
 
-  // ── Society + neutral cards ──────────────────────────────────────────
-  'nora-wells': def('nora-wells', 'Nora Wells', 'society', 'unit', 'scene', 2, 4, ['stealth']),
-  'samuel-pike': def('samuel-pike', 'Dr. Samuel Pike', 'society', 'unit', 'scene', 4, 4, ['seal']),
-  'edith-barrow': def('edith-barrow', 'Edith Barrow', 'society', 'unit', 'archive', 2, 3, ['chain']),
-  'walter-morse': def('walter-morse', 'Walter Morse', 'society', 'unit', 'archive', 3, 6, ['backlash']),
-  'lucia-vaughn': def('lucia-vaughn', 'Lucia Vaughn', 'society', 'unit', 'dream', 1, 7, ['stealth']),
-  'frank-holt': def('frank-holt', 'Capt. Frank Holt', 'society', 'unit', 'scene', 5, 5, ['chain']),
-  'arthur-pendleton': def('arthur-pendleton', 'Arthur Pendleton', 'society', 'unit', 'archive', 3, 4, ['stealth']),
-  abjuration: def('abjuration', 'Abjuration', 'society', 'event', 'any', null, null),
-  'warding-rite': def('warding-rite', 'Warding Rite', 'society', 'event', 'row', null, null),
-  'silver-lantern': def('silver-lantern', 'The Silver Lantern', 'society', 'equipment', 'attach', null, null),
-  'old-library': def('old-library', 'The Old Library', 'society', 'location', 'archive', null, null),
+function normalizeCard(raw) {
+  const keywordsZh = Array.isArray(raw.keywords) ? raw.keywords.slice() : [];
+  const keywords = keywordsZh.map((word) => KEYWORD_MAP[word] ?? word);
+  return Object.freeze({
+    id: raw.id,
+    name: raw.nameEn,
+    nameEn: raw.nameEn,
+    nameZh: raw.nameZh,
+    faction: raw.faction,
+    type: raw.type,
+    location: raw.location,
+    reasonPower: raw.reasonPower,
+    madnessPower: raw.madnessPower,
+    keywords: Object.freeze(keywords),
+    keywordsZh: Object.freeze(keywordsZh),
+    sanityCost: raw.sanityCost ?? 0,
+    copies: raw.copies ?? 1,
+    effect: raw.effect ?? '',
+    flavor: raw.flavor ?? '',
+  });
+}
 
-  // ── Cult + neutral cards ─────────────────────────────────────────────
-  'hooded-acolyte': def('hooded-acolyte', 'Hooded Acolyte', 'cult', 'unit', 'scene', 2, 3, ['sacrifice']),
-  zealot: def('zealot', 'Zealot', 'cult', 'unit', 'scene', 3, 6, ['backlash']),
-  'sea-priestess': def('sea-priestess', 'Sea Priestess', 'cult', 'unit', 'archive', 4, 5, ['corruption']),
-  gravedigger: def('gravedigger', 'Gravedigger', 'cult', 'unit', 'archive', 3, 4, ['sacrifice']),
-  whisperer: def('whisperer', 'The Whisperer', 'cult', 'unit', 'dream', 2, 7, ['stealth']),
-  'deep-one': def('deep-one', 'Deep One', 'cult', 'unit', 'dream', 5, 8, ['backlash'], 1),
-  'bell-claw': def('bell-claw', 'Bell-Claw', 'cult', 'unit', 'scene', 6, 6, ['sacrifice'], 1),
-  seance: def('seance', 'Séance', 'cult', 'ritual', 'any', null, null),
-  'tide-ritual': def('tide-ritual', 'Tide Ritual', 'cult', 'ritual', 'dream', null, null),
-  'lunar-eclipse': def('lunar-eclipse', 'Lunar Eclipse', 'cult', 'environment', 'all', null, null),
-  'drowned-altar': def('drowned-altar', 'Drowned Bell Altar', 'cult', 'location', 'scene', null, null),
-  'finn-calloway': def('finn-calloway', 'Finn Calloway', 'neutral', 'unit', 'any', 3, 4, ['chain']),
-  'silas-gold': def('silas-gold', 'Silas Gold', 'neutral', 'unit', 'archive', 2, 3, ['stealth']),
-  'the-sleeper': def('the-sleeper', 'The Sleeper', 'neutral', 'oldgod', 'dream', 8, 12, ['backlash'], 2),
-  'thousand-eyes': def('thousand-eyes', 'Thousand Eyes', 'neutral', 'oldgod', 'archive', 7, 10, ['seal'], 2),
-  'stormy-night': def('stormy-night', 'Stormy Night', 'neutral', 'environment', 'all', null, null),
-  'unexpected-aid': def('unexpected-aid', 'Unexpected Aid', 'neutral', 'event', 'any', null, null),
-});
+export const CARDS = Object.freeze(
+  Object.fromEntries(RAW_CARDS.map((raw) => [raw.id, normalizeCard(raw)])),
+);
 
-const flat = (ids) => ids.flatMap((id) => (Array.isArray(id) ? Array(id[1]).fill(id[0]) : [id]));
+export const CARD_LIST = Object.freeze(Object.values(CARDS));
 
-/** v1 preset: 1 leader + exactly 19 non-leader cards. */
+/** Rules §10.1 — 1 leader + 19 non-leader cards. */
+const SOCIETY_DECK = Object.freeze([
+  ['nora-wells', 2],
+  ['samuel-pike', 2],
+  ['edith-barrow', 1],
+  ['walter-morse', 1],
+  ['lucia-vaughn', 1],
+  ['frank-holt', 1],
+  ['arthur-pendleton', 1],
+  ['abjuration', 1],
+  ['warding-rite', 1],
+  ['silver-lantern', 1],
+  ['old-library', 1],
+  ['finn-calloway', 1],
+  ['silas-gold', 2],
+  ['thousand-eyes', 1],
+  ['unexpected-aid', 1],
+  ['stormy-night', 1],
+]);
+
+/** Rules §10.2 — 1 leader + 19 non-leader cards. */
+const CULT_DECK = Object.freeze([
+  ['hooded-acolyte', 2],
+  ['zealot', 2],
+  ['sea-priestess', 1],
+  ['gravedigger', 1],
+  ['whisperer', 1],
+  ['deep-one', 1],
+  ['bell-claw', 1],
+  ['seance', 1],
+  ['tide-ritual', 1],
+  ['lunar-eclipse', 1],
+  ['drowned-altar', 1],
+  ['finn-calloway', 1],
+  ['silas-gold', 1],
+  ['the-sleeper', 1],
+  ['thousand-eyes', 1],
+  ['stormy-night', 1],
+  ['unexpected-aid', 1],
+]);
+
+function expand(entries) {
+  return Object.freeze(entries.flatMap(([id, count]) => Array(count).fill(id)));
+}
+
+function buildPreset({ id, name, faction, leader, entries }) {
+  const cards = expand(entries);
+  if (cards.length !== 19) {
+    throw new Error(`preset ${id} must contain 19 non-leader cards, got ${cards.length}`);
+  }
+  for (const cardId of cards) {
+    const card = CARDS[cardId];
+    if (!card) throw new Error(`preset ${id} references unknown card ${cardId}`);
+    if (card.type === 'leader') throw new Error(`preset ${id} contains leader ${cardId}`);
+    if (card.faction !== faction && card.faction !== 'neutral') {
+      throw new Error(`preset ${id} contains out-of-faction card ${cardId}`);
+    }
+  }
+  if (!CARDS[leader] || CARDS[leader].type !== 'leader') {
+    throw new Error(`preset ${id} has an invalid leader ${leader}`);
+  }
+  return Object.freeze({ id, name, faction, leader, cards });
+}
+
 export const PRESET_DECKS = Object.freeze({
-  society: Object.freeze({
+  society: buildPreset({
     id: 'society',
     name: 'Society',
+    faction: 'society',
     leader: 'harold-ashby',
-    cards: Object.freeze(flat([
-      ['nora-wells', 2],
-      ['samuel-pike', 2],
-      'edith-barrow',
-      'walter-morse',
-      'lucia-vaughn',
-      'frank-holt',
-      'arthur-pendleton',
-      'abjuration',
-      'warding-rite',
-      'silver-lantern',
-      'old-library',
-      'finn-calloway',
-      ['silas-gold', 2],
-      'thousand-eyes',
-      'unexpected-aid',
-      'stormy-night',
-    ])),
+    entries: SOCIETY_DECK,
   }),
-  cult: Object.freeze({
+  cult: buildPreset({
     id: 'cult',
     name: 'Cult',
+    faction: 'cult',
     leader: 'elias-thorne',
-    cards: Object.freeze(flat([
-      ['hooded-acolyte', 2],
-      ['zealot', 2],
-      'sea-priestess',
-      'gravedigger',
-      'whisperer',
-      'deep-one',
-      'bell-claw',
-      'seance',
-      'tide-ritual',
-      'lunar-eclipse',
-      'drowned-altar',
-      'finn-calloway',
-      'silas-gold',
-      'the-sleeper',
-      'thousand-eyes',
-      'stormy-night',
-      'unexpected-aid',
-    ])),
+    entries: CULT_DECK,
   }),
 });
 

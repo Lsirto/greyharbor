@@ -1,23 +1,30 @@
 /**
- * v2.1 player-specific views.
+ * v2.2 player-specific views.
  *
  * The authoritative state is never handed to UI/AI code.  viewFor(pov)
  * returns a fresh, plain-data object in which the opponent's hand, deck
- * order, and face-down card identities are redacted.
+ * order, face-down card identities, and private peeks are redacted.
  */
 
 import {
   LOCATIONS,
+  currentUnitPower,
   printedPower,
   scorePlayer,
-  unitPower,
 } from './scoring.js';
 
-function fullCardView(inst, card, { onBoard = false, location = null, slot = null } = {}) {
+function fullCardView(inst, card, {
+  onBoard = false,
+  location = null,
+  slot = null,
+  power = null,
+  cardIndex = null,
+} = {}) {
   return {
     uid: inst.uid,
     cardId: inst.cardId,
     name: card?.name ?? inst.cardId,
+    nameZh: card?.nameZh ?? null,
     faction: card?.faction ?? null,
     type: card?.type ?? null,
     cardLocation: card?.location ?? null,
@@ -27,8 +34,20 @@ function fullCardView(inst, card, { onBoard = false, location = null, slot = nul
     madnessPower: card?.madnessPower ?? null,
     sanityCost: card?.sanityCost ?? 0,
     keywords: Array.isArray(card?.keywords) ? card.keywords.slice() : [],
-    power: onBoard ? unitPower(inst, card) : printedPower(card, inst.face),
+    power: onBoard ? (power ?? 0) : printedPower(card, inst.face),
     ...(onBoard ? { boardLocation: location, slot } : {}),
+    ...(onBoard
+      ? {
+        sealed: !!inst.sealed,
+        corruption: inst.corruptionTokens?.length ?? 0,
+        corruptionLoss: inst.corruptionLoss ?? 0,
+        permanentPower: inst.permanentPower ?? 0,
+        thisNightPower: inst.thisNightPower ?? 0,
+        equipment: inst.equipment
+          ? fullCardView(inst.equipment, cardIndex?.[inst.equipment.cardId], { cardIndex })
+          : null,
+      }
+      : {}),
   };
 }
 
@@ -54,6 +73,11 @@ function sanitizeEvent(event, pov) {
     delete out.name;
     delete out.face;
   }
+  if (out.type === 'peek' && out.player !== pov) {
+    delete out.cardId;
+    delete out.name;
+    delete out.sourceUid;
+  }
   return out;
 }
 
@@ -73,21 +97,58 @@ export function buildView(engine, pov) {
       board[location] = player.board[location].map((inst, slot) => {
         if (!inst) return null;
         if (inst.faceDown && !own) return hiddenCardView(inst, location, slot);
-        return fullCardView(inst, cardIndex[inst.cardId], { onBoard: true, location, slot });
+        return fullCardView(inst, cardIndex[inst.cardId], {
+          onBoard: true,
+          location,
+          slot,
+          power: currentUnitPower(state, p, inst, location, slot),
+          cardIndex,
+        });
       });
     }
+
+    const locations = {};
+    for (const location of LOCATIONS) {
+      const inst = player.locations[location];
+      locations[location] = inst
+        ? {
+          ...fullCardView(inst, cardIndex[inst.cardId]),
+          sealed: !!inst.sealed,
+        }
+        : null;
+    }
+
+    const leaderCard = player.leaderId ? cardIndex[player.leaderId] : null;
 
     return {
       id: p,
       name: player.name,
+      faction: player.faction,
       leaderId: player.leaderId,
+      leader: leaderCard
+        ? {
+          cardId: leaderCard.id,
+          name: leaderCard.name,
+          nameZh: leaderCard.nameZh,
+          faction: leaderCard.faction,
+          usedThisNight: player.leaderUsedThisNight,
+          sealed: player.leaderSealed,
+        }
+        : null,
       sanity: player.sanity,
       hand,
       handCount: player.hand.length,
       deckCount: player.deck.length,
       discard: player.discard.map((inst) => fullCardView(inst, cardIndex[inst.cardId])),
+      abyss: player.abyss.map((inst) => fullCardView(inst, cardIndex[inst.cardId])),
       board,
-      score: scorePlayer(state, p, cardIndex),
+      locations,
+      flags: {
+        cultSacrificeTriggered: !!player.flags?.cultSacrificeTriggered,
+        dreamEntries: player.flags?.dreamEntries ?? 0,
+      },
+      privateNotes: own ? structuredClone(player.privateNotes ?? []) : [],
+      score: scorePlayer(state, p),
       nightWins: state.nightWins[p],
     };
   });
@@ -104,6 +165,11 @@ export function buildView(engine, pov) {
     nightWins: state.nightWins.slice(),
     history: state.history.map((entry) => structuredClone(entry)),
     result: state.result ? structuredClone(state.result) : null,
+    environments: state.environments.map((inst) => ({
+      ...fullCardView(inst, cardIndex[inst.cardId]),
+      owner: inst.owner,
+      sealed: !!inst.sealed,
+    })),
     pending: engine.pending,
     players,
     scores: players.map((p) => p.score.total),

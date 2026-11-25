@@ -1,9 +1,10 @@
 /**
- * Phase 2.1 self-play soak test.
+ * Phase 2.2 self-play soak test.
  *
- * Plays N complete games (default 1000) using only actions returned by
- * engine.getActions(), i.e. random legal actions.  Fails loudly on an
- * illegal action, deadlock, card-conservation violation, or timeout.
+ * Plays N complete games (default 1000) with the two frozen 20-card preset
+ * decks, using only actions returned by engine.getActions(), i.e. random legal
+ * actions.  Fails loudly on an illegal action, deadlock, card-conservation
+ * violation, or timeout.
  *
  *   node scripts/selfplay.mjs
  *   node scripts/selfplay.mjs --games=2000
@@ -18,7 +19,7 @@ const MAX_STEPS_PER_GAME = 400;
 const TIME_LIMIT_MS = 30_000;
 const DECK_SIZE = 19;
 
-const random = { rngState: hashSeed('greyharbor-selfplay-v2.1') };
+const random = { rngState: hashSeed('greyharbor-selfplay-v2.2') };
 const pick = (items) => items[Math.floor(nextRandom(random) * items.length)];
 
 const stats = {
@@ -103,8 +104,9 @@ const summary = {
   totalActions: stats.totalActions,
   avgActionsPerGame: Number((stats.totalActions / stats.games).toFixed(2)),
   maxActionsPerGame: stats.maxActionsPerGame,
+  sanityEndingRatio: Number(((stats.reasons.sanity ?? 0) / stats.games).toFixed(3)),
   conservation: 'ok',
 };
 
-console.log('Greyharbor v2.1 self-play');
+console.log('Greyharbor v2.2 self-play');
 console.log(JSON.stringify(summary, null, 2));

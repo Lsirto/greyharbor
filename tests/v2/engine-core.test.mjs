@@ -449,45 +449,70 @@ test('three nights: loser starts next night, tie keeps priority, final tiebreak 
   assert.deepEqual(engine.result().totalScores, [16, 12]);
 });
 
-// ── dream admission / forced madness ────────────────────────────────────
+// ── dream admission (rules §4.4) ────────────────────────────────────────
+//
+// v2.2 replaces the v2.1 placeholder "dream = madness face only" with the
+// frozen §4.4 admission rules.  The old assertion that reason-face cards can
+// never enter the dream is not part of v1: a dream-native unit may enter
+// face-up on either face, while `any` + stealth must enter face-down and
+// `any` without stealth cannot enter at all.
 
-test('dream only accepts cards currently on their madness face', () => {
-  const cards = [card('dreamer', { location: 'any', reasonPower: 2, madnessPower: 9 })];
-
-  const sane = createGame({
+test('dream admission: affinity, stealth face-down entry, and the per-night limit', () => {
+  const cards = [
+    card('native', { location: 'dream', reasonPower: 2, madnessPower: 9 }),
+    card('lurker', { location: 'any', reasonPower: 3, madnessPower: 5, keywords: ['stealth'] }),
+    card('walker', { location: 'any', reasonPower: 4, madnessPower: 4 }),
+  ];
+  const p0Deck = {
+    leader: null,
+    cards: [
+      ...Array(4).fill('native'),
+      ...Array(4).fill('lurker'),
+      ...Array(4).fill('walker'),
+      ...Array(7).fill('native'),
+    ],
+  };
+  const engine = createGame({
     seed: 31,
     cardPool: cards,
-    decks: [deckOf('dreamer'), deckOf('dreamer')],
+    decks: [p0Deck, deckOf('walker')],
     startingSanity: 4,
+    startingHand: 19,
   });
-  keepHands(sane);
-  if (sane.state.current === 1) passCurrent(sane);
-  assert.equal(sane.state.players[0].hand[0].face, 'reason');
+  keepHands(engine);
+  if (engine.state.current === 1) passCurrent(engine);
+  assert.equal(engine.state.players[0].hand[0].face, 'reason');
 
-  const dreamActions = sane
-    .getActions()
-    .filter((action) => action.type === 'playCard' && action.location === 'dream');
-  assert.equal(dreamActions.length, 0, 'reason-face cards cannot enter the dream');
+  // Dream-native, no stealth: may enter face-up on the reason face.
+  playCard(engine, 0, 'native', 'dream', 0, false);
+  assert.equal(engine.state.players[0].board.dream[0].face, 'reason');
 
-  const saneUid = sane.state.players[0].hand[0].uid;
-  const illegal = sane.apply({ type: 'playCard', player: 0, uid: saneUid, location: 'dream', slot: 0 });
-  assert.equal(illegal.ok, false);
+  // any + stealth: the dream requires a face-down entry, never face-up.
+  const lurker = engine.state.players[0].hand.find((inst) => inst.cardId === 'lurker');
+  assert.ok(lurker);
+  const lurkerActions = engine.getActions().filter(
+    (action) => action.type === 'playCard' && action.uid === lurker.uid && action.location === 'dream',
+  );
+  assert.equal(lurkerActions.some((action) => action.faceDown === false), false);
+  assert.equal(lurkerActions.some((action) => action.faceDown === true), true);
 
-  const mad = createGame({
-    seed: 32,
-    cardPool: cards,
-    decks: [deckOf('dreamer'), deckOf('dreamer')],
-    startingSanity: 3,
-  });
-  keepHands(mad);
-  assert.equal(mad.state.players[0].hand[0].face, 'madness');
-  if (mad.state.current === 1) passCurrent(mad);
+  // any without stealth: no dream entry at all.
+  const walker = engine.state.players[0].hand.find((inst) => inst.cardId === 'walker');
+  assert.ok(walker);
+  assert.equal(
+    engine.getActions().some(
+      (action) => action.type === 'playCard' && action.uid === walker.uid && action.location === 'dream',
+    ),
+    false,
+  );
 
-  playCard(mad, 0, 'dreamer', 'dream', 0);
-  assert.equal(mad.state.players[0].board.dream[0].face, 'madness');
-
-  endNight(mad, 1);
-  assert.equal(mad.state.history[0].scores[0].total, 9);
+  // Second hand entry fills the per-night limit; a third is illegal.
+  playCard(engine, 0, 'lurker', 'dream', 1, true);
+  assert.equal(engine.state.players[0].flags.dreamEntries, 2);
+  assert.equal(
+    engine.getActions().some((action) => action.type === 'playCard' && action.location === 'dream'),
+    false,
+  );
 });
 
 // ── self-play smoke (the 1000-game run lives in scripts/selfplay.mjs) ───
