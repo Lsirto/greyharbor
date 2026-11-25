@@ -1283,7 +1283,9 @@ export class EngineV2 {
     this._emit({
       type: 'cultEcho',
       player: p,
-      bonus: hasUnsealedAltar(this.state, p) ? 3 : 2,
+      // Balance patch v1.2: echo reduced from +2 (altar +3) to +1 (altar +1).
+      // Must stay in sync with scoring.js thisNightBonus().
+      bonus: 1,
     });
   }
 

@@ -268,7 +268,10 @@ function thisNightBonus(state, p, inst) {
   const player = state.players[p];
   let bonus = inst.thisNightPower ?? 0;
   if (player.faction === 'cult' && player.flags?.cultSacrificeTriggered) {
-    bonus += hasUnsealedAltar(state, p) ? 3 : 2;
+    // Balance patch v1.2 (§7.2): the first-sacrifice echo was +2 (altar +3).
+    // Measured ablation put ~37pp of the Cult/Society gap on this single
+    // passive, so it is reduced to +1 (altar +1). See docs/BALANCE_PATCH_V1.2.md.
+    bonus += 1;
   }
   return bonus;
 }

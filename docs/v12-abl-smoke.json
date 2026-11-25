@@ -1,0 +1,765 @@
+{
+  "ok": true,
+  "games": 100,
+  "seedPrefix": "abl-smoke",
+  "baseline": {
+    "p0Wins": 19,
+    "p1Wins": 81,
+    "p0WinRate": 0.19,
+    "p1WinRate": 0.81,
+    "firstPlayerWinRate": 0.59,
+    "firstIsP0Rate": 0.5,
+    "sanityEndingRatio": 0.18,
+    "reasons": {
+      "sanity": 18,
+      "nightWins": 82
+    },
+    "endingNight": {
+      "2": 90,
+      "3": 10
+    },
+    "avgActionsPerGame": 26.95,
+    "conservation": "ok"
+  },
+  "baselineP1WinRate": 0.81,
+  "results": [
+    {
+      "label": "rule:cultPassive=0",
+      "p0Wins": 52,
+      "p1Wins": 48,
+      "p0WinRate": 0.52,
+      "p1WinRate": 0.48,
+      "firstPlayerWinRate": 0.56,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.4,
+      "reasons": {
+        "sanity": 40,
+        "nightWins": 60
+      },
+      "endingNight": {
+        "1": 2,
+        "2": 80,
+        "3": 18
+      },
+      "avgActionsPerGame": 26.67,
+      "conservation": "ok",
+      "deltaP1pp": -33
+    },
+    {
+      "label": "society:-walter-morse",
+      "p0Wins": 22,
+      "p1Wins": 78,
+      "p0WinRate": 0.22,
+      "p1WinRate": 0.78,
+      "firstPlayerWinRate": 0.6,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.2,
+      "reasons": {
+        "sanity": 20,
+        "nightWins": 80
+      },
+      "endingNight": {
+        "2": 91,
+        "3": 9
+      },
+      "avgActionsPerGame": 26.88,
+      "conservation": "ok",
+      "deltaP1pp": -3
+    },
+    {
+      "label": "rule:cultAltarBonus=2",
+      "p0Wins": 22,
+      "p1Wins": 78,
+      "p0WinRate": 0.22,
+      "p1WinRate": 0.78,
+      "firstPlayerWinRate": 0.6,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.2,
+      "reasons": {
+        "sanity": 20,
+        "nightWins": 80
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 26.98,
+      "conservation": "ok",
+      "deltaP1pp": -3
+    },
+    {
+      "label": "cult:-zealot",
+      "p0Wins": 20,
+      "p1Wins": 80,
+      "p0WinRate": 0.2,
+      "p1WinRate": 0.8,
+      "firstPlayerWinRate": 0.56,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.19,
+      "reasons": {
+        "nightWins": 81,
+        "sanity": 19
+      },
+      "endingNight": {
+        "1": 1,
+        "2": 89,
+        "3": 10
+      },
+      "avgActionsPerGame": 27.12,
+      "conservation": "ok",
+      "deltaP1pp": -1
+    },
+    {
+      "label": "cult:-hooded-acolyte",
+      "p0Wins": 20,
+      "p1Wins": 80,
+      "p0WinRate": 0.2,
+      "p1WinRate": 0.8,
+      "firstPlayerWinRate": 0.54,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.18,
+      "reasons": {
+        "sanity": 18,
+        "nightWins": 82
+      },
+      "endingNight": {
+        "2": 86,
+        "3": 14
+      },
+      "avgActionsPerGame": 27.5,
+      "conservation": "ok",
+      "deltaP1pp": -1
+    },
+    {
+      "label": "cult:-sea-priestess",
+      "p0Wins": 20,
+      "p1Wins": 80,
+      "p0WinRate": 0.2,
+      "p1WinRate": 0.8,
+      "firstPlayerWinRate": 0.6,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.17,
+      "reasons": {
+        "nightWins": 83,
+        "sanity": 17
+      },
+      "endingNight": {
+        "2": 89,
+        "3": 11
+      },
+      "avgActionsPerGame": 27.24,
+      "conservation": "ok",
+      "deltaP1pp": -1
+    },
+    {
+      "label": "cult:-drowned-altar",
+      "p0Wins": 20,
+      "p1Wins": 80,
+      "p0WinRate": 0.2,
+      "p1WinRate": 0.8,
+      "firstPlayerWinRate": 0.58,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.19,
+      "reasons": {
+        "sanity": 19,
+        "nightWins": 81
+      },
+      "endingNight": {
+        "2": 88,
+        "3": 12
+      },
+      "avgActionsPerGame": 27.12,
+      "conservation": "ok",
+      "deltaP1pp": -1
+    },
+    {
+      "label": "cult:-thousand-eyes",
+      "p0Wins": 20,
+      "p1Wins": 80,
+      "p0WinRate": 0.2,
+      "p1WinRate": 0.8,
+      "firstPlayerWinRate": 0.52,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.13,
+      "reasons": {
+        "sanity": 13,
+        "nightWins": 87
+      },
+      "endingNight": {
+        "2": 88,
+        "3": 12
+      },
+      "avgActionsPerGame": 28,
+      "conservation": "ok",
+      "deltaP1pp": -1
+    },
+    {
+      "label": "cult:-silas-gold",
+      "p0Wins": 20,
+      "p1Wins": 80,
+      "p0WinRate": 0.2,
+      "p1WinRate": 0.8,
+      "firstPlayerWinRate": 0.56,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.2,
+      "reasons": {
+        "sanity": 20,
+        "nightWins": 80
+      },
+      "endingNight": {
+        "2": 86,
+        "3": 14
+      },
+      "avgActionsPerGame": 27.16,
+      "conservation": "ok",
+      "deltaP1pp": -1
+    },
+    {
+      "label": "society:-warding-rite",
+      "p0Wins": 20,
+      "p1Wins": 80,
+      "p0WinRate": 0.2,
+      "p1WinRate": 0.8,
+      "firstPlayerWinRate": 0.58,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.19,
+      "reasons": {
+        "sanity": 19,
+        "nightWins": 81
+      },
+      "endingNight": {
+        "2": 91,
+        "3": 9
+      },
+      "avgActionsPerGame": 27.2,
+      "conservation": "ok",
+      "deltaP1pp": -1
+    },
+    {
+      "label": "society:-lucia-vaughn",
+      "p0Wins": 20,
+      "p1Wins": 80,
+      "p0WinRate": 0.2,
+      "p1WinRate": 0.8,
+      "firstPlayerWinRate": 0.6,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.19,
+      "reasons": {
+        "sanity": 19,
+        "nightWins": 81
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 26.84,
+      "conservation": "ok",
+      "deltaP1pp": -1
+    },
+    {
+      "label": "cult:-tide-ritual",
+      "p0Wins": 19,
+      "p1Wins": 81,
+      "p0WinRate": 0.19,
+      "p1WinRate": 0.81,
+      "firstPlayerWinRate": 0.57,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.19,
+      "reasons": {
+        "sanity": 19,
+        "nightWins": 81
+      },
+      "endingNight": {
+        "2": 89,
+        "3": 11
+      },
+      "avgActionsPerGame": 26.96,
+      "conservation": "ok",
+      "deltaP1pp": 0
+    },
+    {
+      "label": "society:-stormy-night",
+      "p0Wins": 19,
+      "p1Wins": 81,
+      "p0WinRate": 0.19,
+      "p1WinRate": 0.81,
+      "firstPlayerWinRate": 0.59,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.18,
+      "reasons": {
+        "sanity": 18,
+        "nightWins": 82
+      },
+      "endingNight": {
+        "2": 88,
+        "3": 12
+      },
+      "avgActionsPerGame": 27.12,
+      "conservation": "ok",
+      "deltaP1pp": 0
+    },
+    {
+      "label": "cult:-bell-claw",
+      "p0Wins": 18,
+      "p1Wins": 82,
+      "p0WinRate": 0.18,
+      "p1WinRate": 0.82,
+      "firstPlayerWinRate": 0.58,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.15,
+      "reasons": {
+        "sanity": 15,
+        "nightWins": 85
+      },
+      "endingNight": {
+        "1": 1,
+        "2": 87,
+        "3": 12
+      },
+      "avgActionsPerGame": 27.21,
+      "conservation": "ok",
+      "deltaP1pp": 1
+    },
+    {
+      "label": "society:-abjuration",
+      "p0Wins": 18,
+      "p1Wins": 82,
+      "p0WinRate": 0.18,
+      "p1WinRate": 0.82,
+      "firstPlayerWinRate": 0.58,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.17,
+      "reasons": {
+        "nightWins": 83,
+        "sanity": 17
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 26.99,
+      "conservation": "ok",
+      "deltaP1pp": 1
+    },
+    {
+      "label": "society:-frank-holt",
+      "p0Wins": 18,
+      "p1Wins": 82,
+      "p0WinRate": 0.18,
+      "p1WinRate": 0.82,
+      "firstPlayerWinRate": 0.54,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.17,
+      "reasons": {
+        "sanity": 17,
+        "nightWins": 83
+      },
+      "endingNight": {
+        "2": 93,
+        "3": 7
+      },
+      "avgActionsPerGame": 26.98,
+      "conservation": "ok",
+      "deltaP1pp": 1
+    },
+    {
+      "label": "society:-silas-gold",
+      "p0Wins": 18,
+      "p1Wins": 82,
+      "p0WinRate": 0.18,
+      "p1WinRate": 0.82,
+      "firstPlayerWinRate": 0.58,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.18,
+      "reasons": {
+        "sanity": 18,
+        "nightWins": 82
+      },
+      "endingNight": {
+        "2": 89,
+        "3": 11
+      },
+      "avgActionsPerGame": 27.1,
+      "conservation": "ok",
+      "deltaP1pp": 1
+    },
+    {
+      "label": "cult:-stormy-night",
+      "p0Wins": 17,
+      "p1Wins": 83,
+      "p0WinRate": 0.17,
+      "p1WinRate": 0.83,
+      "firstPlayerWinRate": 0.53,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.16,
+      "reasons": {
+        "sanity": 16,
+        "nightWins": 84
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 27.18,
+      "conservation": "ok",
+      "deltaP1pp": 2
+    },
+    {
+      "label": "cult:-finn-calloway",
+      "p0Wins": 17,
+      "p1Wins": 83,
+      "p0WinRate": 0.17,
+      "p1WinRate": 0.83,
+      "firstPlayerWinRate": 0.59,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.17,
+      "reasons": {
+        "nightWins": 83,
+        "sanity": 17
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 27.24,
+      "conservation": "ok",
+      "deltaP1pp": 2
+    },
+    {
+      "label": "society:-edith-barrow",
+      "p0Wins": 17,
+      "p1Wins": 83,
+      "p0WinRate": 0.17,
+      "p1WinRate": 0.83,
+      "firstPlayerWinRate": 0.57,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.17,
+      "reasons": {
+        "sanity": 17,
+        "nightWins": 83
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 27.09,
+      "conservation": "ok",
+      "deltaP1pp": 2
+    },
+    {
+      "label": "society:-arthur-pendleton",
+      "p0Wins": 17,
+      "p1Wins": 83,
+      "p0WinRate": 0.17,
+      "p1WinRate": 0.83,
+      "firstPlayerWinRate": 0.57,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.16,
+      "reasons": {
+        "sanity": 16,
+        "nightWins": 84
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 27.28,
+      "conservation": "ok",
+      "deltaP1pp": 2
+    },
+    {
+      "label": "cult:-deep-one",
+      "p0Wins": 16,
+      "p1Wins": 84,
+      "p0WinRate": 0.16,
+      "p1WinRate": 0.84,
+      "firstPlayerWinRate": 0.52,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.14,
+      "reasons": {
+        "sanity": 14,
+        "nightWins": 86
+      },
+      "endingNight": {
+        "2": 84,
+        "3": 16
+      },
+      "avgActionsPerGame": 27.85,
+      "conservation": "ok",
+      "deltaP1pp": 3
+    },
+    {
+      "label": "cult:-lunar-eclipse",
+      "p0Wins": 16,
+      "p1Wins": 84,
+      "p0WinRate": 0.16,
+      "p1WinRate": 0.84,
+      "firstPlayerWinRate": 0.56,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.13,
+      "reasons": {
+        "sanity": 13,
+        "nightWins": 87
+      },
+      "endingNight": {
+        "2": 92,
+        "3": 8
+      },
+      "avgActionsPerGame": 27.06,
+      "conservation": "ok",
+      "deltaP1pp": 3
+    },
+    {
+      "label": "society:-silver-lantern",
+      "p0Wins": 16,
+      "p1Wins": 84,
+      "p0WinRate": 0.16,
+      "p1WinRate": 0.84,
+      "firstPlayerWinRate": 0.54,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.15,
+      "reasons": {
+        "sanity": 15,
+        "nightWins": 85
+      },
+      "endingNight": {
+        "2": 93,
+        "3": 7
+      },
+      "avgActionsPerGame": 26.96,
+      "conservation": "ok",
+      "deltaP1pp": 3
+    },
+    {
+      "label": "cult:-unexpected-aid",
+      "p0Wins": 15,
+      "p1Wins": 85,
+      "p0WinRate": 0.15,
+      "p1WinRate": 0.85,
+      "firstPlayerWinRate": 0.59,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.15,
+      "reasons": {
+        "nightWins": 85,
+        "sanity": 15
+      },
+      "endingNight": {
+        "2": 87,
+        "3": 13
+      },
+      "avgActionsPerGame": 27.41,
+      "conservation": "ok",
+      "deltaP1pp": 4
+    },
+    {
+      "label": "society:-old-library",
+      "p0Wins": 15,
+      "p1Wins": 85,
+      "p0WinRate": 0.15,
+      "p1WinRate": 0.85,
+      "firstPlayerWinRate": 0.55,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.14,
+      "reasons": {
+        "sanity": 14,
+        "nightWins": 86
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 27.28,
+      "conservation": "ok",
+      "deltaP1pp": 4
+    },
+    {
+      "label": "cult:-gravedigger",
+      "p0Wins": 14,
+      "p1Wins": 86,
+      "p0WinRate": 0.14,
+      "p1WinRate": 0.86,
+      "firstPlayerWinRate": 0.5,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.12,
+      "reasons": {
+        "sanity": 12,
+        "nightWins": 88
+      },
+      "endingNight": {
+        "2": 92,
+        "3": 8
+      },
+      "avgActionsPerGame": 27.3,
+      "conservation": "ok",
+      "deltaP1pp": 5
+    },
+    {
+      "label": "cult:-whisperer",
+      "p0Wins": 14,
+      "p1Wins": 86,
+      "p0WinRate": 0.14,
+      "p1WinRate": 0.86,
+      "firstPlayerWinRate": 0.54,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.13,
+      "reasons": {
+        "nightWins": 87,
+        "sanity": 13
+      },
+      "endingNight": {
+        "2": 90,
+        "3": 10
+      },
+      "avgActionsPerGame": 27.31,
+      "conservation": "ok",
+      "deltaP1pp": 5
+    },
+    {
+      "label": "society:-nora-wells",
+      "p0Wins": 14,
+      "p1Wins": 86,
+      "p0WinRate": 0.14,
+      "p1WinRate": 0.86,
+      "firstPlayerWinRate": 0.56,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.13,
+      "reasons": {
+        "sanity": 13,
+        "nightWins": 87
+      },
+      "endingNight": {
+        "2": 91,
+        "3": 9
+      },
+      "avgActionsPerGame": 27.23,
+      "conservation": "ok",
+      "deltaP1pp": 5
+    },
+    {
+      "label": "society:-unexpected-aid",
+      "p0Wins": 14,
+      "p1Wins": 86,
+      "p0WinRate": 0.14,
+      "p1WinRate": 0.86,
+      "firstPlayerWinRate": 0.6,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.14,
+      "reasons": {
+        "sanity": 14,
+        "nightWins": 86
+      },
+      "endingNight": {
+        "2": 92,
+        "3": 8
+      },
+      "avgActionsPerGame": 27.12,
+      "conservation": "ok",
+      "deltaP1pp": 5
+    },
+    {
+      "label": "society:-finn-calloway",
+      "p0Wins": 14,
+      "p1Wins": 86,
+      "p0WinRate": 0.14,
+      "p1WinRate": 0.86,
+      "firstPlayerWinRate": 0.56,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.13,
+      "reasons": {
+        "nightWins": 87,
+        "sanity": 13
+      },
+      "endingNight": {
+        "2": 92,
+        "3": 8
+      },
+      "avgActionsPerGame": 27.33,
+      "conservation": "ok",
+      "deltaP1pp": 5
+    },
+    {
+      "label": "society:-samuel-pike",
+      "p0Wins": 12,
+      "p1Wins": 88,
+      "p0WinRate": 0.12,
+      "p1WinRate": 0.88,
+      "firstPlayerWinRate": 0.56,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.11,
+      "reasons": {
+        "nightWins": 89,
+        "sanity": 11
+      },
+      "endingNight": {
+        "2": 94,
+        "3": 6
+      },
+      "avgActionsPerGame": 27.14,
+      "conservation": "ok",
+      "deltaP1pp": 7
+    },
+    {
+      "label": "cult:-seance",
+      "p0Wins": 10,
+      "p1Wins": 90,
+      "p0WinRate": 0.1,
+      "p1WinRate": 0.9,
+      "firstPlayerWinRate": 0.54,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.09,
+      "reasons": {
+        "sanity": 9,
+        "nightWins": 91
+      },
+      "endingNight": {
+        "2": 93,
+        "3": 7
+      },
+      "avgActionsPerGame": 26.83,
+      "conservation": "ok",
+      "deltaP1pp": 9
+    },
+    {
+      "label": "society:-thousand-eyes",
+      "p0Wins": 8,
+      "p1Wins": 92,
+      "p0WinRate": 0.08,
+      "p1WinRate": 0.92,
+      "firstPlayerWinRate": 0.56,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.08,
+      "reasons": {
+        "nightWins": 92,
+        "sanity": 8
+      },
+      "endingNight": {
+        "2": 97,
+        "3": 3
+      },
+      "avgActionsPerGame": 27.21,
+      "conservation": "ok",
+      "deltaP1pp": 11
+    },
+    {
+      "label": "cult:-the-sleeper",
+      "p0Wins": 7,
+      "p1Wins": 93,
+      "p0WinRate": 0.07,
+      "p1WinRate": 0.93,
+      "firstPlayerWinRate": 0.53,
+      "firstIsP0Rate": 0.5,
+      "sanityEndingRatio": 0.04,
+      "reasons": {
+        "nightWins": 96,
+        "sanity": 4
+      },
+      "endingNight": {
+        "2": 83,
+        "3": 17
+      },
+      "avgActionsPerGame": 28.02,
+      "conservation": "ok",
+      "deltaP1pp": 12
+    }
+  ]
+}

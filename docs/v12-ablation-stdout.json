@@ -1,0 +1,217 @@
+{
+  "ok": true,
+  "games": 1000,
+  "baselineP1WinRate": 0.85,
+  "results": [
+    {
+      "label": "rule:cultPassive=0",
+      "p1WinRate": 0.481,
+      "deltaP1pp": -36.9,
+      "sanity": 0.379
+    },
+    {
+      "label": "cult:-sea-priestess",
+      "p1WinRate": 0.807,
+      "deltaP1pp": -4.3,
+      "sanity": 0.16
+    },
+    {
+      "label": "cult:-thousand-eyes",
+      "p1WinRate": 0.809,
+      "deltaP1pp": -4.1,
+      "sanity": 0.143
+    },
+    {
+      "label": "cult:-bell-claw",
+      "p1WinRate": 0.816,
+      "deltaP1pp": -3.4,
+      "sanity": 0.148
+    },
+    {
+      "label": "cult:-finn-calloway",
+      "p1WinRate": 0.827,
+      "deltaP1pp": -2.3,
+      "sanity": 0.15
+    },
+    {
+      "label": "cult:-deep-one",
+      "p1WinRate": 0.835,
+      "deltaP1pp": -1.5,
+      "sanity": 0.126
+    },
+    {
+      "label": "society:-stormy-night",
+      "p1WinRate": 0.84,
+      "deltaP1pp": -1,
+      "sanity": 0.135
+    },
+    {
+      "label": "cult:-lunar-eclipse",
+      "p1WinRate": 0.841,
+      "deltaP1pp": -0.9,
+      "sanity": 0.138
+    },
+    {
+      "label": "cult:-hooded-acolyte",
+      "p1WinRate": 0.842,
+      "deltaP1pp": -0.8,
+      "sanity": 0.13
+    },
+    {
+      "label": "rule:cultAltarBonus=2",
+      "p1WinRate": 0.843,
+      "deltaP1pp": -0.7,
+      "sanity": 0.129
+    },
+    {
+      "label": "cult:-tide-ritual",
+      "p1WinRate": 0.845,
+      "deltaP1pp": -0.5,
+      "sanity": 0.133
+    },
+    {
+      "label": "cult:-unexpected-aid",
+      "p1WinRate": 0.845,
+      "deltaP1pp": -0.5,
+      "sanity": 0.133
+    },
+    {
+      "label": "cult:-drowned-altar",
+      "p1WinRate": 0.851,
+      "deltaP1pp": 0.1,
+      "sanity": 0.129
+    },
+    {
+      "label": "cult:-silas-gold",
+      "p1WinRate": 0.851,
+      "deltaP1pp": 0.1,
+      "sanity": 0.125
+    },
+    {
+      "label": "cult:-stormy-night",
+      "p1WinRate": 0.852,
+      "deltaP1pp": 0.2,
+      "sanity": 0.127
+    },
+    {
+      "label": "society:-warding-rite",
+      "p1WinRate": 0.853,
+      "deltaP1pp": 0.3,
+      "sanity": 0.123
+    },
+    {
+      "label": "society:-abjuration",
+      "p1WinRate": 0.854,
+      "deltaP1pp": 0.4,
+      "sanity": 0.121
+    },
+    {
+      "label": "society:-old-library",
+      "p1WinRate": 0.855,
+      "deltaP1pp": 0.5,
+      "sanity": 0.121
+    },
+    {
+      "label": "society:-walter-morse",
+      "p1WinRate": 0.856,
+      "deltaP1pp": 0.6,
+      "sanity": 0.123
+    },
+    {
+      "label": "cult:-zealot",
+      "p1WinRate": 0.857,
+      "deltaP1pp": 0.7,
+      "sanity": 0.119
+    },
+    {
+      "label": "cult:-gravedigger",
+      "p1WinRate": 0.858,
+      "deltaP1pp": 0.8,
+      "sanity": 0.111
+    },
+    {
+      "label": "society:-nora-wells",
+      "p1WinRate": 0.859,
+      "deltaP1pp": 0.9,
+      "sanity": 0.121
+    },
+    {
+      "label": "society:-lucia-vaughn",
+      "p1WinRate": 0.861,
+      "deltaP1pp": 1.1,
+      "sanity": 0.115
+    },
+    {
+      "label": "society:-silver-lantern",
+      "p1WinRate": 0.862,
+      "deltaP1pp": 1.2,
+      "sanity": 0.113
+    },
+    {
+      "label": "society:-silas-gold",
+      "p1WinRate": 0.865,
+      "deltaP1pp": 1.5,
+      "sanity": 0.111
+    },
+    {
+      "label": "cult:-whisperer",
+      "p1WinRate": 0.866,
+      "deltaP1pp": 1.6,
+      "sanity": 0.111
+    },
+    {
+      "label": "society:-arthur-pendleton",
+      "p1WinRate": 0.868,
+      "deltaP1pp": 1.8,
+      "sanity": 0.109
+    },
+    {
+      "label": "society:-unexpected-aid",
+      "p1WinRate": 0.87,
+      "deltaP1pp": 2,
+      "sanity": 0.107
+    },
+    {
+      "label": "society:-samuel-pike",
+      "p1WinRate": 0.873,
+      "deltaP1pp": 2.3,
+      "sanity": 0.109
+    },
+    {
+      "label": "society:-finn-calloway",
+      "p1WinRate": 0.876,
+      "deltaP1pp": 2.6,
+      "sanity": 0.105
+    },
+    {
+      "label": "society:-edith-barrow",
+      "p1WinRate": 0.877,
+      "deltaP1pp": 2.7,
+      "sanity": 0.111
+    },
+    {
+      "label": "society:-frank-holt",
+      "p1WinRate": 0.896,
+      "deltaP1pp": 4.6,
+      "sanity": 0.093
+    },
+    {
+      "label": "cult:-seance",
+      "p1WinRate": 0.902,
+      "deltaP1pp": 5.2,
+      "sanity": 0.09
+    },
+    {
+      "label": "cult:-the-sleeper",
+      "p1WinRate": 0.924,
+      "deltaP1pp": 7.4,
+      "sanity": 0.043
+    },
+    {
+      "label": "society:-thousand-eyes",
+      "p1WinRate": 0.945,
+      "deltaP1pp": 9.5,
+      "sanity": 0.049
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "ok": true,
+  "games": 1000,
+  "compensation": {},
+  "wins": {
+    "firstPlayer": 536,
+    "secondPlayer": 464,
+    "draw": 0,
+    "p0": 494,
+    "p1": 506
+  },
+  "firstPlayerWinRate": 0.536,
+  "secondPlayerWinRate": 0.464,
+  "p0WinRate": 0.494,
+  "p1WinRate": 0.506,
+  "firstPlayerIsP0Rate": 0.516,
+  "reasons": {
+    "nightWins": 676,
+    "sanity": 323,
+    "tiebreak": 1
+  },
+  "endingNight": {
+    "1": 13,
+    "2": 805,
+    "3": 182
+  },
+  "sanityEndingRatio": 0.323,
+  "totalActions": 27615,
+  "avgActionsPerGame": 27.61,
+  "maxActionsPerGame": 39,
+  "elapsedMs": 2215,
+  "seedPrefix": "balance-v1.2-regression",
+  "conservation": "ok"
+}

@@ -374,7 +374,8 @@ test('elias + hooded-acolyte: replacement sacrifices the Acolyte, keeps the targ
   assert.equal(engine.state.players[0].sanity, 6, 'Elias summoning pays no sanity cost');
   assert.equal(engine.state.players[0].leaderUsedThisNight, true);
   assert.equal(engine.state.players[0].flags.cultSacrificeTriggered, true);
-  assert.equal(result.events.find((event) => event.type === 'cultEcho').bonus, 2);
+  // v1.2: §7.2 echo reduced from +2/altar +3 to +1/altar +1.
+  assert.equal(result.events.find((event) => event.type === 'cultEcho').bonus, 1);
   conservation(engine, [4, 2]);
 });
 

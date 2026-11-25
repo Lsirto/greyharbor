@@ -381,7 +381,8 @@ test('zealot: madness face is printed +3 with backlash, reason face is plain', (
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
   const zealot = putUnit(engine, 0, 'zealot', 'scene', 0, { face: 'madness' });
-  assert.equal(currentUnitPower(engine.state, 0, zealot, 'scene', 0), 9, 'madness face: base 6 + 3');
+  // v1.2: JSON madnessPower 6 -> 4; the printed +3 registry bonus is unchanged.
+  assert.equal(currentUnitPower(engine.state, 0, zealot, 'scene', 0), 7, 'madness face: base 4 + 3');
   engine.state.current = 0;
   engine._maybeBacklash(0, zealot, engine.cardIndex['zealot'], { context: 'entry' });
   assert.equal(engine.state.players[0].sanity, 5, 'madness entry backlash loses 1 sanity');
@@ -392,7 +393,8 @@ test('zealot: madness face is printed +3 with backlash, reason face is plain', (
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
   const reasonUnit = putUnit(reasonEngine, 0, 'zealot', 'scene', 0, { face: 'reason' });
-  assert.equal(currentUnitPower(reasonEngine.state, 0, reasonUnit, 'scene', 0), 3, 'reason face stays at base 3');
+  // v1.2: JSON reasonPower 3 -> 2.
+  assert.equal(currentUnitPower(reasonEngine.state, 0, reasonUnit, 'scene', 0), 2, 'reason face stays at base 2');
 });
 
 test('deep-one: madness face is printed +3 with backlash and pays 1 sanity', () => {
@@ -402,7 +404,8 @@ test('deep-one: madness face is printed +3 with backlash and pays 1 sanity', () 
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
   const deep = putUnit(madnessEngine, 0, 'deep-one', 'dream', 0, { face: 'madness' });
-  assert.equal(currentUnitPower(madnessEngine.state, 0, deep, 'dream', 0), 11, 'madness face: base 8 + 3');
+  // v1.2: JSON madnessPower 8 -> 6; printed +3 bonus unchanged.
+  assert.equal(currentUnitPower(madnessEngine.state, 0, deep, 'dream', 0), 9, 'madness face: base 6 + 3');
   madnessEngine.state.current = 0;
   madnessEngine._maybeBacklash(0, deep, madnessEngine.cardIndex['deep-one'], { context: 'entry' });
   assert.equal(madnessEngine.state.players[0].sanity, 5);
@@ -471,7 +474,8 @@ test('bell-claw: devouring an adjacent unit permanently gains its current power'
   assert.ok(bell.events.some((event) => event.type === 'devour'));
   assert.equal(engine.state.players[0].board.scene[1], null, 'devoured neighbour left the board');
   assert.equal(engine.state.players[0].abyss.length, 1);
-  assert.equal(bell.inst.permanentPower, 3, 'bell-claw permanently gained the devoured current power');
+  // v1.2: devoured zealot's reasonPower 3 -> 2; devour rule (full current power) unchanged.
+  assert.equal(bell.inst.permanentPower, 2, 'bell-claw permanently gained the devoured current power');
 });
 
 // ── seance: mandatory sacrifice + bounded retrieval (§6.4) ─────────────────
@@ -515,7 +519,8 @@ test('tide-ritual: gives the own dream row +3 this night and expires afterwards'
   const played = play(engine, 0, 'tide-ritual');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
   putUnit(engine, 0, 'deep-one', 'dream', 0);
-  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.dream[0], 'dream', 0), 8, 'own dream unit +3');
+  // v1.2: deep-one reasonPower 5 -> 4, Tide Ritual +3 unchanged.
+  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.dream[0], 'dream', 0), 7, 'own dream unit +3');
   passUntilNight(engine, 2);
   assert.equal(engine.state.effects.length, 0, 'this-night aura cleared at night end cleanup');
 });
@@ -532,7 +537,8 @@ test('lunar-eclipse: this night reason face -1 and madness face +1 for both play
   putUnit(engine, 1, 'finn-calloway', 'scene', 0);
   const played = play(engine, 0, 'lunar-eclipse');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
-  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.scene[0], 'scene', 0), 2);
+  // v1.2: zealot reasonPower 3 -> 2, Lunar Eclipse reason -1 unchanged; finn unaffected.
+  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.scene[0], 'scene', 0), 1);
   assert.equal(currentUnitPower(engine.state, 1, engine.state.players[1].board.scene[0], 'scene', 0), 2);
 });
 
@@ -546,13 +552,14 @@ test('stormy-night: this night scene -2 for both players', () => {
   putUnit(engine, 1, 'finn-calloway', 'scene', 0);
   const played = play(engine, 0, 'stormy-night');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
-  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.scene[0], 'scene', 0), 1);
+  // v1.2: zealot reasonPower 3 -> 2, Stormy Night scene -2 unchanged; finn unaffected.
+  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.scene[0], 'scene', 0), 0);
   assert.equal(currentUnitPower(engine.state, 1, engine.state.players[1].board.scene[0], 'scene', 0), 1);
 });
 
 // ── drowned-altar: scene sacrifice immunity + cult echo +3 ─────────────────
 
-test('drowned-altar: scene sacrifices skip backlash and the cult echo becomes +3', () => {
+test('drowned-altar: scene sacrifices skip backlash and the cult echo is +1', () => {
   const engine = setup({
     seed: 220,
     p0: { leader: 'elias-thorne', cards: ['drowned-altar', 'zealot', 'deep-one', 'finn-calloway'] },
@@ -579,7 +586,8 @@ test('drowned-altar: scene sacrifices skip backlash and the cult echo becomes +3
     result.events.map((event) => event.type),
     ['leaderSkill', 'sacrifice', 'cultEcho', 'playFromDeck', 'backlash', 'sanityChange'],
   );
-  assert.equal(result.events.find((event) => event.type === 'cultEcho').bonus, 3, 'unsealed altar upgrades the echo to +3');
+  // v1.2: §7.2 echo +2/altar +3 -> +1/altar +1; the altar still suppresses backlash.
+  assert.equal(result.events.find((event) => event.type === 'cultEcho').bonus, 1, 'v1.2 echo is +1 with or without the altar');
   assert.equal(engine.state.players[0].sanity, 2, 'deep-one madness entry backlash still applies after the summon');
 });
 

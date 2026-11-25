@@ -216,7 +216,7 @@
     "type": "unit",
     "location": "scene",
     "reasonPower": 2,
-    "madnessPower": 3,
+    "madnessPower": 2,
     "keywords": [
       "献祭"
     ],
@@ -232,8 +232,8 @@
     "faction": "cult",
     "type": "unit",
     "location": "scene",
-    "reasonPower": 3,
-    "madnessPower": 6,
+    "reasonPower": 2,
+    "madnessPower": 4,
     "keywords": [
       "理智反噬"
     ],
@@ -249,8 +249,8 @@
     "faction": "cult",
     "type": "unit",
     "location": "archive",
-    "reasonPower": 4,
-    "madnessPower": 5,
+    "reasonPower": 3,
+    "madnessPower": 4,
     "keywords": [
       "腐化"
     ],
@@ -266,8 +266,8 @@
     "faction": "cult",
     "type": "unit",
     "location": "archive",
-    "reasonPower": 3,
-    "madnessPower": 4,
+    "reasonPower": 2,
+    "madnessPower": 3,
     "keywords": [
       "献祭"
     ],
@@ -300,8 +300,8 @@
     "faction": "cult",
     "type": "unit",
     "location": "dream",
-    "reasonPower": 5,
-    "madnessPower": 8,
+    "reasonPower": 4,
+    "madnessPower": 6,
     "keywords": [
       "理智反噬"
     ],
@@ -317,8 +317,8 @@
     "faction": "cult",
     "type": "unit",
     "location": "scene",
-    "reasonPower": 6,
-    "madnessPower": 6,
+    "reasonPower": 5,
+    "madnessPower": 5,
     "keywords": [
       "献祭"
     ],
@@ -428,8 +428,8 @@
     "faction": "neutral",
     "type": "oldgod",
     "location": "dream",
-    "reasonPower": 8,
-    "madnessPower": 12,
+    "reasonPower": 7,
+    "madnessPower": 10,
     "keywords": [
       "理智反噬"
     ],

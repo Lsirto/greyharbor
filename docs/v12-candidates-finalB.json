@@ -1,0 +1,504 @@
+{
+  "ok": true,
+  "games": 1000,
+  "mirrorGames": 600,
+  "seedPrefix": "balance-v1.2-finalB",
+  "results": [
+    {
+      "name": "passive=1/1+packageB",
+      "config": {
+        "ruleOverrides": {
+          "cultSacrificeBonus": 1,
+          "cultAltarBonus": 1
+        },
+        "cardOverrides": {
+          "zealot": {
+            "reasonPower": 2,
+            "madnessPower": 5
+          },
+          "deep-one": {
+            "reasonPower": 4,
+            "madnessPower": 7
+          },
+          "sea-priestess": {
+            "reasonPower": 3,
+            "madnessPower": 4
+          },
+          "bell-claw": {
+            "reasonPower": 5,
+            "madnessPower": 5
+          },
+          "hooded-acolyte": {
+            "madnessPower": 2
+          },
+          "gravedigger": {
+            "reasonPower": 2,
+            "madnessPower": 3
+          }
+        }
+      },
+      "crossAB": {
+        "games": 1000,
+        "p0Wins": 460,
+        "p1Wins": 540,
+        "p0WinRate": 0.46,
+        "p1WinRate": 0.54,
+        "firstPlayerWinRate": 0.558,
+        "firstIsP0Rate": 0.486,
+        "sanityEndingRatio": 0.316,
+        "reasons": {
+          "sanity": 316,
+          "nightWins": 683,
+          "tiebreak": 1
+        },
+        "endingNight": {
+          "1": 9,
+          "2": 789,
+          "3": 202
+        },
+        "avgActionsPerGame": 27.77,
+        "conservation": "ok"
+      },
+      "crossBA": {
+        "games": 1000,
+        "p0Wins": 510,
+        "p1Wins": 490,
+        "p0WinRate": 0.51,
+        "p1WinRate": 0.49,
+        "firstPlayerWinRate": 0.568,
+        "firstIsP0Rate": 0.486,
+        "sanityEndingRatio": 0.332,
+        "reasons": {
+          "nightWins": 667,
+          "sanity": 332,
+          "tiebreak": 1
+        },
+        "endingNight": {
+          "1": 15,
+          "2": 779,
+          "3": 206
+        },
+        "avgActionsPerGame": 27.68,
+        "conservation": "ok"
+      },
+      "cultMirror": {
+        "games": 600,
+        "p0Wins": 280,
+        "p1Wins": 303,
+        "p0WinRate": 0.4667,
+        "p1WinRate": 0.505,
+        "firstPlayerWinRate": 0.5667,
+        "firstIsP0Rate": 0.4867,
+        "sanityEndingRatio": 0.7883,
+        "reasons": {
+          "sanity": 473,
+          "nightWins": 127
+        },
+        "endingNight": {
+          "1": 124,
+          "2": 428,
+          "3": 48
+        },
+        "avgActionsPerGame": 25.03,
+        "conservation": "ok"
+      },
+      "societyMirror": {
+        "games": 600,
+        "p0Wins": 277,
+        "p1Wins": 321,
+        "p0WinRate": 0.4617,
+        "p1WinRate": 0.535,
+        "firstPlayerWinRate": 0.5133,
+        "firstIsP0Rate": 0.4867,
+        "sanityEndingRatio": 0,
+        "reasons": {
+          "nightWins": 575,
+          "tiebreak": 25
+        },
+        "endingNight": {
+          "2": 431,
+          "3": 169
+        },
+        "avgActionsPerGame": 27.87,
+        "conservation": "ok"
+      },
+      "cultWinAB": 0.54,
+      "cultWinBA": 0.51
+    },
+    {
+      "name": "passive=1/1+packageB-noSleeperNerf",
+      "config": {
+        "ruleOverrides": {
+          "cultSacrificeBonus": 1,
+          "cultAltarBonus": 1
+        },
+        "cardOverrides": {
+          "zealot": {
+            "reasonPower": 2,
+            "madnessPower": 5
+          },
+          "deep-one": {
+            "reasonPower": 4,
+            "madnessPower": 7
+          },
+          "sea-priestess": {
+            "reasonPower": 3,
+            "madnessPower": 4
+          },
+          "bell-claw": {
+            "reasonPower": 5,
+            "madnessPower": 5
+          },
+          "hooded-acolyte": {
+            "madnessPower": 2
+          },
+          "gravedigger": {
+            "reasonPower": 2,
+            "madnessPower": 3
+          },
+          "the-sleeper": {
+            "reasonPower": 7,
+            "madnessPower": 10
+          }
+        }
+      },
+      "crossAB": {
+        "games": 1000,
+        "p0Wins": 481,
+        "p1Wins": 519,
+        "p0WinRate": 0.481,
+        "p1WinRate": 0.519,
+        "firstPlayerWinRate": 0.547,
+        "firstIsP0Rate": 0.486,
+        "sanityEndingRatio": 0.33,
+        "reasons": {
+          "sanity": 330,
+          "nightWins": 669,
+          "tiebreak": 1
+        },
+        "endingNight": {
+          "1": 7,
+          "2": 783,
+          "3": 210
+        },
+        "avgActionsPerGame": 27.83,
+        "conservation": "ok"
+      },
+      "crossBA": {
+        "games": 1000,
+        "p0Wins": 505,
+        "p1Wins": 495,
+        "p0WinRate": 0.505,
+        "p1WinRate": 0.495,
+        "firstPlayerWinRate": 0.559,
+        "firstIsP0Rate": 0.486,
+        "sanityEndingRatio": 0.329,
+        "reasons": {
+          "nightWins": 670,
+          "sanity": 329,
+          "tiebreak": 1
+        },
+        "endingNight": {
+          "1": 17,
+          "2": 788,
+          "3": 195
+        },
+        "avgActionsPerGame": 27.73,
+        "conservation": "ok"
+      },
+      "cultMirror": {
+        "games": 600,
+        "p0Wins": 283,
+        "p1Wins": 307,
+        "p0WinRate": 0.4717,
+        "p1WinRate": 0.5117,
+        "firstPlayerWinRate": 0.5767,
+        "firstIsP0Rate": 0.4867,
+        "sanityEndingRatio": 0.785,
+        "reasons": {
+          "sanity": 471,
+          "nightWins": 129
+        },
+        "endingNight": {
+          "1": 130,
+          "2": 424,
+          "3": 46
+        },
+        "avgActionsPerGame": 24.93,
+        "conservation": "ok"
+      },
+      "societyMirror": {
+        "games": 600,
+        "p0Wins": 277,
+        "p1Wins": 321,
+        "p0WinRate": 0.4617,
+        "p1WinRate": 0.535,
+        "firstPlayerWinRate": 0.5133,
+        "firstIsP0Rate": 0.4867,
+        "sanityEndingRatio": 0,
+        "reasons": {
+          "nightWins": 575,
+          "tiebreak": 25
+        },
+        "endingNight": {
+          "2": 431,
+          "3": 169
+        },
+        "avgActionsPerGame": 27.87,
+        "conservation": "ok"
+      },
+      "cultWinAB": 0.519,
+      "cultWinBA": 0.505
+    },
+    {
+      "name": "passive=1/0+packageB",
+      "config": {
+        "ruleOverrides": {
+          "cultSacrificeBonus": 1,
+          "cultAltarBonus": 0
+        },
+        "cardOverrides": {
+          "zealot": {
+            "reasonPower": 2,
+            "madnessPower": 5
+          },
+          "deep-one": {
+            "reasonPower": 4,
+            "madnessPower": 7
+          },
+          "sea-priestess": {
+            "reasonPower": 3,
+            "madnessPower": 4
+          },
+          "bell-claw": {
+            "reasonPower": 5,
+            "madnessPower": 5
+          },
+          "hooded-acolyte": {
+            "madnessPower": 2
+          },
+          "gravedigger": {
+            "reasonPower": 2,
+            "madnessPower": 3
+          },
+          "the-sleeper": {
+            "reasonPower": 7,
+            "madnessPower": 10
+          }
+        }
+      },
+      "crossAB": {
+        "games": 1000,
+        "p0Wins": 542,
+        "p1Wins": 458,
+        "p0WinRate": 0.542,
+        "p1WinRate": 0.458,
+        "firstPlayerWinRate": 0.518,
+        "firstIsP0Rate": 0.486,
+        "sanityEndingRatio": 0.366,
+        "reasons": {
+          "sanity": 366,
+          "nightWins": 633,
+          "tiebreak": 1
+        },
+        "endingNight": {
+          "1": 10,
+          "2": 774,
+          "3": 216
+        },
+        "avgActionsPerGame": 27.72,
+        "conservation": "ok"
+      },
+      "crossBA": {
+        "games": 1000,
+        "p0Wins": 451,
+        "p1Wins": 549,
+        "p0WinRate": 0.451,
+        "p1WinRate": 0.549,
+        "firstPlayerWinRate": 0.539,
+        "firstIsP0Rate": 0.486,
+        "sanityEndingRatio": 0.363,
+        "reasons": {
+          "nightWins": 635,
+          "sanity": 363,
+          "tiebreak": 2
+        },
+        "endingNight": {
+          "1": 22,
+          "2": 783,
+          "3": 195
+        },
+        "avgActionsPerGame": 27.59,
+        "conservation": "ok"
+      },
+      "cultMirror": {
+        "games": 600,
+        "p0Wins": 278,
+        "p1Wins": 314,
+        "p0WinRate": 0.4633,
+        "p1WinRate": 0.5233,
+        "firstPlayerWinRate": 0.5583,
+        "firstIsP0Rate": 0.4867,
+        "sanityEndingRatio": 0.7817,
+        "reasons": {
+          "sanity": 469,
+          "nightWins": 131
+        },
+        "endingNight": {
+          "1": 133,
+          "2": 420,
+          "3": 47
+        },
+        "avgActionsPerGame": 24.98,
+        "conservation": "ok"
+      },
+      "societyMirror": {
+        "games": 600,
+        "p0Wins": 277,
+        "p1Wins": 321,
+        "p0WinRate": 0.4617,
+        "p1WinRate": 0.535,
+        "firstPlayerWinRate": 0.5133,
+        "firstIsP0Rate": 0.4867,
+        "sanityEndingRatio": 0,
+        "reasons": {
+          "nightWins": 575,
+          "tiebreak": 25
+        },
+        "endingNight": {
+          "2": 431,
+          "3": 169
+        },
+        "avgActionsPerGame": 27.87,
+        "conservation": "ok"
+      },
+      "cultWinAB": 0.458,
+      "cultWinBA": 0.451
+    },
+    {
+      "name": "passive=1/1+packageB+extra",
+      "config": {
+        "ruleOverrides": {
+          "cultSacrificeBonus": 1,
+          "cultAltarBonus": 1
+        },
+        "cardOverrides": {
+          "zealot": {
+            "reasonPower": 2,
+            "madnessPower": 4
+          },
+          "deep-one": {
+            "reasonPower": 4,
+            "madnessPower": 6
+          },
+          "sea-priestess": {
+            "reasonPower": 3,
+            "madnessPower": 4
+          },
+          "bell-claw": {
+            "reasonPower": 5,
+            "madnessPower": 5
+          },
+          "hooded-acolyte": {
+            "madnessPower": 2
+          },
+          "gravedigger": {
+            "reasonPower": 2,
+            "madnessPower": 3
+          },
+          "the-sleeper": {
+            "reasonPower": 7,
+            "madnessPower": 10
+          }
+        }
+      },
+      "crossAB": {
+        "games": 1000,
+        "p0Wins": 487,
+        "p1Wins": 513,
+        "p0WinRate": 0.487,
+        "p1WinRate": 0.513,
+        "firstPlayerWinRate": 0.547,
+        "firstIsP0Rate": 0.486,
+        "sanityEndingRatio": 0.333,
+        "reasons": {
+          "sanity": 333,
+          "nightWins": 666,
+          "tiebreak": 1
+        },
+        "endingNight": {
+          "1": 9,
+          "2": 779,
+          "3": 212
+        },
+        "avgActionsPerGame": 27.83,
+        "conservation": "ok"
+      },
+      "crossBA": {
+        "games": 1000,
+        "p0Wins": 495,
+        "p1Wins": 505,
+        "p0WinRate": 0.495,
+        "p1WinRate": 0.505,
+        "firstPlayerWinRate": 0.561,
+        "firstIsP0Rate": 0.486,
+        "sanityEndingRatio": 0.335,
+        "reasons": {
+          "nightWins": 664,
+          "sanity": 335,
+          "tiebreak": 1
+        },
+        "endingNight": {
+          "1": 20,
+          "2": 783,
+          "3": 197
+        },
+        "avgActionsPerGame": 27.73,
+        "conservation": "ok"
+      },
+      "cultMirror": {
+        "games": 600,
+        "p0Wins": 283,
+        "p1Wins": 308,
+        "p0WinRate": 0.4717,
+        "p1WinRate": 0.5133,
+        "firstPlayerWinRate": 0.5717,
+        "firstIsP0Rate": 0.4867,
+        "sanityEndingRatio": 0.7833,
+        "reasons": {
+          "sanity": 470,
+          "nightWins": 130
+        },
+        "endingNight": {
+          "1": 132,
+          "2": 422,
+          "3": 46
+        },
+        "avgActionsPerGame": 24.96,
+        "conservation": "ok"
+      },
+      "societyMirror": {
+        "games": 600,
+        "p0Wins": 277,
+        "p1Wins": 321,
+        "p0WinRate": 0.4617,
+        "p1WinRate": 0.535,
+        "firstPlayerWinRate": 0.5133,
+        "firstIsP0Rate": 0.4867,
+        "sanityEndingRatio": 0,
+        "reasons": {
+          "nightWins": 575,
+          "tiebreak": 25
+        },
+        "endingNight": {
+          "2": 431,
+          "3": 169
+        },
+        "avgActionsPerGame": 27.87,
+        "conservation": "ok"
+      },
+      "cultWinAB": 0.513,
+      "cultWinBA": 0.495
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "ok": true,
+  "games": 2000,
+  "seedPrefix": "balance-v1.2-final",
+  "engineVersion": "v1.2 final (shipped defaults)",
+  "groups": [
+    {
+      "label": "crossAB (P0 Society / P1 Cult)",
+      "games": 2000,
+      "p0Wins": 1023,
+      "p1Wins": 977,
+      "draws": 0,
+      "p0WinRate": 0.5115,
+      "p1WinRate": 0.4885,
+      "firstPlayerWinRate": 0.5365,
+      "sanityEndingRatio": 0.341,
+      "reasons": {
+        "nightWins": 1316,
+        "sanity": 682,
+        "tiebreak": 2
+      },
+      "endingNight": {
+        "1": 25,
+        "2": 1569,
+        "3": 406
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "crossBA (P0 Cult / P1 Society)",
+      "games": 2000,
+      "p0Wins": 969,
+      "p1Wins": 1031,
+      "draws": 0,
+      "p0WinRate": 0.4845,
+      "p1WinRate": 0.5155,
+      "firstPlayerWinRate": 0.5515,
+      "sanityEndingRatio": 0.3485,
+      "reasons": {
+        "nightWins": 1301,
+        "sanity": 697,
+        "tiebreak": 2
+      },
+      "endingNight": {
+        "1": 45,
+        "2": 1593,
+        "3": 362
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "cult mirror",
+      "games": 1200,
+      "p0Wins": 552,
+      "p1Wins": 609,
+      "draws": 39,
+      "p0WinRate": 0.46,
+      "p1WinRate": 0.5075,
+      "firstPlayerWinRate": 0.5542,
+      "sanityEndingRatio": 0.8142,
+      "reasons": {
+        "nightWins": 223,
+        "sanity": 977
+      },
+      "endingNight": {
+        "1": 256,
+        "2": 836,
+        "3": 108
+      },
+      "conservation": "ok"
+    },
+    {
+      "label": "society mirror",
+      "games": 1200,
+      "p0Wins": 578,
+      "p1Wins": 619,
+      "draws": 3,
+      "p0WinRate": 0.4817,
+      "p1WinRate": 0.5158,
+      "firstPlayerWinRate": 0.5017,
+      "sanityEndingRatio": 0,
+      "reasons": {
+        "nightWins": 1156,
+        "tiebreak": 44
+      },
+      "endingNight": {
+        "2": 911,
+        "3": 289
+      },
+      "conservation": "ok"
+    }
+  ]
+}
