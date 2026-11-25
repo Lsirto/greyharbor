@@ -58,7 +58,14 @@ export const SIDE = Object.freeze({
 export const ZONE = Object.freeze({
   BOARD: 'board',
   ATTACHED: 'attached',
+  /** The location-effect slot of one player (a card instance). */
   LOCATION_SLOT: 'locationSlot',
+  /**
+   * A bare location ("row") rather than a card in it.  Used by effects that
+   * choose one of the three places, e.g. Warding Rite.  Pseudo target shape:
+   *   { kind: 'locationRow', uid: 'p0-scene', player, location }
+   */
+  LOCATION_ROW: 'locationRow',
   ENVIRONMENT: 'environment',
   DECK: 'deck',
   HAND: 'hand',

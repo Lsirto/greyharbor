@@ -74,9 +74,12 @@ function sanitizeEvent(event, pov) {
     delete out.face;
   }
   if (out.type === 'peek' && out.player !== pov) {
-    delete out.cardId;
-    delete out.name;
-    delete out.sourceUid;
+    // Arthur's shown card is public (§9.10); only private peeks are redacted.
+    if (out.private !== false) {
+      delete out.cardId;
+      delete out.name;
+      delete out.sourceUid;
+    }
   }
   return out;
 }

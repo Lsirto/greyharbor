@@ -24,3 +24,6 @@ research/__pycache__/
 
 # local servers / logs
 *.log
+
+# temporary debug/probe scripts from agent runs
+scripts-tools/

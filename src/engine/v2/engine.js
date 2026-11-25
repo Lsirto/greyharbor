@@ -19,20 +19,26 @@ import {
   SANITY_MIN,
   clampSanity,
   countCards,
+  currentUnitPower,
   faceForSanity,
   hasBacklash,
   hasKeyword,
   hasUnsealedAltar,
+  isCorruptionImmune,
+  isSealImmune,
   isStealth,
   isUnitCard,
   scorePlayer,
 } from './scoring.js';
 import {
   effectsFor,
+  equipmentSpecFor,
   hasSacrificeReplacement,
 } from './effects/registry.js';
 import { SIDE, TRIGGER } from './effects/dsl.js';
 import {
+  canPlayCard,
+  choiceEntryMatches,
   enumerateEffectChoices,
   makeContext,
   runTrigger,
@@ -419,15 +425,13 @@ export class EngineV2 {
     const card = this.cardIndex[inst.cardId];
     if (!card) return fail(`unknown card: ${inst.cardId}`);
 
-    const sanityCost = Math.max(0, card.sanityCost ?? 0);
-    if (sanityCost > player.sanity) return fail(`${card.name} costs ${sanityCost} sanity`);
-
+    const baseSanityCost = Math.max(0, card.sanityCost ?? 0);
     const face = faceForSanity(player.sanity);
     let plan;
     switch (card.type) {
       case 'unit':
       case 'oldgod':
-        plan = this._validateUnitPlay(p, card, action, face, sanityCost);
+        plan = this._validateUnitPlay(p, card, action, face, baseSanityCost);
         break;
       case 'event':
       case 'ritual':
@@ -449,10 +453,17 @@ export class EngineV2 {
     }
     if (!plan.ok) return plan;
 
+    // Old Library: the first archive card each night costs 1 less, but only
+    // when the discount actually reduces a positive printed cost (§5.4).
+    const discount = this._archiveDiscount(p, plan, baseSanityCost);
+    const sanityCost = Math.max(0, baseSanityCost - discount);
+    if (sanityCost > player.sanity) return fail(`${card.name} costs ${sanityCost} sanity`);
+
     // Commit.
     player.hand.splice(handIndex, 1);
     inst.face = face;
     inst.enteredNight = state.night;
+    if (discount > 0) this.state.players[p].flags.libraryDiscountUsed = true;
     if (sanityCost > 0) this._changeSanity(p, -sanityCost, 'sanityCost');
 
     if (plan.kind === 'unit') {
@@ -554,6 +565,18 @@ export class EngineV2 {
     return { ok: true };
   }
 
+  _archiveDiscount(p, plan, baseCost) {
+    if (baseCost < 1) return 0;
+    const player = this.state.players[p];
+    if (player.flags.libraryDiscountUsed) return 0;
+    const library = player.locations?.archive;
+    if (!library || library.cardId !== 'old-library' || library.sealed) return 0;
+    const archivePlay = (plan.kind === 'unit' && plan.location === 'archive')
+      || (plan.kind === 'location' && plan.location === 'archive');
+    if (!archivePlay) return 0;
+    return 1;
+  }
+
   _validateUnitPlay(p, card, action, face, sanityCost) {
     const player = this.state.players[p];
     const location = action.location;
@@ -601,10 +624,18 @@ export class EngineV2 {
 
   _validateEffectCardPlay(p, card, action, face) {
     const source = { kind: 'card', cardId: card.id, player: p, location: null, slot: null, inst: null };
+    if (!this._playConditionAllows(p, card.id, source, action.choice)) {
+      return fail(`${card.name} cannot be played right now`);
+    }
     const choiceError = this._validateEffectChoice(p, card, source, action.choice, false);
     if (choiceError) return fail(choiceError);
     void face;
     return { ok: true, kind: card.type };
+  }
+
+  _playConditionAllows(p, cardId, source, choice) {
+    const ctx = makeContext(this, p, source, { trigger: TRIGGER.ON_PLAY, choice: choice ?? null });
+    return canPlayCard(this, ctx, cardId);
   }
 
   _validateEquipmentPlay(p, card, action) {
@@ -656,24 +687,34 @@ export class EngineV2 {
       if (choice) return `${card.name} has no legal enter-effect target`;
       return null;
     }
-    if (!choice) return `${card.name} requires an enter-effect choice`;
-    const match = choiceList.find(
-      (entry) => entry && entry.mode === choice.mode
-        && (entry.targetUid ?? null) === (choice.targetUid ?? null),
-    );
+    if (!choice) {
+      // A skip/decline mode makes an omitted choice legal.
+      const skip = choiceList.find((entry) => entry && this._isSkipChoice(card.id, entry.mode));
+      return skip ? null : `${card.name} requires an enter-effect choice`;
+    }
+    const match = choiceList.find((entry) => choiceEntryMatches(entry, choice));
     if (!match) return `illegal enter-effect choice for ${card.name}`;
     return null;
   }
 
-  _effectChoiceList(p, cardId, source) {
+  _isSkipChoice(cardId, mode) {
+    const entries = effectsFor(cardId) ?? [];
+    for (const entry of entries) {
+      if (!Array.isArray(entry.choices)) continue;
+      if (entry.choices.some((choice) => choice.id === mode && choice.skip)) return true;
+    }
+    return false;
+  }
+
+  _effectChoiceList(p, cardId, source, trigger = TRIGGER.ON_PLAY) {
     const entries = effectsFor(cardId) ?? [];
     const modal = entries.find(
-      (entry) => entry.trigger === TRIGGER.ON_PLAY
+      (entry) => entry.trigger === trigger
         && Array.isArray(entry.choices)
         && entry.choices.length > 0,
     );
     if (!modal) return null;
-    const ctx = makeContext(this, p, source, { trigger: TRIGGER.ON_PLAY });
+    const ctx = makeContext(this, p, source, { trigger });
     return enumerateEffectChoices(this, ctx, modal);
   }
 
@@ -692,17 +733,26 @@ export class EngineV2 {
     void card;
   }
 
-  _runOnReveal(p, inst) {
+  _runOnReveal(p, inst, choice = null) {
     const entries = effectsFor(inst.cardId) ?? [];
     if (!entries.length) return;
-    const ctx = makeContext(this, p, {
+    const source = {
       kind: 'card',
       cardId: inst.cardId,
       inst,
       player: p,
       location: inst.location,
       slot: inst.slot,
-    }, { trigger: TRIGGER.ON_REVEAL });
+    };
+    const hasModal = entries.some(
+      (entry) => entry.trigger === TRIGGER.ON_REVEAL
+        && Array.isArray(entry.choices)
+        && entry.choices.length > 0,
+    );
+    // Forced reveals (night end, effect-driven reveals) have no interactive
+    // choice; resolve the first legal mode deterministically.
+    const resolvedChoice = hasModal && !choice ? this._autoChoice(p, inst, this.cardIndex[inst.cardId], TRIGGER.ON_REVEAL) : choice;
+    const ctx = makeContext(this, p, source, { trigger: TRIGGER.ON_REVEAL, choice: resolvedChoice });
     runTrigger(this, ctx, TRIGGER.ON_REVEAL);
   }
 
@@ -720,27 +770,43 @@ export class EngineV2 {
     const uids = action.uids;
     if (!Array.isArray(uids) || uids.length === 0) return fail('reveal needs at least one uid');
     if (new Set(uids).size !== uids.length) return fail('reveal uids must be unique');
+    if (action.choice && uids.length !== 1) {
+      return fail('a reveal choice needs exactly one revealed card');
+    }
     for (const uid of uids) {
       const target = resolveTargetByUid(this, uid);
       if (!target || target.kind !== 'unit' || target.player !== p) {
         return fail(`card ${uid} is not an own board unit`);
       }
       if (!target.inst.faceDown) return fail(`card ${uid} is already face-up`);
+      if (action.choice) {
+        const source = {
+          kind: 'card',
+          cardId: target.inst.cardId,
+          inst: target.inst,
+          player: p,
+          location: target.location,
+          slot: target.slot,
+        };
+        const choiceList = this._effectChoiceList(p, target.inst.cardId, source, TRIGGER.ON_REVEAL);
+        const match = choiceList && choiceList.find((entry) => choiceEntryMatches(entry, action.choice));
+        if (!match) return fail('illegal reveal choice');
+      }
     }
 
-    for (const uid of uids) this._revealByUid(uid, 'turn');
+    for (const uid of uids) this._revealByUid(uid, 'turn', action.choice ?? null);
     if (this._checkSanityZero()) return { ok: true };
     this._autoPassStuck();
     return { ok: true };
   }
 
-  _revealByUid(uid, via) {
+  _revealByUid(uid, via, choice = null) {
     const target = resolveTargetByUid(this, uid);
     if (!target || target.kind !== 'unit' || !target.inst.faceDown) return;
-    this._revealInstance(target.player, target.inst, target.location, target.slot, via);
+    this._revealInstance(target.player, target.inst, target.location, target.slot, via, choice);
   }
 
-  _revealInstance(p, inst, location, slot, via) {
+  _revealInstance(p, inst, location, slot, via, choice = null) {
     if (!inst.faceDown) return;
     inst.faceDown = false;
     this._emit({
@@ -755,7 +821,7 @@ export class EngineV2 {
       via,
     });
     const card = this.cardIndex[inst.cardId];
-    this._runOnReveal(p, inst);
+    this._runOnReveal(p, inst, choice);
     this._maybeBacklash(p, inst, card, { context: 'reveal' });
   }
 
@@ -1020,7 +1086,7 @@ export class EngineV2 {
     this._maybeBacklash(p, inst, card, { context: 'entry' });
   }
 
-  _autoChoice(p, inst, card) {
+  _autoChoice(p, inst, card, trigger = TRIGGER.ON_PLAY) {
     const list = this._effectChoiceList(p, card.id, {
       kind: 'card',
       cardId: card.id,
@@ -1028,10 +1094,17 @@ export class EngineV2 {
       location: inst.location,
       slot: inst.slot,
       inst,
-    });
+    }, trigger);
     if (!list || !list.length) return null;
-    const first = list.find((entry) => entry);
-    return first ? { mode: first.mode, targetUid: first.targetUid } : null;
+    const first = list.find((entry) => entry && !this._isSkipChoice(card.id, entry.mode));
+    return first
+      ? {
+        mode: first.mode,
+        targetUid: first.targetUid,
+        secondaryUids: first.secondaryUids ?? [],
+        replaceWithUid: first.replaceWithUid ?? null,
+      }
+      : null;
   }
 
   // ── sacrifice / abyss ───────────────────────────────────────────────
@@ -1168,6 +1241,19 @@ export class EngineV2 {
     if (target.kind === 'unit' && target.inst.faceDown) {
       throw new Error('face-down cards cannot be sealed');
     }
+    if (isSealImmune(this.state, target.player, target.inst, target.location ?? null)) {
+      this._emit({
+        type: 'sealBlocked',
+        player: ctx?.controller ?? null,
+        targetPlayer: target.player,
+        uid: target.uid,
+        cardId: target.inst.cardId,
+        kind: target.kind,
+        reason: 'immune',
+      });
+      return false;
+    }
+    if (this._trySilverLantern(target, 'seal')) return false;
     const refreshed = !!target.inst.sealed;
     target.inst.sealed = true;
     target.inst.sealedNight = this.state.night;
@@ -1181,11 +1267,68 @@ export class EngineV2 {
       duration,
       refreshed,
     });
+    return true;
+  }
+
+  /**
+   * Silver Lantern replacement (§5.6/§9.9): when the equipped host is about to
+   * be sealed or destroyed, discard the unsealed lantern instead and cancel
+   * the event.  Sacrifice/devour never route through this helper.
+   */
+  _trySilverLantern(target, eventKind) {
+    if (target?.kind !== 'unit' || !target.inst) return false;
+    const equipment = target.inst.equipment;
+    if (!equipment || equipment.sealed) return false;
+    const spec = equipmentSpecFor(equipment.cardId);
+    if (!spec) return false;
+    if (eventKind === 'seal' && !spec.replaceOnSeal) return false;
+    if (eventKind === 'destroy' && !spec.replaceOnDestroy) return false;
+    target.inst.equipment = null;
+    equipment.attachedTo = null;
+    this._discardInstance(target.player, equipment, 'silverLantern');
+    this._emit({
+      type: 'silverLanternReplace',
+      player: target.player,
+      hostUid: target.uid,
+      equipmentUid: equipment.uid,
+      event: eventKind,
+    });
+    return true;
+  }
+
+  _sealLeader(targetPlayer, duration = 'untilNextNight', ctx = null) {
+    const player = this.state.players[targetPlayer];
+    if (!player?.leaderId) return false;
+    const refreshed = !!player.leaderSealed;
+    player.leaderSealed = true;
+    this._emit({
+      type: 'sealLeader',
+      player: ctx?.controller ?? null,
+      targetPlayer,
+      leaderId: player.leaderId,
+      duration,
+      refreshed,
+    });
+    return true;
+  }
+
+  _removeSeal(target) {
+    if (!target?.inst || !target.inst.sealed) return;
+    target.inst.sealed = false;
+    target.inst.sealedNight = null;
+    this._emit({
+      type: 'sealRemoved',
+      targetPlayer: target.player,
+      uid: target.uid,
+      cardId: target.inst.cardId,
+      kind: target.kind,
+    });
   }
 
   _applyCorruption(controller, target, amount = 1, ctx = null) {
     if (!target?.inst || target.kind !== 'unit') return;
     if (target.inst.faceDown) return;
+    if (isCorruptionImmune(this.state, target.player, target.inst, target.location ?? null)) return;
     const { state } = this;
     const inst = target.inst;
     inst.corruptionTokens ??= [];
@@ -1255,20 +1398,23 @@ export class EngineV2 {
     }
     const inst = hand[randInt(state, hand.length)];
     const card = this.cardIndex[inst.cardId];
-    state.players[controller].privateNotes.push({
-      night: state.night,
-      sourceUid: options.source?.inst?.uid ?? null,
-      targetPlayer,
-      cardId: inst.cardId,
-      name: card?.name ?? inst.cardId,
-    });
+    const isPrivate = options.private !== false;
+    if (isPrivate) {
+      state.players[controller].privateNotes.push({
+        night: state.night,
+        sourceUid: options.source?.inst?.uid ?? null,
+        targetPlayer,
+        cardId: inst.cardId,
+        name: card?.name ?? inst.cardId,
+      });
+    }
     this._emit({
       type: 'peek',
       player: controller,
       targetPlayer,
       cardId: inst.cardId,
       name: card?.name ?? inst.cardId,
-      private: options.private !== false,
+      private: isPrivate,
       night: state.night,
       sourceUid: options.source?.inst?.uid ?? null,
     });
@@ -1341,11 +1487,160 @@ export class EngineV2 {
     return inst;
   }
 
+  _moveDeckToHand(p, uid) {
+    const player = this.state.players[p];
+    const index = player.deck.findIndex((inst) => inst.uid === uid);
+    if (index < 0) return null;
+    const inst = player.deck.splice(index, 1)[0];
+    inst.zone = 'hand';
+    inst.faceDown = false;
+    inst.face = faceForSanity(player.sanity);
+    player.hand.push(inst);
+    this._emit({ type: 'deckToHand', player: p, uid: inst.uid, cardId: inst.cardId });
+    return inst;
+  }
+
+  _revealDeckTop(p, count = 3) {
+    const player = this.state.players[p];
+    const shown = player.deck.slice(0, count).map((inst) => ({
+      uid: inst.uid,
+      cardId: inst.cardId,
+      name: this.cardIndex[inst.cardId]?.name ?? inst.cardId,
+    }));
+    this._emit({ type: 'revealDeckTop', player: p, count: shown.length, cards: shown });
+    return shown;
+  }
+
+  _shuffleDeck(p) {
+    const player = this.state.players[p];
+    player.deck = shuffle(this.state, player.deck);
+    this._emit({ type: 'shuffleDeck', player: p, count: player.deck.length });
+  }
+
+  /**
+   * Register a persistent aura.  `record` is pure data (see registry addAura
+   * ops); `target` is the chosen card/location-row.  Scoring reads these
+   * records for power/seal/corruption modifiers, engine removes them on the
+   * appropriate night boundary.
+   */
+  _addAura(record, target = null) {
+    const state = this.state;
+    const scope = { ...(record.scope ?? {}) };
+    if (scope.locationFromTarget) {
+      scope.location = target?.location ?? null;
+      delete scope.locationFromTarget;
+    }
+    const aura = {
+      id: `aura-${state.effects.length + 1}-${record.cardId ?? 'effect'}`,
+      kind: 'aura',
+      cardId: record.cardId ?? null,
+      sourceUid: record.sourceUid ?? null,
+      sourcePlayer: record.sourcePlayer,
+      duration: record.duration ?? 'thisNight',
+      requiresSourceActive: !!record.requiresSourceActive,
+      scope,
+      modifiers: { ...(record.modifiers ?? {}) },
+      targetUid: target?.uid ?? null,
+      location: scope.location ?? null,
+    };
+    state.effects.push(aura);
+    this._emit({
+      type: 'auraAdded',
+      player: record.sourcePlayer,
+      cardId: aura.cardId,
+      duration: aura.duration,
+      location: aura.location,
+      modifiers: { ...aura.modifiers },
+    });
+    return aura;
+  }
+
+  _expireAuras(duration) {
+    const state = this.state;
+    if (!state.effects?.length) return;
+    const kept = [];
+    for (const aura of state.effects) {
+      if (aura.duration === duration) {
+        this._emit({
+          type: 'auraExpired',
+          player: aura.sourcePlayer,
+          cardId: aura.cardId,
+          duration,
+        });
+      } else {
+        kept.push(aura);
+      }
+    }
+    state.effects = kept;
+  }
+
+  /** Move any on-field card/environment to its owner's ordinary discard pile. */
+  _removeFromPlay(target, reason = 'effect') {
+    const state = this.state;
+    if (!target) return false;
+    const player = state.players[target.player];
+    if (target.kind === 'environment') {
+      const index = state.environments.findIndex((inst) => inst.uid === target.uid);
+      if (index < 0) return false;
+      const inst = state.environments.splice(index, 1)[0];
+      this._discardInstance(inst.owner ?? target.player, inst, reason);
+      return true;
+    }
+    if (target.kind === 'attached') {
+      const host = target.host
+        ?? player.board[target.location]?.[target.slot];
+      if (host?.equipment?.uid === target.uid) {
+        const inst = host.equipment;
+        host.equipment = null;
+        inst.attachedTo = null;
+        this._discardInstance(target.player, inst, reason);
+        return true;
+      }
+      return false;
+    }
+    if (target.kind === 'location') {
+      const inst = player.locations?.[target.location];
+      if (!inst || inst.uid !== target.uid) return false;
+      player.locations[target.location] = null;
+      this._discardInstance(target.player, inst, reason);
+      return true;
+    }
+    if (target.kind === 'unit') {
+      const row = player.board[target.location];
+      const inst = row?.[target.slot];
+      if (!inst || inst.uid !== target.uid) return false;
+      this._detachEquipment(target.player, inst, 'hostLeft');
+      row[target.slot] = null;
+      inst.location = null;
+      inst.slot = null;
+      this._discardInstance(target.player, inst, reason);
+      return true;
+    }
+    return false;
+  }
+
+  /** Generic destroy primitive (currently only exercised by tests). */
+  _destroyTarget(target, reason = 'destroy') {
+    if (!target) return false;
+    if (target.kind === 'unit' && this._trySilverLantern(target, 'destroy')) return false;
+    this._emit({
+      type: 'destroy',
+      targetPlayer: target.player,
+      uid: target.uid,
+      cardId: target.inst?.cardId ?? null,
+      kind: target.kind,
+      reason,
+    });
+    return this._removeFromPlay(target, reason);
+  }
+
   _devour(p, uid, options = {}) {
     const source = options.sourceUid ? resolveTargetByUid(this, options.sourceUid) : null;
     const target = resolveTargetByUid(this, uid);
     if (!target || target.kind !== 'unit') return;
-    const power = target.power ?? 0;
+    // §6.4: Bell-Claw permanently gains the devoured unit's *current* power,
+    // including equipment / night / chain bonuses.
+    const power = currentUnitPower(this.state, target.player, target.inst, target.location, target.slot);
     const sacrificed = this._sacrificeUnit(p, uid, {
       sourceUid: source?.uid ?? null,
       allowReplacement: false,
@@ -1421,6 +1716,7 @@ export class EngineV2 {
 
     // 1. Expire "until next night" effects.
     this._expireSeals();
+    this._expireAuras('untilNextNight');
 
     // 2. Reset per-night counters.
     for (const player of state.players) {
@@ -1667,8 +1963,7 @@ export class EngineV2 {
         }
       }
     }
-    state.effects = state.effects.filter((entry) => entry.duration !== 'thisNight');
-  }
+    state.effects = state.effects.filter((entry) => entry.duration !== 'thisNight');  }
 
   _finalTiebreak() {
     const state = this.state;
@@ -1805,21 +2100,49 @@ export class EngineV2 {
     if (state.passed[p] || state.turnActionTaken) return [];
     const actions = [];
     const all = [];
+    let modalPending = false;
     for (const location of LOCATIONS) {
       const row = state.players[p].board[location];
       for (let slot = 0; slot < row.length; slot++) {
         const inst = row[slot];
         if (!inst?.faceDown) continue;
         all.push(inst.uid);
-        actions.push({
-          type: 'reveal',
+        const source = {
+          kind: 'card',
+          cardId: inst.cardId,
+          inst,
           player: p,
-          uids: [inst.uid],
-          label: `Reveal ${this.cardIndex[inst.cardId]?.name ?? inst.cardId} at ${LOCATION_LABELS[location]}#${slot}`,
-        });
+          location,
+          slot,
+        };
+        const choices = this._effectChoiceList(p, inst.cardId, source, TRIGGER.ON_REVEAL);
+        if (choices && !(choices.length === 1 && choices[0] === null)) {
+          modalPending = true;
+          for (const choice of choices) {
+            actions.push({
+              type: 'reveal',
+              player: p,
+              uids: [inst.uid],
+              choice: {
+                mode: choice.mode,
+                targetUid: choice.targetUid,
+                secondaryUids: choice.secondaryUids ?? [],
+                replaceWithUid: choice.replaceWithUid ?? null,
+              },
+              label: `Reveal ${this.cardIndex[inst.cardId]?.name ?? inst.cardId} (${choice.label})`,
+            });
+          }
+        } else {
+          actions.push({
+            type: 'reveal',
+            player: p,
+            uids: [inst.uid],
+            label: `Reveal ${this.cardIndex[inst.cardId]?.name ?? inst.cardId} at ${LOCATION_LABELS[location]}#${slot}`,
+          });
+        }
       }
     }
-    if (all.length > 1) {
+    if (all.length > 1 && !modalPending) {
       actions.push({ type: 'reveal', player: p, uids: all, label: 'Reveal all face-down cards' });
     }
     return actions;
@@ -1872,7 +2195,12 @@ export class EngineV2 {
                     slot,
                     faceDown,
                     face,
-                    choice: { mode: choice.mode, targetUid: choice.targetUid },
+                    choice: {
+                      mode: choice.mode,
+                      targetUid: choice.targetUid,
+                      secondaryUids: choice.secondaryUids ?? [],
+                      replaceWithUid: choice.replaceWithUid ?? null,
+                    },
                     label: `Play ${card.name} → ${LOCATION_LABELS[location]}#${slot}${faceDown ? ' (face-down)' : ''} (${choice.label})`,
                   });
                 }
@@ -1898,6 +2226,7 @@ export class EngineV2 {
 
       if (card.type === 'event' || card.type === 'ritual') {
         const source = { kind: 'card', cardId: card.id, player: p, location: null, slot: null, inst: null };
+        if (!this._playConditionAllows(p, card.id, source, null)) continue;
         const choices = this._effectChoiceList(p, card.id, source);
         if (choices && choices.length && choices[0] !== null) {
           for (const choice of choices) {
@@ -1910,7 +2239,12 @@ export class EngineV2 {
               slot: null,
               faceDown: false,
               face,
-              choice: { mode: choice.mode, targetUid: choice.targetUid },
+              choice: {
+                mode: choice.mode,
+                targetUid: choice.targetUid,
+                secondaryUids: choice.secondaryUids ?? [],
+                replaceWithUid: choice.replaceWithUid ?? null,
+              },
               label: `Play ${card.name} (${choice.label})`,
             });
           }

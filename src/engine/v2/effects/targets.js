@@ -14,6 +14,7 @@ import {
   currentUnitPower,
   findUnit,
   isCorruptionImmune,
+  isSealImmune,
 } from '../scoring.js';
 import { SIDE, ZONE } from './dsl.js';
 
@@ -65,14 +66,17 @@ function enumerateUnits(engine, ctx, selector) {
         if (selector.sealed !== undefined && !!inst.sealed !== selector.sealed) continue;
         if (selector.faceDown !== undefined && !!inst.faceDown !== selector.faceDown) continue;
         if (selector.adjacentToSource) {
-          const source = ctx.source?.inst;
-          if (!source || ctx.source.location !== location) continue;
-          if (Math.abs(ctx.source.slot - slot) !== 1) continue;
+          const sourceLocation = ctx.source?.location;
+          const sourceSlot = ctx.source?.slot;
+          if (!sourceLocation || sourceLocation !== location) continue;
+          if (!Number.isInteger(sourceSlot)) continue;
+          if (Math.abs(sourceSlot - slot) !== 1) continue;
         }
         if (selector.hasCorruption && !(inst.corruptionTokens?.length > 0)) continue;
         if (selector.canReceiveCorruption && !canReceiveCorruption(state, p, inst, location)) continue;
         if (selector.corruptionImmune === true && !isCorruptionImmune(state, p, inst, location)) continue;
         if (selector.corruptionImmune === false && isCorruptionImmune(state, p, inst, location)) continue;
+        if (selector.sealable && isSealImmune(state, p, inst, location)) continue;
 
         const power = currentUnitPower(state, p, inst, location, slot);
         if (selector.maxCurrentPower !== undefined && power > selector.maxCurrentPower) continue;
@@ -99,6 +103,7 @@ function enumerateAttached(engine, ctx, selector) {
         const card = state.cardIndex?.[equipment.cardId];
         if (!matchesType(card, selector.types)) continue;
         if (selector.sealed !== undefined && !!equipment.sealed !== selector.sealed) continue;
+        if (selector.sealable && isSealImmune(state, p, equipment, location)) continue;
         if (selector.excludeUids?.includes(equipment.uid)) continue;
         if (selector.cardId && equipment.cardId !== selector.cardId) continue;
         out.push({
@@ -128,12 +133,34 @@ function enumerateLocationSlots(engine, ctx, selector) {
       const card = state.cardIndex?.[inst.cardId];
       if (!matchesType(card, selector.types)) continue;
       if (selector.sealed !== undefined && !!inst.sealed !== selector.sealed) continue;
+      if (selector.sealable && isSealImmune(state, p, inst, location)) continue;
       if (selector.excludeUids?.includes(inst.uid)) continue;
       if (selector.cardId && inst.cardId !== selector.cardId) continue;
       out.push({
         kind: 'location',
         uid: inst.uid,
         inst,
+        player: p,
+        location,
+        power: 0,
+      });
+    }
+  }
+  return out;
+}
+
+/** A bare row (location) target, whether or not a location card is present. */
+function enumerateLocationRows(engine, ctx, selector) {
+  void engine;
+  const out = [];
+  for (const p of playersForSide(ctx.controller, selector.side)) {
+    for (const location of LOCATIONS) {
+      if (!locationMatches(selector, ctx, location)) continue;
+      if (selector.excludeLocations?.includes(location)) continue;
+      out.push({
+        kind: 'locationRow',
+        uid: `p${p}-${location}`,
+        inst: null,
         player: p,
         location,
         power: 0,
@@ -153,6 +180,7 @@ function enumerateEnvironments(engine, ctx, selector) {
     const card = state.cardIndex?.[inst.cardId];
     if (!matchesType(card, selector.types)) continue;
     if (selector.sealed !== undefined && !!inst.sealed !== selector.sealed) continue;
+    if (selector.sealable && isSealImmune(state, p, inst, null)) continue;
     if (selector.excludeUids?.includes(inst.uid)) continue;
     if (selector.cardId && inst.cardId !== selector.cardId) continue;
     out.push({ kind: 'environment', uid: inst.uid, inst, player: p, location: null, power: 0 });
@@ -172,7 +200,10 @@ function enumerateCards(engine, ctx, selector, zone) {
           : zone === ZONE.ABYSS
             ? state.players[p].abyss ?? []
             : state.players[p].discard;
-    for (const inst of pile) {
+    const ordered = zone === ZONE.DECK && selector.topN
+      ? pile.slice(0, selector.topN)
+      : pile;
+    for (const inst of ordered) {
       const card = state.cardIndex?.[inst.cardId];
       if (!matchesType(card, selector.types)) continue;
       if (selector.cardId && inst.cardId !== selector.cardId) continue;
@@ -213,6 +244,7 @@ export function enumerateTargets(engine, ctx, selector) {
     if (zone === ZONE.BOARD) targets.push(...enumerateUnits(engine, ctx, selector));
     else if (zone === ZONE.ATTACHED) targets.push(...enumerateAttached(engine, ctx, selector));
     else if (zone === ZONE.LOCATION_SLOT) targets.push(...enumerateLocationSlots(engine, ctx, selector));
+    else if (zone === ZONE.LOCATION_ROW) targets.push(...enumerateLocationRows(engine, ctx, selector));
     else if (zone === ZONE.ENVIRONMENT) targets.push(...enumerateEnvironments(engine, ctx, selector));
     else if (zone === ZONE.DECK || zone === ZONE.HAND || zone === ZONE.ABYSS || zone === ZONE.DISCARD) {
       targets.push(...enumerateCards(engine, ctx, selector, zone));

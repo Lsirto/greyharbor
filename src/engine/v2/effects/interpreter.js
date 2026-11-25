@@ -37,6 +37,18 @@ export function evalCondition(engine, ctx, condition) {
       const p = condition.side === SIDE.ENEMY ? 1 - ctx.controller : ctx.controller;
       return engine.state.players[p].hand.length > 0;
     }
+    case 'handEmpty': {
+      const p = condition.side === SIDE.ENEMY ? 1 - ctx.controller : ctx.controller;
+      return engine.state.players[p].hand.length === 0;
+    }
+    case 'deckNotEmpty': {
+      const p = condition.side === SIDE.ENEMY ? 1 - ctx.controller : ctx.controller;
+      return engine.state.players[p].deck.length > 0;
+    }
+    case 'deckEmpty': {
+      const p = condition.side === SIDE.ENEMY ? 1 - ctx.controller : ctx.controller;
+      return engine.state.players[p].deck.length === 0;
+    }
     case 'deckHasAberration': {
       const p = condition.side === SIDE.ENEMY ? 1 - ctx.controller : ctx.controller;
       return engine.state.players[p].deck.some((inst) => engine._isAberration(inst.cardId));
@@ -81,7 +93,15 @@ function getSelected(engine, ctx, key, selector, choice) {
   let targets;
   if (choiceMatches) {
     const resolved = resolveTargetByUid(engine, choice.targetUid);
-    targets = resolved ? [resolved] : [];
+    if (resolved) {
+      targets = [resolved];
+    } else {
+      // Pseudo targets (e.g. a bare location row chosen by Warding Rite) are
+      // not resolvable by uid, so fall back to the selector enumeration.
+      targets = selector
+        ? enumerateTargets(engine, ctx, selector).filter((entry) => entry.uid === choice.targetUid)
+        : [];
+    }
   } else if (selector) {
     targets = enumerateTargets(engine, ctx, selector);
   } else {
@@ -122,19 +142,26 @@ export function runEffect(engine, ctx, effectDef, extra = {}) {
       if (!choice) return;
       throw new Error(`illegal effect choice for ${effectDef.id}: no legal mode`);
     }
-    const legalMode = choice?.mode ?? null;
-    const match = legal.find((entry) => entry && entry.mode === legalMode
-      && (entry.targetUid ?? null) === (choice?.targetUid ?? null));
-    if (!match) {
-      throw new Error(`illegal effect choice for ${effectDef.id}: ${legalMode}`);
+    // An omitted choice is the explicit "decline" option when one exists.
+    let effectiveChoice = choice;
+    if (!effectiveChoice) {
+      const skipEntry = legal.find((entry) => entry && isSkipMode(effectDef, entry.mode));
+      if (!skipEntry) {
+        throw new Error(`effect ${effectDef.id} requires a choice`);
+      }
+      effectiveChoice = { mode: skipEntry.mode, targetUid: null, secondaryUids: [] };
     }
-    const chosen = effectDef.choices.find((entry) => entry.id === legalMode);
-    if (!chosen) throw new Error(`unknown effect choice: ${legalMode}`);
+    const chosen = effectDef.choices.find((entry) => entry.id === effectiveChoice.mode);
+    if (!chosen) throw new Error(`unknown effect choice: ${effectiveChoice.mode}`);
+    const match = legal.find((entry) => choiceEntryMatches(entry, effectiveChoice));
+    if (!match) {
+      throw new Error(`illegal effect choice for ${effectDef.id}: ${effectiveChoice.mode}`);
+    }
     if (!evalCondition(engine, ctx, chosen.condition)) return;
-    // Merge the player's concrete selection ({targetUid, ...}) with the
-    // registry definition so operations can resolve the chosen target; the
-    // definition alone only carries the selector, not the picked uid.
-    const executionChoice = { ...chosen, ...ctx.choice };
+    // Merge the player's concrete selection ({targetUid, secondaryUids, ...})
+    // with the registry definition so operations can resolve the chosen
+    // targets; the definition alone only carries selectors.
+    const executionChoice = { ...chosen, ...effectiveChoice };
     for (const operation of chosen.operations ?? []) {
       runOperation(engine, ctx, effectDef, executionChoice, operation);
     }
@@ -144,6 +171,22 @@ export function runEffect(engine, ctx, effectDef, extra = {}) {
   for (const operation of effectDef.operations ?? []) {
     runOperation(engine, ctx, effectDef, null, operation);
   }
+}
+
+function isSkipMode(effectDef, mode) {
+  return (effectDef.choices ?? []).some((entry) => entry.id === mode && entry.skip);
+}
+
+export function choiceEntryMatches(entry, choice) {
+  if (!entry) return false;
+  if (entry.mode !== choice?.mode) return false;
+  if ((entry.targetUid ?? null) !== (choice?.targetUid ?? null)) return false;
+  const a = [...(entry.secondaryUids ?? [])].sort();
+  const b = [...(choice?.secondaryUids ?? [])].sort();
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  if ((entry.replaceWithUid ?? null) !== (choice?.replaceWithUid ?? null)) return false;
+  return true;
 }
 
 function runOperation(engine, ctx, effectDef, choice, operation) {
@@ -249,13 +292,70 @@ function runOperation(engine, ctx, effectDef, choice, operation) {
       return;
     }
     case 'moveAbyssToHand': {
-      const targets = operationTargets(engine, ctx, effectDef, choice, operation);
-      for (const target of targets) engine._moveAbyssToHand(target.player, target.uid);
+      const key = operation.secondaryKey ?? operation.secondary?.key ?? 'secondaryUids';
+      const raw = ctx.choice?.[key] ?? ctx.choice?.secondaryUids ?? [];
+      const uids = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+      const limit = operation.max ?? uids.length;
+      for (const uid of uids.slice(0, limit)) engine._moveAbyssToHand(ctx.controller, uid);
+      return;
+    }
+    case 'moveDeckToHand': {
+      const key = operation.secondaryKey ?? operation.cardKey ?? operation.secondary?.key ?? 'secondaryUids';
+      const raw = ctx.choice?.[key] ?? ctx.choice?.secondaryUids ?? [];
+      const uids = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+      const limit = operation.max ?? uids.length;
+      for (const uid of uids.slice(0, limit)) engine._moveDeckToHand(ctx.controller, uid);
+      return;
+    }
+    case 'revealDeckTop': {
+      engine._revealDeckTop(ctx.controller, operation.count ?? 3);
+      return;
+    }
+    case 'shuffleDeck': {
+      engine._shuffleDeck(ctx.controller);
+      return;
+    }
+    case 'addAura': {
+      for (const target of operationTargets(engine, ctx, effectDef, choice, operation)) {
+        engine._addAura({
+          cardId: ctx.source?.cardId ?? null,
+          sourceUid: ctx.source?.inst?.uid ?? null,
+          sourcePlayer: ctx.controller,
+          duration: operation.duration ?? 'thisNight',
+          requiresSourceActive: !!operation.requiresSourceActive,
+          scope: { ...(operation.scope ?? {}) },
+          modifiers: { ...(operation.modifiers ?? {}) },
+        }, target);
+      }
+      return;
+    }
+    case 'removeFromPlay': {
+      for (const target of operationTargets(engine, ctx, effectDef, choice, operation)) {
+        engine._removeFromPlay(target, operation.reason ?? 'effect');
+      }
+      return;
+    }
+    case 'destroy': {
+      for (const target of operationTargets(engine, ctx, effectDef, choice, operation)) {
+        engine._destroyTarget(target, operation.reason ?? 'destroy');
+      }
+      return;
+    }
+    case 'removeSeal': {
+      for (const target of operationTargets(engine, ctx, effectDef, choice, operation)) {
+        engine._removeSeal(target);
+      }
+      return;
+    }
+    case 'sealLeader': {
+      for (const target of operationTargets(engine, ctx, effectDef, choice, operation)) {
+        if (target.kind === 'leader') {
+          engine._sealLeader(target.player, operation.duration ?? 'untilNextNight', ctx);
+        }
+      }
       return;
     }
     case 'devour': {
-      // Extension point for Bell-Claw (phase 2.2b): a devour is a sacrifice
-      // plus a permanent power transfer.  No v1 pilot uses it yet.
       const targets = operationTargets(engine, ctx, effectDef, choice, operation);
       const target = targets[0];
       if (!target) return;
@@ -270,38 +370,119 @@ function runOperation(engine, ctx, effectDef, choice, operation) {
 }
 
 /**
- * Enumerate every legal (mode, targetUid) pair for a modal effect.
- * Returns `[]` for non-modal effects and `[null]` when every mode fizzles
- * (the card is still playable, it simply has no effect).
+ * Every k-sized subset of `items`, in stable order.
+ */
+function combinations(items, k) {
+  if (k === 0) return [[]];
+  if (items.length < k) return [];
+  const out = [];
+  const walk = (start, chosen) => {
+    if (chosen.length === k) {
+      out.push(chosen.slice());
+      return;
+    }
+    for (let i = start; i < items.length; i++) {
+      chosen.push(items[i]);
+      walk(i + 1, chosen);
+      chosen.pop();
+    }
+  };
+  walk(0, []);
+  return out;
+}
+
+function secondarySelections(engine, ctx, secondary) {
+  if (!secondary) return [[]];
+  const selector = secondary.selector ?? {};
+  const max = secondary.max ?? selector.count ?? 1;
+  const candidates = enumerateCandidates(engine, ctx, { ...selector, count: undefined });
+  const min = secondary.required === false ? 0 : Math.min(1, max);
+  if (candidates.length < min) return [];
+  const out = [];
+  for (let size = min; size <= Math.min(max, candidates.length); size++) {
+    for (const combo of combinations(candidates, size)) {
+      out.push(combo);
+    }
+  }
+  return out;
+}
+
+function replacementSelections(engine, ctx, replacements, primaryUid) {
+  if (!replacements) return [null];
+  const key = replacements.key ?? 'replaceWithUid';
+  const candidates = engine._replacementCandidates
+    ? engine._replacementCandidates(ctx.controller, primaryUid)
+    : [];
+  void key;
+  return [null, ...candidates.map((inst) => inst.uid)];
+}
+
+/**
+ * Enumerate every legal (mode, targetUid, secondaryUids, replaceWithUid) tuple
+ * for a modal effect.  Returns `[]` for non-modal effects and `[null]` when
+ * every mode fizzles (the card is still playable, it simply has no effect).
+ *
+ * `choice.skip` marks an optional "decline" mode; it is only offered while at
+ * least one real mode is legal.  Otherwise the effect collapses to [null].
  */
 export function enumerateEffectChoices(engine, ctx, effectDef) {
   if (!Array.isArray(effectDef.choices) || !effectDef.choices.length) return [];
   const out = [];
+  const skips = [];
+
   for (const choice of effectDef.choices) {
     if (!evalCondition(engine, ctx, choice.condition)) continue;
-    const key = choiceKeyFor(choice);
-    const selector = choice.target;
-    if (!selector) {
-      out.push({ mode: choice.id, targetUid: null, label: choice.label ?? choice.id });
+    if (choice.skip) {
+      skips.push(choice);
       continue;
     }
-    if (selector.required !== false && selector.required === true) {
-      const targets = enumerateCandidates(engine, ctx, selector);
-      if (!targets.length) continue;
-      for (const target of targets) {
-        out.push({ mode: choice.id, targetUid: target.uid, label: choice.label ?? choice.id });
-      }
+
+    let primaries;
+    if (!choice.target) {
+      primaries = [null];
     } else {
-      const targets = enumerateCandidates(engine, ctx, selector);
-      if (!targets.length) {
-        out.push({ mode: choice.id, targetUid: null, label: choice.label ?? choice.id });
+      const candidates = enumerateCandidates(engine, ctx, choice.target);
+      if (choice.target.required === true) {
+        if (!candidates.length) continue;
+        primaries = candidates;
       } else {
-        for (const target of targets) {
-          out.push({ mode: choice.id, targetUid: target.uid, label: choice.label ?? choice.id });
+        primaries = candidates.length ? candidates : [null];
+      }
+    }
+
+    for (const primary of primaries) {
+      const secondaries = secondarySelections(engine, ctx, choice.secondary);
+      if (!secondaries.length) continue;
+      const replacements = replacementSelections(
+        engine,
+        ctx,
+        choice.replacements,
+        primary?.uid ?? null,
+      );
+      for (const secondary of secondaries) {
+        for (const replaceWithUid of replacements) {
+          out.push({
+            mode: choice.id,
+            targetUid: primary?.uid ?? null,
+            secondaryUids: secondary.map((entry) => entry.uid),
+            replaceWithUid,
+            label: choice.label ?? choice.id,
+          });
         }
       }
     }
-    void key;
+  }
+
+  if (out.length) {
+    for (const choice of skips) {
+      out.push({
+        mode: choice.id,
+        targetUid: null,
+        secondaryUids: [],
+        replaceWithUid: null,
+        label: choice.label ?? choice.id,
+      });
+    }
   }
   return out.length ? out : [null];
 }
@@ -309,6 +490,26 @@ export function enumerateEffectChoices(engine, ctx, effectDef) {
 /** Non-modal effects never require a choice; modal ones validate it. */
 export function requiresChoice(effectDef) {
   return Array.isArray(effectDef?.choices) && effectDef.choices.length > 0;
+}
+
+/**
+ * Evaluate an effect-level `playCondition` (a condition that gates whether the
+ * card can be played at all, e.g. Séance's mandatory sacrifice).  Conditions
+ * on individual effects still only gate resolution.
+ */
+export function canPlayCard(engine, ctx, cardId) {
+  const entries = effectsFor(cardId) ?? [];
+  for (const effectDef of entries) {
+    if (effectDef.trigger !== TRIGGER.ON_PLAY) continue;
+    if (!effectDef.playCondition) continue;
+    const context = makeContext(engine, ctx.controller, ctx.source, {
+      trigger: TRIGGER.ON_PLAY,
+      choice: ctx.choice,
+      ...ctx.extra,
+    });
+    if (!evalCondition(engine, context, effectDef.playCondition)) return false;
+  }
+  return true;
 }
 
 export { TRIGGER, ZONE };

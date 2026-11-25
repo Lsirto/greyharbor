@@ -1,0 +1,89 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+import {
+  EFFECT_REGISTRY,
+  KEYWORD_ONLY_CARDS,
+  effectsFor,
+  isRegistered,
+} from '../../src/engine/v2/index.js';
+
+const cardTable = JSON.parse(
+  readFileSync(new URL('../../src/data/card-table.normalized.json', import.meta.url), 'utf8'),
+);
+const cardIds = cardTable.map((entry) => entry.id);
+
+/**
+ * Explicit null whitelist.  Each card's printed text is *already completely
+ * covered* by an engine primitive, so a DSL effect array would only duplicate
+ * the shared implementation.  Every id carries its own reason:
+ *
+ * - lucia-vaughn: 引擎原语已完整覆盖——梦境原生隐秘的「必须盖牌进入梦境」由
+ *   dream admission / stealth 引擎原语实现（§4.4、§11.1）；卡面文字只是准入
+ *   提示，没有额外的翻开时效果。
+ * - frank-holt: 引擎原语已完整覆盖——「每有 1 张相邻己方卡 +1，上限 +3」完全
+ *   由共享的 KEYWORD_SPECS.chain + scoring.chainCount 原语实现（§6.5、§11.1），
+ *   没有专属操作。
+ * - finn-calloway: 引擎原语已完整覆盖——「每有 1 张相邻己方卡 +1，上限 +2」
+ *   同样由 chain 原语实现（§6.5、§11.3）；不带隐秘所以不能主动进梦境，也由
+ *   梦境准入原语覆盖。
+ */
+const NULL_WHITELIST = Object.freeze({
+  'lucia-vaughn': '引擎原语已完整覆盖：梦境原生隐秘的盖牌入场由 dream admission / stealth 原语实现；无额外翻开效果（§4.4/§11.1）',
+  'frank-holt': '引擎原语已完整覆盖：相邻己方卡连锁 +1 上限 +3 由 KEYWORD_SPECS.chain + scoring.chainCount 共享原语实现（§6.5/§11.1）',
+  'finn-calloway': '引擎原语已完整覆盖：相邻己方卡连锁 +1 上限 +2 由同一 chain 原语实现；不带隐秘不能主动进梦境（§6.5/§11.3）',
+});
+
+test('card table declares exactly 30 unique card ids', () => {
+  assert.equal(cardIds.length, 30, 'the normalized card table has 30 cards');
+  assert.equal(new Set(cardIds).size, 30, 'card ids are unique');
+});
+
+test('all 30 cards are covered by a non-empty effect array or the explicit null whitelist', () => {
+  for (const id of cardIds) {
+    assert.ok(
+      Object.prototype.hasOwnProperty.call(EFFECT_REGISTRY, id),
+      `${id} must have an EFFECT_REGISTRY entry (do not ship a new card without implementation)`,
+    );
+    const registered = EFFECT_REGISTRY[id];
+    if (registered === null) {
+      assert.ok(
+        Object.prototype.hasOwnProperty.call(NULL_WHITELIST, id),
+        `${id} is null only when its whole text is covered by an engine primitive`,
+      );
+      assert.equal(effectsFor(id), null, `${id}: effectsFor mirrors the null registration`);
+      assert.equal(isRegistered(id), false, `${id}: a null card is not a registered effect card`);
+    } else {
+      assert.ok(
+        Array.isArray(registered) && registered.length > 0,
+        `${id} must register a non-empty effect array (or an explicitly justified null)`,
+      );
+      assert.equal(effectsFor(id), registered, `${id}: effectsFor mirrors EFFECT_REGISTRY`);
+      assert.equal(isRegistered(id), true, `${id}: a non-empty array is registered`);
+    }
+  }
+});
+
+test('the null whitelist is exactly the three documented engine-primitive cards', () => {
+  assert.deepEqual(
+    Object.keys(NULL_WHITELIST).sort(),
+    ['finn-calloway', 'frank-holt', 'lucia-vaughn'],
+    'only these three cards may be registered as null',
+  );
+  assert.deepEqual(
+    Object.keys(NULL_WHITELIST).sort(),
+    Object.keys(KEYWORD_ONLY_CARDS).sort(),
+    'the test whitelist and the registry keyword-only note must agree',
+  );
+  for (const id of Object.keys(NULL_WHITELIST)) {
+    assert.equal(EFFECT_REGISTRY[id], null, `${id} is actually registered null`);
+    assert.ok(NULL_WHITELIST[id].length > 0, `${id} documents why engine primitives fully cover it`);
+  }
+});
+
+test('EFFECT_REGISTRY has no orphan ids outside the card table', () => {
+  for (const id of Object.keys(EFFECT_REGISTRY)) {
+    assert.ok(cardIds.includes(id), `${id} is a card-table id, not a stale registry entry`);
+  }
+});

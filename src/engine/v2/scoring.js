@@ -9,7 +9,13 @@
  * stored aura state.  A face-down or sealed card contributes no chain bonus.
  */
 
-import { chainSpecFor } from './effects/registry.js';
+import {
+  chainSpecFor,
+  conditionalPowerSpecFor,
+  equipmentSpecFor,
+  isSealImmuneCard,
+  madnessPowerBonusFor,
+} from './effects/registry.js';
 
 export const LOCATIONS = Object.freeze(['scene', 'archive', 'dream']);
 
@@ -71,8 +77,12 @@ export function hasChain(card) {
 /** Printed power for the locked face.  Non-units have no power. */
 export function printedPower(card, face) {
   if (!isUnitCard(card)) return 0;
-  if (face === 'madness') return card.madnessPower ?? card.reasonPower ?? 0;
-  return card.reasonPower ?? card.madnessPower ?? 0;
+  const base = face === 'madness'
+    ? (card.madnessPower ?? card.reasonPower ?? 0)
+    : (card.reasonPower ?? card.madnessPower ?? 0);
+  // §11.2 Zealot / Deep One: "疯狂面基础 +3".  The bonus is a printed-power
+  // modifier on the madness face, so it also shows correctly in views.
+  return base + (face === 'madness' ? madnessPowerBonusFor(card.id) : 0);
 }
 
 export function boardUnits(state, p) {
@@ -104,16 +114,23 @@ export function hasUnsealedAltar(state, p) {
 }
 
 /**
- * Corruption immunity is a flag on the instance.  §6.3 names Old Library as
- * a source; the location card itself is implemented in phase 2.2b, but the
- * keyword primitive still honours its presence for archive cards so the
- * immunity/retarget rule is testable today.
+ * Corruption immunity.  Three sources:
+ *   1. an instance flag (`corruptionImmune`, used by tests/future cards),
+ *   2. Old Library while unsealed, for every own card in the archive,
+ *   3. a Warding Rite aura with `corruptionImmune` for the chosen location.
+ * Existing tokens are never removed by immunity (§6.3).
  */
 export function isCorruptionImmune(state, p, inst, location) {
   if (inst?.corruptionImmune) return true;
   if (location === 'archive') {
     const library = state.players[p].locations?.archive;
     if (library && library.cardId === 'old-library' && !library.sealed) return true;
+  }
+  const card = state.cardIndex?.[inst?.cardId];
+  for (const aura of state.effects ?? []) {
+    if (!aura.modifiers?.corruptionImmune) continue;
+    if (!auraApplies(aura, state, p, inst, location, card)) continue;
+    return true;
   }
   return false;
 }
@@ -123,6 +140,97 @@ export function canReceiveCorruption(state, p, inst, location) {
   if (!isUnitCard(state.cardIndex?.[inst.cardId])) return false;
   if ((inst.corruptionTokens?.length ?? 0) >= 3) return false;
   return !isCorruptionImmune(state, p, inst, location);
+}
+
+/** Locate one instance anywhere it can live (board, equipment, locations, env). */
+export function findInstanceByUid(state, uid) {
+  for (const p of [0, 1]) {
+    const player = state.players[p];
+    for (const location of LOCATIONS) {
+      const row = player.board[location];
+      for (const inst of row) {
+        if (!inst) continue;
+        if (inst.uid === uid) return { inst, player: p, location, slot: inst.slot };
+        if (inst.equipment?.uid === uid) {
+          return { inst: inst.equipment, player: p, location, slot: inst.slot, host: inst };
+        }
+      }
+      if (player.locations?.[location]?.uid === uid) {
+        return { inst: player.locations[location], player: p, location, slot: null };
+      }
+    }
+  }
+  for (const inst of state.environments ?? []) {
+    if (inst.uid === uid) return { inst, player: inst.owner, location: null, slot: null };
+  }
+  return null;
+}
+
+/** An aura whose source card must still be present and unsealed. */
+export function isAuraActive(state, aura) {
+  if (!aura.requiresSourceActive) return true;
+  const found = aura.sourceUid ? findInstanceByUid(state, aura.sourceUid) : null;
+  if (!found) return false;
+  return !found.inst.sealed;
+}
+
+/** Does one aura cover this card?  Scope is public, data-only. */
+export function auraApplies(aura, state, p, inst, location, card) {
+  if (!aura || !isAuraActive(state, aura)) return false;
+  const scope = aura.scope ?? {};
+  if (scope.side === 'own' && p !== aura.sourcePlayer) return false;
+  if (scope.location && location !== scope.location) return false;
+  if (scope.types && (!card || !scope.types.includes(card.type))) return false;
+  if (scope.faceUpOnly !== false && inst?.faceDown) return false;
+  return true;
+}
+
+/** Sum of this-night aura power modifiers for one board unit. */
+export function auraPowerBonus(state, p, inst, location, card) {
+  let bonus = 0;
+  for (const aura of state.effects ?? []) {
+    if (!auraApplies(aura, state, p, inst, location, card)) continue;
+    bonus += aura.modifiers?.power ?? 0;
+    const facePower = aura.modifiers?.facePower;
+    if (facePower && inst?.face) bonus += facePower[inst.face] ?? 0;
+  }
+  return bonus;
+}
+
+/**
+ * Seal immunity.  The Sleeper is immune by card text; Warding Rite grants it
+ * to every own card in the chosen location (including the location card).
+ * Existing seals are not cleared by immunity.
+ */
+export function isSealImmune(state, p, inst, location) {
+  if (!inst) return false;
+  if (isSealImmuneCard(inst.cardId)) return true;
+  const card = state.cardIndex?.[inst.cardId];
+  for (const aura of state.effects ?? []) {
+    if (!aura.modifiers?.sealImmune) continue;
+    if (!auraApplies(aura, state, p, inst, location, card)) continue;
+    return true;
+  }
+  return false;
+}
+
+/** Thousand Eyes' public-count static power (§11.3). */
+export function conditionalSelfPower(state, p, inst, location) {
+  const spec = conditionalPowerSpecFor(inst?.cardId);
+  if (!spec || inst.sealed || inst.faceDown) return 0;
+  if (spec.kind === 'enemyFaceUpStealth') {
+    const enemy = state.players[1 - p];
+    let count = 0;
+    for (const rowLocation of LOCATIONS) {
+      for (const entry of enemy.board[rowLocation]) {
+        if (!entry || entry.faceDown || entry.sealed) continue;
+        if (isStealth(state.cardIndex?.[entry.cardId])) count += 1;
+      }
+    }
+    return count * (spec.per ?? 1);
+  }
+  void location;
+  return 0;
 }
 
 function chainCount(state, p, inst, location, slot) {
@@ -146,12 +254,13 @@ function chainCount(state, p, inst, location, slot) {
   return Number.isFinite(spec.cap) ? Math.min(spec.cap, count) : count;
 }
 
-/** Equipment bonuses.  Silver Lantern's +2 is text (2.2b); the primitive is here. */
+/** Equipment bonuses.  Silver Lantern's +2 comes from KEYWORD_SPECS. */
 function equipmentBonus(state, inst) {
   const equipment = inst.equipment;
   if (!equipment || equipment.sealed) return 0;
   const card = state.cardIndex?.[equipment.cardId];
-  return (equipment.powerBonus ?? 0) + (card?.powerBonus ?? 0);
+  const spec = equipmentSpecFor(equipment.cardId);
+  return (equipment.powerBonus ?? 0) + (card?.powerBonus ?? 0) + (spec?.power ?? 0);
 }
 
 /** Player-wide "this night" auras; §7.2 cult sacrifice echo currently. */
@@ -178,6 +287,8 @@ export function currentUnitPower(state, p, inst, location, slot) {
   power -= inst.corruptionLoss ?? 0;
   power += equipmentBonus(state, inst);
   power += thisNightBonus(state, p, inst);
+  power += auraPowerBonus(state, p, inst, location, card);
+  power += conditionalSelfPower(state, p, inst, location);
   power += chainCount(state, p, inst, location, slot);
   return Math.max(0, power);
 }
