@@ -1,0 +1,149 @@
+/* ============================================================
+   styles-v2/screens.css — phase 3.3 screen router + result overlay.
+   Relies on theme.css tokens only; no external resources.
+   ============================================================ */
+
+.gh2-screen {
+  display: none;
+  min-height: 100vh;
+  padding: 20px 16px 40px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+.gh2-screen[hidden] { display: none !important; }
+.gh2-screen.is-active { display: block; opacity: 1; transform: translateY(0); }
+.gh2-screen--menu { padding-top: min(8vh, 72px); }
+.gh2-screen--faction { padding-top: 32px; }
+
+.gh2-screen--game {
+  max-width: 1640px;
+  margin: 0 auto;
+  padding: 12px 18px 32px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+.gh2-screen--game.is-active { display: flex; }
+.gh2-game-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 2px;
+}
+.gh2-game-top__tag {
+  color: var(--gh2-silver-faint);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+}
+
+/* Board + controls keep their phase 3.2 layout inside the shell. */
+.gh2-screen--game .gh2-play-controls-host,
+.gh2-screen--game .gh2-board { width: 100%; }
+
+/* The shell provides its own result wrapper; hide the in-controls modal. */
+.gh2-screen--game.is-over .gh2-modal { display: none !important; }
+
+/* ── result overlay ────────────────────────────────────────── */
+
+.gh2-result-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 8, 10, 0.82);
+  backdrop-filter: blur(3px);
+}
+.gh2-result-layer[hidden] { display: none !important; }
+.gh2-result-panel {
+  width: min(620px, 94vw);
+  max-height: 92vh;
+  overflow: auto;
+  padding: 30px 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  border: 1px solid var(--gh2-lamp-dim);
+  border-radius: var(--gh2-radius);
+  background: linear-gradient(160deg, rgba(232, 201, 138, 0.09), var(--gh2-ink-1) 55%);
+  box-shadow: var(--gh2-shadow), var(--gh2-glow-lamp);
+}
+.gh2-result-panel__seal {
+  color: var(--gh2-lamp);
+  font-size: 13px;
+  letter-spacing: 0.3em;
+}
+.gh2-result-panel__title {
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 38px;
+  letter-spacing: 0.12em;
+}
+.gh2-result-panel__reason { color: var(--gh2-silver-dim); font-size: 14px; }
+.gh2-result-panel__history {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  color: var(--gh2-silver);
+  font-size: 13px;
+}
+.gh2-result-panel__history caption {
+  padding-bottom: 6px;
+  color: var(--gh2-lamp-dim);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+.gh2-result-panel__history th,
+.gh2-result-panel__history td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--gh2-line-soft);
+  text-align: left;
+}
+.gh2-result-panel__history th { color: var(--gh2-silver-faint); font-weight: normal; }
+.gh2-result-panel__seed { color: var(--gh2-silver-faint); font-size: 12px; }
+.gh2-result-panel__seed code { color: var(--gh2-cult-glow); }
+.gh2-result-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.gh2-result-panel__actions .gh2-menu-btn { min-width: 240px; }
+
+/* ── leader composer modal steps ───────────────────────────── */
+
+.gh2-modal__panel--leader { max-width: 560px; }
+.gh2-leader-steps {
+  margin: 8px 0;
+  padding-left: 22px;
+  color: var(--gh2-silver-faint);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.gh2-leader-step.is-done { color: var(--gh2-cult-glow); }
+.gh2-leader-step.is-active { color: var(--gh2-lamp); font-weight: bold; }
+.gh2-modal__skip,
+.gh2-modal__cancel {
+  padding: 7px 14px;
+  color: var(--gh2-silver-dim);
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: transparent;
+  cursor: pointer;
+}
+.gh2-modal__skip { border-color: var(--gh2-cult); color: var(--gh2-cult-glow); }
+.gh2-modal__skip:hover,
+.gh2-modal__cancel:hover { border-color: var(--gh2-lamp); color: var(--gh2-lamp); }
+
+@media (max-width: 1024px) {
+  .gh2-screen { padding: 16px 10px 32px; }
+  .gh2-screen--game { padding: 10px 10px 24px; }
+  .gh2-result-panel { padding: 22px 20px; }
+  .gh2-result-panel__title { font-size: 30px; }
+}

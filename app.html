@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>灰港三夜 · 正式入口</title>
+  <meta name="description" content="阶段 3.3：主菜单、阵营选择、牌局模式与完整对局流程。UI 只经 buildView 读取、只经 apply 写入。">
+
+  <link rel="stylesheet" href="./src/styles-v2/theme.css">
+  <link rel="stylesheet" href="./src/styles-v2/card.css">
+  <link rel="stylesheet" href="./src/styles-v2/board.css">
+  <link rel="stylesheet" href="./src/styles-v2/interaction.css">
+  <link rel="stylesheet" href="./src/styles-v2/menu.css">
+  <link rel="stylesheet" href="./src/styles-v2/screens.css">
+
+  <!-- Same browser-only shim as play.html / game.html: the v2 engine reads
+       its canonical card table through node:fs in Node. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "node:fs": "./src/ui-v2/shims/fs-browser.mjs"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="gh2-app" id="app"></div>
+
+  <script type="module">
+    import { createAppShell } from './src/ui-v2/menu/app-shell.mjs';
+
+    try {
+      const app = createAppShell({ root: document.getElementById('app') });
+      window.__greyharborApp = app;
+    } catch (error) {
+      document.getElementById('app').innerHTML =
+        '<div class="gh2-screen gh2-screen--menu is-active"><div class="gh2-main-menu">' +
+        '<h1 class="gh2-main-menu__title">启动失败</h1><p>' +
+        String(error && error.message ? error.message : error).replace(/[<>&"']/g, '') +
+        '</p><p>请使用 npm start 后访问 http://127.0.0.1:8788/app.html</p></div></div>';
+      console.error(error);
+    }
+  </script>
+</body>
+</html>

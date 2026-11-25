@@ -1,9 +1,9 @@
 /**
- * src/ui-v2/game-controller.mjs — human-vs-AI game driver for play.html.
+ * src/ui-v2/game-controller.mjs — human-vs-AI game driver for play.html / app.html.
  *
- * The human is always seat 0 (Society, Harold Ashby); the AI is seat 1
- * (Cult, Elias Thorne).  Faction selection is intentionally deferred to a
- * later phase.  Both sides are driven exclusively through `buildView`
+ * The human is always seat 0 and the AI seat 1; `matchConfig.humanFaction`
+ * decides which preset deck each seat receives (society → cult, or the
+ * reverse).  Both sides are driven exclusively through `buildView`
  * (`engine.viewFor(pov)`) and `engine.apply(action)`:
  *
  *   - the human picks one of the exact objects in buildView(0).actions via
@@ -12,10 +12,15 @@
  *     chooseAction(), and is stepped through injectable timers so the whole
  *     match is observable in the browser.
  *
+ * Harold's single-target skill keeps its original flow.  When the human sits
+ * with the cult, Elias' four-field action is driven by `leader-composer.mjs`.
+ *
  * Every imperative method used by the DOM handlers is public, which makes a
  * complete headless human-vs-AI match scriptable with a fake renderer and a
  * queued `schedule` function (see tests/ui-v2/game-controller.test.mjs).
- * No Math.random: the only randomness is the engine's injected seed.
+ * No Math.random: match randomness is the engine's injected seed; only a
+ * `random` seed mode generates a fresh seed, via injected generator or
+ * `crypto.randomUUID` in the browser.
  */
 
 import { createGame } from '../engine/v2/index.js';
@@ -24,14 +29,62 @@ import { createBoardRenderer } from './board-render.mjs';
 import { publicActionLabel } from './demo-controller.mjs';
 import { findMatchingActions, matchAction } from './action-matcher.mjs';
 import { createSelection } from './selection.mjs';
+import { createLeaderComposer, LEADER_STEPS, LEADER_STEP_LABELS } from './leader-composer.mjs';
 import { asArray, asObject, escapeHtml, safeInt } from './utils.mjs';
 
 export const DEFAULT_PLAY_SEED = 'greyharbor-seed-1';
 export const DEFAULT_AI_DELAY_MS = 460;
+export const HUMAN_SEAT = 0;
+export const AI_SEAT = 1;
 
-const HUMAN = 0;
-const AI = 1;
-const DECKS = ['society', 'cult'];
+/** A seat-0 faction maps to the ordered deck pair handed to createGame(). */
+export const FACTION_DECK_ORDER = Object.freeze({
+  society: Object.freeze(['society', 'cult']),
+  cult: Object.freeze(['cult', 'society']),
+});
+
+const FACTION_NAMES_ZH = Object.freeze({ society: '学会', cult: '教团' });
+
+export const DEFAULT_MATCH_CONFIG = Object.freeze({
+  humanFaction: 'society',
+  seedMode: 'fixed',
+  baseSeed: DEFAULT_PLAY_SEED,
+});
+
+const HUMAN = HUMAN_SEAT;
+const AI = AI_SEAT;
+
+/**
+ * Normalise the public match configuration.  The legacy top-level `seed`
+ * option is accepted as a base seed so play.html and older scripts keep
+ * working unchanged.
+ */
+export function normalizeMatchConfig(raw = {}, legacySeed) {
+  const input = asObject(raw);
+  const humanFaction = input.humanFaction === 'cult' ? 'cult' : 'society';
+  const seedMode = input.seedMode === 'random' ? 'random' : 'fixed';
+  const candidate = input.baseSeed ?? legacySeed ?? DEFAULT_PLAY_SEED;
+  const baseSeed = typeof candidate === 'string' && candidate.length > 0
+    ? candidate
+    : DEFAULT_PLAY_SEED;
+  return Object.freeze({ humanFaction, seedMode, baseSeed });
+}
+
+function isNodeRuntime() {
+  return typeof process !== 'undefined' && !!asObject(process.versions).node;
+}
+
+/** Browser: crypto.randomUUID.  Node: an injected generator is mandatory. */
+function resolveSeedGenerator(options, seedMode) {
+  if (seedMode !== 'random') return null;
+  if (typeof options.seedGenerator === 'function') return options.seedGenerator;
+  if (typeof options.randomSeed === 'function') return options.randomSeed;
+  const webCrypto = typeof globalThis !== 'undefined' ? globalThis.crypto : null;
+  if (!isNodeRuntime() && webCrypto && typeof webCrypto.randomUUID === 'function') {
+    return () => webCrypto.randomUUID();
+  }
+  throw new TypeError('random seed mode needs an injected seedGenerator in Node');
+}
 
 const EVENT_NAMES_ZH = Object.freeze({
   gameStart: '开局',
@@ -75,7 +128,9 @@ function reasonText(view) {
 
 export function createGameController(options = {}) {
   const opts = asObject(options);
-  const seed = opts.seed ?? DEFAULT_PLAY_SEED;
+  const matchConfig = normalizeMatchConfig(opts.matchConfig, opts.seed ?? opts.baseSeed);
+  const seedGenerator = resolveSeedGenerator(opts, matchConfig.seedMode);
+  let seed = matchConfig.baseSeed;
   const aiDelay = Number.isFinite(opts.aiDelay) && opts.aiDelay >= 0
     ? opts.aiDelay
     : DEFAULT_AI_DELAY_MS;
@@ -121,6 +176,13 @@ export function createGameController(options = {}) {
   let aiSteps = 0;
   let toastStack = opts.toastRoot ?? null;
   let decorated = [];
+  const toastTimers = new Set();
+  let gameOverNotified = false;
+
+  const composer = createLeaderComposer({
+    commit: (action) => commit(action),
+    labelFor: (stepKey, value, action) => leaderCandidateLabel(stepKey, value, action),
+  });
 
   const toast = typeof opts.toast === 'function'
     ? opts.toast
@@ -139,9 +201,11 @@ export function createGameController(options = {}) {
     item.textContent = String(text);
     toastStack.appendChild(item);
     while (toastStack.children.length > 5) toastStack.removeChild(toastStack.firstChild);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      toastTimers.delete(timer);
       if (item.parentNode) item.parentNode.removeChild(item);
     }, 3400);
+    toastTimers.add(timer);
   }
 
   function say(text, tone = 'info') {
@@ -150,8 +214,46 @@ export function createGameController(options = {}) {
   }
 
   function newEngine() {
-    engine = createGame({ seed, names: ['你 · 学会', 'AI · 教团'], decks: DECKS.slice() });
+    seed = matchConfig.seedMode === 'random'
+      ? String(seedGenerator())
+      : matchConfig.baseSeed;
+    const decks = FACTION_DECK_ORDER[matchConfig.humanFaction].slice();
+    const myFaction = FACTION_NAMES_ZH[matchConfig.humanFaction];
+    const foeFaction = FACTION_NAMES_ZH[decks[AI]];
+    engine = createGame({
+      seed,
+      names: [`你 · ${myFaction}`, `AI · ${foeFaction}`],
+      decks,
+    });
     aiSteps = 0;
+    gameOverNotified = false;
+  }
+
+  /** Display labels come from the human view; candidate values come from actions. */
+  function leaderCandidateLabel(stepKey, value, action) {
+    const lookup = (uid) => {
+      if (!uid || !view) return null;
+      for (let player = 0; player < 2; player += 1) {
+        const sections = [asArray(view.players[player]?.hand), ...['scene', 'archive', 'dream']
+          .map((location) => asArray(asObject(view.players[player]?.board)[location]))];
+        for (const list of sections) {
+          const card = list.find((entry) => entry?.uid === uid);
+          if (card) return card.nameZh || card.name || uid;
+        }
+      }
+      return null;
+    };
+    if (stepKey === 'sacrifice') return `献祭 ${lookup(value.sacrificeUid) ?? value.sacrificeUid}`;
+    if (stepKey === 'aberration') {
+      const match = /→\s*([^\s@]+)/.exec(String(asObject(action).label ?? ''));
+      return `召唤异怪 ${match?.[1] ?? value.cardUid}`;
+    }
+    if (stepKey === 'placement') {
+      return `${LOCATION_ZH[value.location] ?? value.location} #${value.slot + 1}（明放）`;
+    }
+    return value.replaceWithUid === null
+      ? '不替换 · 跳过'
+      : `替代信徒 ${lookup(value.replaceWithUid) ?? value.replaceWithUid}`;
   }
 
   // ── rendering / decoration ──────────────────────────────────────────
@@ -269,6 +371,8 @@ export function createGameController(options = {}) {
         status = `对局结束 · ${reasonText(view)} · ${RESULT_REASON_ZH[result.reason] ?? result.reason ?? '对局结束'}`;
       } else if (mode === 'leader-target') {
         status = '领袖目标选择中 · 点击高亮的敌方单位，或按取消返回';
+      } else if (modal?.kind === 'leader-compose') {
+        status = `伊莱亚斯领袖编排 · ${asObject(modal.composerState).stepLabel ?? ''} · 可取消回到选牌态`;
       } else if (selectedUid) {
         status = `已选中手牌 ${selectedUid} · 点击高亮落点${directConfirm ? '，或点击「确认出牌」' : ''}`;
       } else {
@@ -299,15 +403,33 @@ export function createGameController(options = {}) {
         const options = asArray(modal.options).map((option, index) =>
           `<button type="button" class="gh2-modal__option" data-gh2-choice="${index}">${escapeHtml(option.label ?? `选项 ${index + 1}`)}</button>`,
         ).join('');
-        const restart = modal.kind === 'result'
-          ? '<button type="button" class="gh2-modal__restart" data-gh2="restart">再来一局</button>'
-          : '<button type="button" class="gh2-modal__cancel" data-gh2="modal-cancel">取消</button>';
-        modalEl.innerHTML = `<div class="gh2-modal__panel" role="dialog" aria-modal="true">
-          <h3 class="gh2-modal__title">${escapeHtml(modal.title ?? '请选择')}</h3>
-          <p class="gh2-modal__hint">${escapeHtml(modal.hint ?? '')}</p>
-          <div class="gh2-modal__options">${options}</div>
-          <div class="gh2-modal__foot">${restart}</div>
-        </div>`;
+        if (modal.kind === 'leader-compose') {
+          const state = asObject(modal.composerState);
+          const steps = LEADER_STEPS.map((key, index) => {
+            const cls = index === state.stepIndex ? 'is-active' : index < state.stepIndex ? 'is-done' : '';
+            return `<li class="gh2-leader-step ${cls}">${escapeHtml(LEADER_STEP_LABELS[key])}</li>`;
+          }).join('');
+          const skip = state.step === 'replacement'
+            ? '<button type="button" class="gh2-modal__skip" data-gh2="composer-skip">跳过替换</button>'
+            : '';
+          modalEl.innerHTML = `<div class="gh2-modal__panel gh2-modal__panel--leader" role="dialog" aria-modal="true">
+            <h3 class="gh2-modal__title">${escapeHtml(modal.title ?? '领袖编排')}</h3>
+            <ol class="gh2-leader-steps">${steps}</ol>
+            <p class="gh2-modal__hint">${escapeHtml(modal.hint ?? '')}</p>
+            <div class="gh2-modal__options">${options}</div>
+            <div class="gh2-modal__foot">${skip}<button type="button" class="gh2-modal__cancel" data-gh2="modal-cancel">取消编排</button></div>
+          </div>`;
+        } else {
+          const restart = modal.kind === 'result'
+            ? '<button type="button" class="gh2-modal__restart" data-gh2="restart">再来一局</button>'
+            : '<button type="button" class="gh2-modal__cancel" data-gh2="modal-cancel">取消</button>';
+          modalEl.innerHTML = `<div class="gh2-modal__panel" role="dialog" aria-modal="true">
+            <h3 class="gh2-modal__title">${escapeHtml(modal.title ?? '请选择')}</h3>
+            <p class="gh2-modal__hint">${escapeHtml(modal.hint ?? '')}</p>
+            <div class="gh2-modal__options">${options}</div>
+            <div class="gh2-modal__foot">${restart}</div>
+          </div>`;
+        }
       }
     }
   }
@@ -499,6 +621,88 @@ export function createGameController(options = {}) {
     return commit(option.action);
   }
 
+  // ── Elias leader composer ───────────────────────────────────────────
+
+  function syncComposerModal() {
+    const state = composer.snapshot();
+    if (!state.active || modal?.kind !== 'leader-compose') return;
+    modal.composerState = state;
+    modal.title = `伊莱亚斯领袖编排 · ${state.stepLabel}`;
+    modal.hint = '候选均来自当前合法领袖动作；最终只提交唯一匹配的真实动作，随时可取消回到选牌态';
+    modal.options = state.candidates.map((candidate) => ({
+      label: candidate.label,
+      candidateId: candidate.id,
+      actionIndex: -1,
+    }));
+  }
+
+  function beginLeaderComposer(leaderActions) {
+    const state = composer.begin(leaderActions);
+    if (!state.ok) {
+      say(state.error || '领袖编排不可用', 'warn');
+      return false;
+    }
+    selectedUid = null;
+    highlights = [];
+    selectionHighlights = [];
+    directConfirm = false;
+    modal = { kind: 'leader-compose', title: '', hint: '', options: [], composerState: state };
+    syncComposerModal();
+    message = '领袖编排进行中';
+    paint();
+    return true;
+  }
+
+  function composerChoose(index) {
+    if (inputLocked) {
+      say('AI 思考中，请稍候', 'warn');
+      return false;
+    }
+    if (modal?.kind !== 'leader-compose') return false;
+    const state = composer.snapshot();
+    const candidate = state.candidates[safeInt(index, -1)];
+    if (!candidate) {
+      say('该选项已失效，请重新选择', 'warn');
+      paint();
+      return false;
+    }
+    const result = composer.choose(candidate.id);
+    if (!result.ok) {
+      say(result.error, 'warn');
+      composerCancel();
+      return false;
+    }
+    if (result.done) {
+      modal = null;
+      message = '领袖技已发动';
+      return true;
+    }
+    syncComposerModal();
+    paint();
+    return true;
+  }
+
+  function composerSkip() {
+    if (modal?.kind !== 'leader-compose') return false;
+    const result = composer.skip();
+    if (!result.ok) {
+      say(result.error, 'warn');
+      return false;
+    }
+    modal = null;
+    message = '领袖技已发动（未替换信徒）';
+    return true;
+  }
+
+  function composerCancel() {
+    composer.cancel();
+    if (modal?.kind === 'leader-compose') modal = null;
+    highlights = selectionHighlights.slice();
+    message = '已取消领袖编排，回到选牌';
+    paint();
+    return true;
+  }
+
   // ── committing actions ──────────────────────────────────────────────
 
   function recordEvents(events, who) {
@@ -532,7 +736,7 @@ export function createGameController(options = {}) {
         return `你出牌${place}`;
       }
       case 'reveal': return `你翻开 ${asArray(data.uids).length} 张盖牌`;
-      case 'useLeader': return '你使用领袖技';
+      case 'useLeader': return data.sacrificeUid ? '你献祭并召唤异怪' : '你使用领袖技封印';
       case 'pass': return '你过牌';
       default: return '你行动';
     }
@@ -658,12 +862,37 @@ export function createGameController(options = {}) {
         : result.reason === 'sanity'
           ? `理智 ${safeInt(result.sanity?.[HUMAN], 0)} : ${safeInt(result.sanity?.[AI], 0)}`
           : `终局夜 ${safeInt(result.night, 0)}`;
+      const seedHint = matchConfig.seedMode === 'random'
+        ? '点击「再来一局」用新随机种子重新开局'
+        : '点击「再来一局」用同一固定种子重新开局';
       modal = {
         kind: 'result',
         title: `${reasonText(view)} · ${RESULT_REASON_ZH[result.reason] ?? result.reason ?? '对局结束'}`,
-        hint: `${detail} · 点击「再来一局」用同一固定种子重新开局`,
+        hint: `${detail} · ${seedHint}`,
         options: [],
       };
+      if (!gameOverNotified) {
+        gameOverNotified = true;
+        if (typeof opts.onGameOver === 'function') {
+          try {
+            opts.onGameOver({
+              view,
+              result: result ? { ...result } : null,
+              nightHistory: asArray(view.history).map((entry) => asObject(entry)).map((entry) => ({
+                night: safeInt(entry.night, 0),
+                scores: asArray(entry.scores).map((score) => safeInt(asObject(score).total, 0)),
+                winner: entry.winner ?? null,
+                tie: entry.tie === true,
+                nightWins: asArray(entry.nightWins).slice(),
+              })),
+              seed,
+              matchConfig: { ...matchConfig },
+            });
+          } catch (error) {
+            say(`结算回调失败：${error?.message ?? error}`, 'error');
+          }
+        }
+      }
     } else if (phase === 'mulligan' && done[HUMAN] !== true) {
       mode = 'mulligan';
       inputLocked = false;
@@ -888,6 +1117,9 @@ export function createGameController(options = {}) {
     leaderDisabled = false;
     leaderReason = '';
     selectedUid = null;
+    const eliasActions = leaderActions.filter((action) =>
+      typeof asObject(action).sacrificeUid === 'string' && typeof asObject(action).cardUid === 'string');
+    if (eliasActions.length) return beginLeaderComposer(leaderActions);
     if (leaderActions.every((action) => !!asObject(action).targetUid)) {
       mode = 'leader-target';
       highlights = computeLeaderHighlights();
@@ -907,6 +1139,17 @@ export function createGameController(options = {}) {
       return false;
     }
     if (mode !== 'leader-target') {
+      if (modal?.kind === 'leader-compose') {
+        const state = composer.snapshot();
+        const index = state.candidates.findIndex((candidate) =>
+          candidate.value.sacrificeUid === targetUid || candidate.value.replaceWithUid === targetUid);
+        if (index < 0) {
+          say('该目标不在当前领袖编排选项中', 'warn');
+          paint();
+          return false;
+        }
+        return composerChoose(index);
+      }
       if (modal) return chooseModalOptionByUid(targetUid);
       say('请先点击己方领袖', 'warn');
       return false;
@@ -951,6 +1194,7 @@ export function createGameController(options = {}) {
       return false;
     }
     if (modal?.kind === 'result') return false;
+    if (modal?.kind === 'leader-compose') return composerCancel();
     if (modal) return closeModal();
     if (mode === 'leader-target') {
       mode = 'play';
@@ -986,6 +1230,7 @@ export function createGameController(options = {}) {
     aiScheduled = false;
     mulliganPrepared = false;
     clearInteraction();
+    composer.cancel();
     eventLog = [];
     lastAction = '等待你的第一个动作';
     message = '新对局已开始';
@@ -994,7 +1239,7 @@ export function createGameController(options = {}) {
     mode = 'mulligan';
     newEngine();
     refresh();
-    say('已用相同固定种子重新开局', 'good');
+    say(matchConfig.seedMode === 'random' ? '已用新随机种子重新开局' : '已用相同固定种子重新开局', 'good');
     return view;
   }
 
@@ -1008,6 +1253,13 @@ export function createGameController(options = {}) {
       return;
     }
     if (modal) {
+      if (modal.kind === 'leader-compose') {
+        const card = target.closest('.gh2-card[data-uid]');
+        if (card) {
+          clickTarget(card.dataset.uid);
+          return;
+        }
+      }
       say('请先完成或取消当前选择', 'warn');
       return;
     }
@@ -1039,7 +1291,8 @@ export function createGameController(options = {}) {
     if (!target || typeof target.closest !== 'function') return;
     const choice = target.closest('[data-gh2-choice]');
     if (choice) {
-      chooseModalOption(safeInt(choice.dataset.gh2Choice, -1));
+      if (modal?.kind === 'leader-compose') composerChoose(safeInt(choice.dataset.gh2Choice, -1));
+      else chooseModalOption(safeInt(choice.dataset.gh2Choice, -1));
       return;
     }
     const button = target.closest('[data-gh2]');
@@ -1051,7 +1304,11 @@ export function createGameController(options = {}) {
       case 'reveal-all': revealAll(); break;
       case 'cancel': cancel(); break;
       case 'restart': restart(); break;
-      case 'modal-cancel': closeModal(); break;
+      case 'composer-skip': composerSkip(); break;
+      case 'modal-cancel':
+        if (modal?.kind === 'leader-compose') composerCancel();
+        else closeModal();
+        break;
       default: break;
     }
   }
@@ -1103,8 +1360,12 @@ export function createGameController(options = {}) {
           label: option.label,
           faceDown: option.faceDown === true,
           actionIndex: option.actionIndex,
+          candidateId: option.candidateId ?? null,
         })),
+        composerState: modal.kind === 'leader-compose' ? composer.snapshot() : null,
       } : null,
+      matchConfig: { ...matchConfig },
+      leaderComposer: composer.snapshot(),
       aiThinking,
       inputLocked,
       message,
@@ -1129,6 +1390,9 @@ export function createGameController(options = {}) {
     revealAll,
     pass,
     chooseModalOption,
+    chooseLeaderCandidate: composerChoose,
+    skipLeaderReplacement: composerSkip,
+    cancelLeaderComposer: composerCancel,
     cancel,
     restart,
     // lifecycle / introspection
@@ -1139,6 +1403,13 @@ export function createGameController(options = {}) {
         try { cancelScheduled(aiTimer); } catch (_) { /* ignore */ }
         aiTimer = null;
       }
+      aiScheduled = false;
+      for (const timer of toastTimers) {
+        try { clearTimeout(timer); } catch (_) { /* ignore */ }
+      }
+      toastTimers.clear();
+      composer.cancel();
+      modal = null;
       if (controlsRoot) controlsRoot.removeEventListener('click', handleControlClick);
       if (boardRoot) boardRoot.removeEventListener('click', handleBoardClick);
       if (typeof document !== 'undefined') document.removeEventListener('keydown', handleKeyDown);
@@ -1147,8 +1418,11 @@ export function createGameController(options = {}) {
     getActions: () => actions.slice(),
     getEngine: () => engine,
     getUiState,
+    getMatchConfig: () => ({ ...matchConfig }),
     getState: () => ({
       seed,
+      humanFaction: matchConfig.humanFaction,
+      seedMode: matchConfig.seedMode,
       mode,
       phase: view?.phase ?? null,
       night: view?.night ?? 0,
