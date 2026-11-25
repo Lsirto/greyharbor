@@ -3870,3 +3870,58 @@ Error: P0 should hold sea-priestess
 
 Node.js v22.23.2
 > build · flint-40b-free
+← Write /tmp/opencode/probe9.mjs
+Created file successfully: D:/tmp/opencode/probe9.mjs
+> build · flint-40b-free
+$ node /tmp/opencode/probe9.mjs 2>&1 | Select-Object -First 30
+sea-priestess card: {"id":"sea-priestess","type":"unit","location":"archive","sanityCost":0}
+plan result ok; discount: 0
+sanity now: 6 events: ["play"]
+flags: {"libraryDiscountUsed":false,"cultSacrificeTriggered":false,"dreamEntries":0}
+> build · flint-40b-free
+All probes resolved the design questions. Now let me write the final version of the golden-scenario test file:
+← Write tests/v2/effects-cards.test.mjs
+Wrote file successfully: tests/v2/effects-cards.test.mjs
+> build · flint-40b-free
+$ node --test tests/v2/effects-cards.test.mjs > /tmp/opencode/eff-out2.txt 2>&1; Select-String -Path /tmp/opencode/eff-out2.txt -Pattern "^not ok|^ok |^# (tests|pass|fail)" | Select-Object -First 60
+D:\tmp\opencode\eff-out2.txt:3:ok 1 - lucia-vaughn: dream-native stealth enters the dream face-down with no enter effec
+t
+D:\tmp\opencode\eff-out2.txt:9:ok 2 - frank-holt: adjacent chain counts own neighbours with cap +3
+D:\tmp\opencode\eff-out2.txt:15:ok 3 - finn-calloway: adjacent chain caps at +2 and the non-stealth card cannot enter t
+he dream
+D:\tmp\opencode\eff-out2.txt:21:ok 4 - arthur-pendleton: reveal peeks the opponent hand publicly
+D:\tmp\opencode\eff-out2.txt:27:not ok 5 - abjuration: two choices �?remove corruption or remove an environment
+D:\tmp\opencode\eff-out2.txt:50:ok 6 - warding-rite: wards one friendly location this night (+1, seal + corruption immu
+nity)
+D:\tmp\opencode\eff-out2.txt:56:not ok 7 - silver-lantern: replaces seal and destroy but not sacrifice
+D:\tmp\opencode\eff-out2.txt:82:ok 8 - old-library: archive cards are corruption immune and the first archive play cost
+s 1 less
+D:\tmp\opencode\eff-out2.txt:88:ok 9 - zealot: madness face is printed +3 with backlash, reason face is plain
+D:\tmp\opencode\eff-out2.txt:94:ok 10 - deep-one: madness face is printed +3 with backlash and pays 1 sanity
+D:\tmp\opencode\eff-out2.txt:100:ok 11 - gravedigger: must sacrifice when possible, then retrieves one unit from the ab
+yss
+D:\tmp\opencode\eff-out2.txt:106:ok 12 - whisperer: flipping the dream stealth card drains the opponent 1 sanity
+D:\tmp\opencode\eff-out2.txt:112:ok 13 - bell-claw: devouring an adjacent unit permanently gains its current power
+D:\tmp\opencode\eff-out2.txt:118:ok 14 - seance: cannot be played without a sacrifice target and cannot retrieve the sa
+crificed card
+D:\tmp\opencode\eff-out2.txt:124:ok 15 - tide-ritual: gives the own dream row +3 this night and expires afterwards
+D:\tmp\opencode\eff-out2.txt:130:ok 16 - lunar-eclipse: this night reason face -1 and madness face +1 for both players
+D:\tmp\opencode\eff-out2.txt:136:ok 17 - stormy-night: this night scene -2 for both players
+D:\tmp\opencode\eff-out2.txt:142:ok 18 - drowned-altar: scene sacrifices skip backlash and the cult echo becomes +3
+D:\tmp\opencode\eff-out2.txt:148:not ok 19 - silas-gold: discard one hand card and retrieve one of the top three
+D:\tmp\opencode\eff-out2.txt:174:ok 20 - thousand-eyes: seals the enemy leader and counts face-up unsealed stealth
+D:\tmp\opencode\eff-out2.txt:180:ok 21 - unexpected-aid: permanent +3 plus remove all seals and corruption
+D:\tmp\opencode\eff-out2.txt:186:ok 22 - the-sleeper: cannot be sealed, pays 2 sanity on entry and 1 sanity per night
+D:\tmp\opencode\eff-out2.txt:192:# tests 22
+D:\tmp\opencode\eff-out2.txt:194:# pass 19
+D:\tmp\opencode\eff-out2.txt:195:# fail 3
+> build · flint-40b-free
+→ Read /tmp/opencode/eff-out2.txt [limit=130, offset=27]
+> build · flint-40b-free
+→ Read /tmp/opencode/eff-out2.txt [limit=45, offset=148]
+> build · flint-40b-free
+! retrying (attempt 2): Timed out waiting for response data
+> build · flint-40b-free
+! retrying (attempt 3): Timed out waiting for response headers
+! retrying (attempt 4): Can't reach opencode.ai. Check the network connection. (getaddrinfo ENOTFOUND opencode.ai)
+! retrying (attempt 5): Can't reach opencode.ai. Check the network connection. (getaddrinfo ENOTFOUND opencode.ai)
