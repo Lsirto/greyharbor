@@ -12,6 +12,8 @@
 
 import { readFileSync } from 'node:fs';
 
+import { validateDeck, DECK_ERROR_CODES } from './deck-validation.js';
+
 const DATA_URL = new URL('../../data/card-table.normalized.json', import.meta.url);
 
 const KEYWORD_MAP = Object.freeze({
@@ -98,22 +100,36 @@ function expand(entries) {
   return Object.freeze(entries.flatMap(([id, count]) => Array(count).fill(id)));
 }
 
+/** Keep the historical preset error wording while delegating all checks to the validator. */
+function presetErrorMessage(id, error, summary) {
+  switch (error.code) {
+    case DECK_ERROR_CODES.MALFORMED_INPUT:
+      return `preset ${id} has malformed deck input`;
+    case DECK_ERROR_CODES.UNKNOWN_CARD:
+      return `preset ${id} references unknown card ${error.cardId}`;
+    case DECK_ERROR_CODES.LEADER_INVALID:
+      return `preset ${id} has an invalid leader ${error.cardId}`;
+    case DECK_ERROR_CODES.LEADER_IN_ENTRIES:
+      return `preset ${id} contains leader ${error.cardId}`;
+    case DECK_ERROR_CODES.FACTION_MISMATCH:
+      return `preset ${id} contains out-of-faction card ${error.cardId}`;
+    case DECK_ERROR_CODES.COPY_LIMIT:
+      return `preset ${id} contains more than 2 copies of ${error.cardId}`;
+    case DECK_ERROR_CODES.NON_LEADER_COUNT:
+      return `preset ${id} must contain 19 non-leader cards, got ${summary.nonLeaderCount}`;
+    case DECK_ERROR_CODES.TOTAL_COUNT:
+      return `preset ${id} must contain 20 cards, got ${summary.total}`;
+    default:
+      return `preset ${id} failed deck validation: ${error.message}`;
+  }
+}
+
 function buildPreset({ id, name, faction, leader, entries }) {
+  const validation = validateDeck({ faction, leader, entries }, CARDS);
+  if (!validation.ok) {
+    throw new Error(presetErrorMessage(id, validation.errors[0], validation.summary));
+  }
   const cards = expand(entries);
-  if (cards.length !== 19) {
-    throw new Error(`preset ${id} must contain 19 non-leader cards, got ${cards.length}`);
-  }
-  for (const cardId of cards) {
-    const card = CARDS[cardId];
-    if (!card) throw new Error(`preset ${id} references unknown card ${cardId}`);
-    if (card.type === 'leader') throw new Error(`preset ${id} contains leader ${cardId}`);
-    if (card.faction !== faction && card.faction !== 'neutral') {
-      throw new Error(`preset ${id} contains out-of-faction card ${cardId}`);
-    }
-  }
-  if (!CARDS[leader] || CARDS[leader].type !== 'leader') {
-    throw new Error(`preset ${id} has an invalid leader ${leader}`);
-  }
   return Object.freeze({ id, name, faction, leader, cards });
 }
 
