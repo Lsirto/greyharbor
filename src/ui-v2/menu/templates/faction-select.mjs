@@ -66,12 +66,10 @@ export function renderFactionCard(id, selected = false) {
       aria-pressed="${active ? 'true' : 'false'}">
     <span class="gh2-faction-card__crest" aria-hidden="true">${escapeHtml(card.crest)}</span>
     <span class="gh2-faction-card__name">${escapeHtml(card.nameZh)}</span>
-    <span class="gh2-faction-card__en">${escapeHtml(card.name)}</span>
     <span class="gh2-faction-card__tagline">${escapeHtml(card.tagline)}</span>
     <span class="gh2-faction-card__role">${escapeHtml(card.role)}</span>
     <span class="gh2-faction-card__leader">
       <b>领袖 · ${escapeHtml(card.leaderNameZh)}</b>
-      <small>${escapeHtml(card.leaderName)} · ${escapeHtml(card.leaderId ?? '')}</small>
     </span>
     <span class="gh2-faction-card__effect">${escapeHtml(card.effect)}</span>
     <span class="gh2-faction-card__flavor">“${escapeHtml(card.flavor)}”</span>

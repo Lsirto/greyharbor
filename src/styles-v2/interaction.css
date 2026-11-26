@@ -316,3 +316,72 @@
   .gh2-play-btn { padding: 5px 10px; font-size: 12px; }
   .gh2-toast-stack { right: 10px; top: 10px; }
 }
+
+/* ── enemy intent chip (human-vs-AI only) ────────────────────── */
+
+.gh2-intent {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid var(--gh2-cult);
+  border-radius: 6px;
+  background: rgba(67, 162, 145, 0.12);
+}
+.gh2-intent__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--gh2-cult-glow);
+}
+.gh2-intent__text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #eaf6f1;
+}
+
+/* ── chaos bag popup (auto-dismiss, non-blocking) ────────────── */
+
+.gh2-chaos-pop {
+  position: fixed;
+  left: 50%;
+  top: 32%;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 220px;
+  padding: 16px 26px;
+  border: 1px solid var(--gh2-lamp-dim);
+  border-radius: 10px;
+  background: rgba(8, 16, 18, 0.94);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), var(--gh2-glow-lamp);
+  transform: translateX(-50%);
+  animation: gh2-chaos-pop-in 0.18s ease-out;
+}
+.gh2-chaos-pop__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--gh2-lamp);
+}
+.gh2-chaos-pop__text {
+  font-family: var(--gh2-font-display);
+  font-size: 22px;
+  color: #f1e7cf;
+}
+.gh2-chaos-pop__mod {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gh2-cult-glow);
+}
+
+@keyframes gh2-chaos-pop-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(0.94); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}

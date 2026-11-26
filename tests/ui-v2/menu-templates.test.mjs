@@ -71,7 +71,7 @@ test('牌局模式：固定种子 / 随机牌局互斥切换，非法值回退 f
   assert.match(fixed, /data-seed-mode="random"[^>]*aria-pressed="false"/);
   const random = renderModeToggle({ seedMode: 'random' });
   assert.match(random, /data-seed-mode="random"[^>]*aria-pressed="true"/);
-  assert.match(random, /crypto\.randomUUID/);
+  assert.match(random, /全新牌局/);
   assert.match(renderModeToggle({ seedMode: 'nonsense' }), /data-seed-mode="fixed"[^>]*aria-pressed="true"/);
 });
 

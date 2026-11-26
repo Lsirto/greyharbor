@@ -209,23 +209,3 @@ export function cardClasses(card, options = {}) {
   return classes;
 }
 
-/** Card-like view used by the leader zone (buildView leader has no power fields). */
-export function leaderAsCard(leader) {
-  const data = asObject(leader);
-  return {
-    uid: '',
-    cardId: data.cardId ?? data.leaderId ?? '',
-    nameZh: cleanString(data.nameZh, '未知领袖'),
-    name: cleanString(data.name),
-    faction: cleanString(data.faction, 'neutral'),
-    type: 'leader',
-    face: 'reason',
-    faceDown: false,
-    power: 0,
-    reasonPower: null,
-    madnessPower: null,
-    keywords: [],
-    sanityCost: 0,
-    sealed: data.sealed === true,
-  };
-}

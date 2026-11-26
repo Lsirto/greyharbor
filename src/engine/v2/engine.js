@@ -2112,6 +2112,7 @@ export class EngineV2 {
       player: p,
       uid: inst.uid,
       token: token.id,
+      nameZh: token.nameZh,
       modifier: token.modifier,
     });
     if (token.sanity) this._changeSanity(p, token.sanity, 'chaosElderSign');

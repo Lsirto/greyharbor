@@ -86,6 +86,23 @@ function renderDemoBanner(demo) {
   </div>`;
 }
 
+function renderEnemyIntent(intent) {
+  if (!intent) return '';
+  return `<div class="gh2-intent" data-intent="true">
+    <span class="gh2-intent__label">${icon('eye')}敌方意图</span>
+    <span class="gh2-intent__text">${escapeHtml(intent)}</span>
+  </div>`;
+}
+
+function renderChaosBanner(banner) {
+  if (!banner || typeof banner !== 'object') return '';
+  return `<div class="gh2-chaos-pop" data-chaos-pop="true" role="status">
+    <span class="gh2-chaos-pop__title">${icon('moon')}${escapeHtml(banner.title ?? '混沌袋')}</span>
+    <strong class="gh2-chaos-pop__text">${escapeHtml(banner.text ?? '')}</strong>
+    <span class="gh2-chaos-pop__mod">${escapeHtml(banner.modText ?? '')}</span>
+  </div>`;
+}
+
 export function renderBoardMarkup(view, options = {}) {
   const opts = asObject(options);
   const data = asObject(view);
@@ -102,6 +119,7 @@ export function renderBoardMarkup(view, options = {}) {
   const scoreFoe = Number.isFinite(scores[1 - pov]) ? scores[1 - pov] : foe.score?.total ?? 0;
   const nightWins = asArray(data.nightWins);
   const result = asObject(data.result);
+  const controller = asObject(opts.controller);
 
   return `<section class="gh2-shell gh2-shell--compact" data-phase="${escapeHtml(phase)}" data-night="${night}" data-pov="${pov}">
     <header class="gh2-masthead gh2-masthead--compact">
@@ -125,6 +143,7 @@ export function renderBoardMarkup(view, options = {}) {
           ${renderLocationGrid(foe, { playerIndex: 1 - pov, anomaly: data.anomaly })}
         </div>
         <aside class="gh2-table__rail">
+          ${renderEnemyIntent(controller.enemyIntent)}
           ${renderPlayerBar(foe, {
             role: '对手 · AI',
             current: data.current === 1 - pov,
@@ -174,6 +193,8 @@ export function renderBoardMarkup(view, options = {}) {
     <div class="gh2-hand-dock">
       ${renderHandZone({ visible: true, cards: me.hand, count: me.handCount, label: '己方手牌' })}
     </div>
+
+    ${renderChaosBanner(controller.chaosBanner)}
 
     ${result.winner !== undefined ? `<div class="gh2-legend__result">结果：${escapeHtml(result.reason ?? '对局结束')}</div>` : ''}
   </section>`;

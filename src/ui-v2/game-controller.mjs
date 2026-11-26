@@ -202,6 +202,9 @@ export function createGameController(options = {}) {
   let decorated = [];
   const toastTimers = new Set();
   let gameOverNotified = false;
+  let enemyIntent = null;
+  let chaosBanner = null;
+  let chaosBannerTimer = null;
   // Optional atmosphere hooks.  They are best-effort: a broken FX/audio
   // callback must never break an otherwise legal game action.
   const hooks = asObject(opts.hooks);
@@ -264,6 +267,8 @@ export function createGameController(options = {}) {
   function newEngine() {
     aiSteps = 0;
     gameOverNotified = false;
+    enemyIntent = null;
+    clearChaosBanner();
 
     // Generic engine-options override (used by the campaign: run deck + relic
     // translation + difficulty).  The human-vs-AI driving loop is unchanged.
@@ -524,6 +529,8 @@ export function createGameController(options = {}) {
           lastAction,
           modalKind: modal?.kind ?? null,
           message,
+          enemyIntent,
+          chaosBanner,
         },
       });
     } catch (error) {
@@ -782,10 +789,32 @@ export function createGameController(options = {}) {
 
   // ── committing actions ──────────────────────────────────────────────
 
+  function clearChaosBanner() {
+    chaosBanner = null;
+    if (chaosBannerTimer !== null) {
+      cancelScheduled(chaosBannerTimer);
+      chaosBannerTimer = null;
+    }
+  }
+
+  function showChaosBanner(data) {
+    const mod = safeInt(data.modifier, 0);
+    const modText = mod > 0 ? `战力 +${mod}` : mod === 0 ? '战力 0' : `战力 ${mod}`;
+    const tokenName = typeof data.nameZh === 'string' && data.nameZh ? data.nameZh : data.token;
+    clearChaosBanner();
+    chaosBanner = { title: '混沌袋', text: `抽出「${tokenName}」`, modText };
+    chaosBannerTimer = schedule(() => {
+      chaosBannerTimer = null;
+      chaosBanner = null;
+      paint();
+    }, 1700);
+  }
+
   function recordEvents(events, who) {
     for (const event of asArray(events)) {
       const data = asObject(event);
       const name = EVENT_NAMES_ZH[data.type] ?? data.type ?? '事件';
+      if (data.type === 'chaosDraw') showChaosBanner(data);
       if (data.type === 'nightEnd') {
         const winner = data.winner === HUMAN ? '你' : data.winner === AI ? 'AI' : '平夜';
         eventLog.push(`第 ${safeInt(data.night, 0)} 夜结算 · ${winner} · ${safeInt(data.scores?.[HUMAN]?.total, 0)}:${safeInt(data.scores?.[AI]?.total, 0)}`);
@@ -863,6 +892,34 @@ export function createGameController(options = {}) {
   }
 
   // ── AI loop ─────────────────────────────────────────────────────────
+
+  /**
+   * Preview the AI's planned action without applying it.  chooseAction is
+   * re-seeded from the same string every call, so on an unchanged view this
+   * preview is the exact action aiStep will later commit.  publicActionLabel
+   * redacts face-down identities, so no hidden card leaks.
+   */
+  function computeEnemyIntent() {
+    if (!engine || view?.phase !== 'play') return null;
+    const aiView = engine.viewFor(AI);
+    let candidates = asArray(aiView.actions);
+    // On the human's turn getActions(AI) is gated to [], so derive the moves the
+    // AI would have if the turn passed to it right now. This is a conditional
+    // preview and refreshes after every action the human takes.
+    let decisionView = aiView;
+    if (!candidates.length && view.current === HUMAN) {
+      candidates = [
+        ...engine._legalReveals(AI),
+        ...engine._legalPlays(AI),
+        ...engine._legalLeaderActions(AI),
+        { type: 'pass', player: AI, label: '过牌' },
+      ];
+      decisionView = { ...aiView, current: AI, actions: candidates };
+    }
+    const planned = chooseAction(decisionView, { seed: `${seed}:p1`, difficulty: aiDifficulty });
+    if (!planned || !candidates.includes(planned)) return null;
+    return publicActionLabel(planned);
+  }
 
   function scheduleAi() {
     if (aiScheduled || !engine || view?.phase === 'gameOver') return;
@@ -1008,6 +1065,7 @@ export function createGameController(options = {}) {
       leaderDisabled = false;
       leaderReason = '';
     }
+    enemyIntent = computeEnemyIntent();
     paint();
     if (mode === 'ai') scheduleAi();
     return view;

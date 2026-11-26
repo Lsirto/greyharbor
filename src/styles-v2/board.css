@@ -203,26 +203,50 @@
   100% { transform: rotate(45deg) scale(1); }
 }
 
-/* ── leader zone ────────────────────────────────────────── */
+/* ── leader zone (compact horizontal strip) ─────────────── */
 .gh2-leader-zone {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 5px;
-  padding: 7px;
+  gap: 9px;
+  padding: 7px 9px;
   border: 1px solid var(--gh2-line-soft);
   border-radius: 6px;
   background: rgba(4, 8, 10, 0.55);
 }
-.gh2-leader-zone__title { font-size: 10px; letter-spacing: 0.12em; color: var(--gh2-lamp-dim); }
-.gh2-leader-zone__empty { padding: 14px; color: var(--gh2-silver-faint); font-size: 11px; }
+.gh2-leader-zone__title { font-size: 11px; letter-spacing: 0.1em; color: var(--gh2-lamp-dim); }
+.gh2-leader-zone__empty { padding: 6px; color: var(--gh2-silver-faint); font-size: 11px; }
+.gh2-leader-zone__portrait {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border: 1px solid var(--gh2-lamp-dim);
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--gh2-lamp);
+}
+.gh2-leader-zone__portrait-mark { font-size: 20px; }
+.gh2-leader-zone__portrait-img { width: 100%; height: 100%; object-fit: cover; }
+.gh2-leader-zone__info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.gh2-leader-zone__name {
+  font-family: var(--gh2-font-display);
+  font-size: 14px;
+  color: #efe4ca;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .gh2-leader-zone__status {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
+  align-self: flex-start;
+  padding: 1px 8px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 10.5px;
 }
 .gh2-leader-zone__status--ready { color: var(--gh2-cult-glow); background: rgba(67, 162, 145, 0.12); }
 .gh2-leader-zone__status--used { color: var(--gh2-silver-dim); background: rgba(255, 255, 255, 0.06); }
@@ -231,7 +255,7 @@
 /* ── location grid ──────────────────────────────────────── */
 .gh2-location-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 9px;
   min-width: 0;
 }
@@ -247,7 +271,6 @@
     radial-gradient(90% 50% at 50% 0%, rgba(232, 201, 138, 0.06), transparent 70%),
     rgba(2, 6, 7, 0.5);
 }
-.gh2-location--dream { border-color: rgba(67, 162, 145, 0.3); }
 .gh2-location__head { display: flex; align-items: center; gap: 6px; }
 .gh2-location__icon { font-size: 15px; color: var(--gh2-lamp); }
 .gh2-location__name { font-family: var(--gh2-font-display); font-size: 14px; color: #efe4ca; }
@@ -255,8 +278,7 @@
 .gh2-location__capacity { margin-left: auto; font-size: 10px; color: var(--gh2-silver-faint); }
 .gh2-location__card-slot { display: flex; justify-content: center; min-height: 20px; }
 .gh2-location__slot-empty { font-size: 10px; color: var(--gh2-silver-faint); padding: 4px; }
-.gh2-location__slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
-.gh2-location--dream .gh2-location__slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.gh2-location__slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
 .gh2-location__slot { display: flex; justify-content: center; min-width: 0; }
 .gh2-location__slot .gh2-card { width: 100%; max-width: 66px; height: auto; aspect-ratio: 54 / 76; }
 .gh2-location__slot--empty {
@@ -268,7 +290,6 @@
   color: rgba(217, 211, 196, 0.22);
   font-size: 11px;
 }
-.gh2-location--dream .gh2-location__slot--empty { min-height: 76px; }
 .gh2-location__foot {
   display: flex;
   justify-content: space-between;
@@ -303,9 +324,6 @@
   text-overflow: ellipsis;
 }
 .gh2-anomaly__text i { font-size: 9px; font-style: normal; color: var(--gh2-silver-dim); }
-.gh2-location--dream .gh2-anomaly { border-color: rgba(67, 162, 145, 0.45); }
-.gh2-location--dream .gh2-anomaly__mark,
-.gh2-location--dream .gh2-anomaly__text b { color: #7fc7b8; }
 
 /* ── midline ────────────────────────────────────────────── */
 .gh2-midline {
@@ -392,7 +410,7 @@
   .gh2-side__rail { flex-direction: row; align-items: stretch; }
   .gh2-player-bar { flex: 1 1 55%; }
   .gh2-leader-zone { flex: 0 0 auto; }
-  .gh2-location-grid { grid-template-columns: repeat(3, minmax(214px, 1fr)); overflow-x: auto; padding-bottom: 4px; }
+  .gh2-location-grid { grid-template-columns: minmax(0, 1fr); overflow-x: auto; padding-bottom: 4px; }
   .gh2-midline { grid-template-columns: minmax(0, 1fr); }
   .gh2-midline__dial { flex-direction: row; align-items: baseline; gap: 12px; }
   .gh2-hand__cards { overflow-x: auto; padding-bottom: 6px; }
