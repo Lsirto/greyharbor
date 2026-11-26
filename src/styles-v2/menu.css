@@ -1305,3 +1305,229 @@
   .gh2-deck-save,
   .gh2-deck-start { flex: 1; }
 }
+
+/* ============================================================
+   卡牌图鉴 Card Codex
+   ============================================================ */
+.gh2-codex {
+  width: min(1180px, 94vw);
+  margin: 0 auto;
+  padding: 26px 24px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.gh2-codex__header { display: flex; align-items: center; gap: 18px; }
+.gh2-codex__title {
+  margin: 0;
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 28px;
+  letter-spacing: 0.1em;
+}
+.gh2-codex-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  color: var(--gh2-silver-dim);
+  background: transparent;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  cursor: pointer;
+}
+.gh2-codex-back .gh2-icon { width: 16px; height: 16px; }
+.gh2-codex-back:hover { color: var(--gh2-lamp); border-color: var(--gh2-lamp-dim); }
+
+.gh2-codex__filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: rgba(4, 8, 10, 0.55);
+}
+.gh2-codex-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border: 1px solid var(--gh2-line);
+  border-radius: 999px;
+  background: var(--gh2-ink-1);
+  color: var(--gh2-silver-faint);
+}
+.gh2-codex-search .gh2-icon { width: 16px; height: 16px; }
+.gh2-codex-search__input {
+  flex: 1;
+  min-width: 0;
+  color: var(--gh2-parchment);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+.gh2-codex-search__input::placeholder { color: var(--gh2-silver-faint); }
+
+.gh2-codex-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.gh2-codex-chip {
+  padding: 7px 16px;
+  color: var(--gh2-silver-dim);
+  border: 1px solid var(--gh2-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+.gh2-codex-chip:hover { border-color: var(--gh2-gold); color: var(--gh2-parchment); }
+.gh2-codex-chip.is-selected {
+  border-color: rgba(232, 201, 138, 0.6);
+  background: rgba(232, 201, 138, 0.16);
+  color: var(--gh2-lamp);
+  box-shadow: inset 0 0 0 1px rgba(232, 201, 138, 0.25);
+}
+
+.gh2-codex__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--gh2-silver-faint);
+  font-size: 13px;
+}
+
+.gh2-codex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+.gh2-codex-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 0 16px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: linear-gradient(160deg, rgba(232, 201, 138, 0.05), rgba(4, 8, 10, 0.88));
+  overflow: hidden;
+}
+.gh2-codex-card--cult {
+  background: linear-gradient(160deg, rgba(67, 162, 145, 0.1), rgba(4, 16, 14, 0.9));
+}
+.gh2-codex-card--neutral {
+  background: linear-gradient(160deg, rgba(154, 150, 138, 0.08), rgba(8, 10, 10, 0.9));
+}
+.gh2-codex-card__top {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  color: var(--gh2-lamp);
+}
+.gh2-codex-card__top .gh2-icon { width: 15px; height: 15px; }
+.gh2-codex-card__art {
+  position: relative;
+  display: block;
+  aspect-ratio: 512 / 380;
+  border-bottom: 1px solid var(--gh2-line);
+  overflow: hidden;
+}
+.gh2-codex-card__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  display: block;
+}
+.gh2-codex-card__art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(4, 8, 10, 0.35) 0%, rgba(4, 8, 10, 0) 35%, rgba(4, 8, 10, 0.45) 100%);
+  pointer-events: none;
+}
+.gh2-codex-card__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 16px;
+}
+.gh2-codex-card__name-zh {
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 19px;
+}
+.gh2-codex-card__name-en {
+  color: var(--gh2-silver-faint);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.gh2-codex-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px;
+}
+.gh2-codex-card__tag {
+  padding: 2px 9px;
+  font-size: 11px;
+  color: var(--gh2-silver-dim);
+  border: 1px solid var(--gh2-line);
+  border-radius: 999px;
+}
+.gh2-codex-card__printed {
+  display: flex;
+  gap: 14px;
+  padding: 0 16px;
+  font-size: 12px;
+  color: var(--gh2-silver-dim);
+}
+.gh2-codex-card__printed .gh2-icon { width: 13px; height: 13px; }
+.gh2-codex-card__keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px;
+}
+.gh2-codex-card__keyword {
+  padding: 2px 9px;
+  font-size: 11px;
+  color: var(--gh2-lamp);
+  border: 1px solid rgba(232, 201, 138, 0.35);
+  border-radius: 999px;
+}
+.gh2-codex-card__effect {
+  padding: 0 16px;
+  color: var(--gh2-silver);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.gh2-codex-card__flavor {
+  padding: 0 16px;
+  color: var(--gh2-silver-faint);
+  font-size: 11.5px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.gh2-codex-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 20px;
+  border: 1px dashed var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  color: var(--gh2-silver-faint);
+}
+.gh2-codex-empty__icon .gh2-icon { width: 38px; height: 38px; }
+
+@media (max-width: 1024px) {
+  .gh2-codex { width: 96vw; padding: 20px 14px 28px; gap: 14px; }
+  .gh2-codex__filters { padding: 14px; gap: 10px; }
+  .gh2-codex-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+}
