@@ -538,3 +538,16 @@ test('random legal self-play never crashes or deadlocks', () => {
     assert.ok(engine.result());
   }
 });
+
+test('startingHand accepts a scalar or a per-player array', () => {
+  const scalar = createGame({ seed: 'hand-scalar', startingHand: 5 });
+  assert.equal(scalar.state.players[0].hand.length, 5);
+  assert.equal(scalar.state.players[1].hand.length, 5);
+
+  const array = createGame({ seed: 'hand-array', startingHand: [6, 8] });
+  assert.equal(array.state.players[0].hand.length, 6);
+  assert.equal(array.state.players[1].hand.length, 8);
+
+  assert.throws(() => createGame({ seed: 'hand-bad', startingHand: [7] }), /two entries/);
+  assert.throws(() => createGame({ seed: 'hand-neg', startingHand: [-1, 8] }), /non-negative integer/);
+});

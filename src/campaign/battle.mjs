@@ -32,7 +32,9 @@ export function buildBattleConfig(run, node) {
     }
   }
 
-  // Difficulty: lower starting sanity for elite/boss unless a relic floors it.
+  // Difficulty: elite/boss fight under a resource disadvantage — fewer cards
+  // in the opening hand and lower starting sanity — unless a relic floors it.
+  const playerHand = node.type === 'elite' ? 7 : node.type === 'boss' ? 6 : 8;
   let playerSanity = node.type === 'elite' ? 5 : node.type === 'boss' ? 4 : 6;
   if (sanityFloor) playerSanity = Math.max(playerSanity, sanityFloor);
 
@@ -45,6 +47,7 @@ export function buildBattleConfig(run, node) {
       { leader: run.leaderId, cards: run.deck.slice() },
       opponentFaction,
     ],
+    startingHand: [playerHand, 8],
     startingSanity: [playerSanity, 6],
     mechanics,
     names: ['调查员', '对手'],

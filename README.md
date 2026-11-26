@@ -30,7 +30,7 @@ npm start                        # node server.mjs → http://127.0.0.1:8788/
 
 | 地址 | 内容 |
 |---|---|
-| `/` 或 `/index.html` | **v2 正式入口**：主菜单 → 阵营选择 → 人机对战（含氛围层） |
+| `/` 或 `/index.html` | **v2 正式入口**：主菜单 → 阵营选择 → 人机对战（含氛围层）或战役 Roguelike |
 | `/app.html` | 同款 app shell（阶段 3.3 入口，保留兼容） |
 | `/play.html` | 阶段 3.2 人机对战直入（固定种子） |
 | `/game.html` | 阶段 3.1 自动棋盘演示 |
@@ -49,17 +49,20 @@ assets/
 src/
 ├─ engine/v2/       新版规则引擎：确定性状态机、效果 DSL、buildView、计分、anomalies、chaos-bag、objectives
 ├─ ai/v2/           新版 AI（合法动作 + 启发式评估，注入式随机）
+├─ campaign/        战役元层：地图、池、操作 DSL、奖励、战斗翻译、run 状态机 + data/（遗物、事件）
 ├─ data/            卡表 / 领袖 / 阵营 / 预设牌组（唯一数值事实源）
 ├─ ui-v2/           新版 UI
+│  ├─ campaign/     战役控制器 + 纯函数屏幕模板（地图 / 事件 / 奖励 / 休整 / 结算）
 │  ├─ menu/         app shell、菜单 / 阵营 / 结果模板
 │  ├─ templates/    纯字符串模板（data-uid / data-card-id / data-faction）
 │  ├─ fx/           view-diff、DOM 动画、粒子池、fx-controller
 │  ├─ audio/        WebAudio 合成引擎与事件→音色映射
 │  └─ shims/        浏览器侧 node:fs 兼容层
-├─ styles-v2/       theme / card / board / layout / interaction / menu / screens / fx
+├─ styles-v2/       theme / card / board / layout / interaction / menu / screens / fx / campaign
 ├─ engine/, ai/, ui/, styles/   旧版昆特牌参考实现（保留，勿改）
 └─ app.js / main.js 旧版入口（由 gwent.html 加载）
 tests/
+├─ campaign/        战役套件（地图 / 数据 / run 状态机 / 战斗配置 / 操作 / 模板，53 项）
 ├─ v2/, ai-v2/      新版引擎 / AI 套件
 ├─ ui-v2/           新版 UI、控制器、氛围层套件（注入假对象，无外部依赖）
 └─ *.test.mjs       旧版引擎 / 数据 / AI / E2E 遗留套件
@@ -71,6 +74,7 @@ research/           来源数据、QA 记录与审计产物
 ## 操作
 
 - 主菜单选择「开始对局」→ 阵营 + 固定/随机种子 → 进入对局。
+- 主菜单选择「战役模式」→ 阵营 → 地图上点击发光的可达节点推进，战斗/事件/休整/宝藏依次进行，抵达并击败 Boss 即通关。
 - 点击手牌 → 点击高亮落点出牌；可点击己方领袖、盖牌翻开、过牌；`Esc` 取消。
 - 换牌阶段点击手牌标记，再点「确认换牌」。教团领袖伊莱亚斯会打开步骤式编排弹层。
 - 操作台「♪ 音效 / ♪ 已静音」按钮切换声音；设置存 `localStorage`，首次用户手势才解锁音频。
@@ -111,6 +115,33 @@ research/           来源数据、QA 记录与审计产物
 目标结束占比），定稿阈值 7；`scripts/balance-objectives-final.mjs` 同种子 6400 局复核：交叉胜率
 46.95–53.05%、目标结束约 28.5%、理智约 27%、夜胜约 44%，0 崩溃、牌数守恒。
 
+## 战役 v3（Roguelike 调查之旅）
+
+规则事实源：`docs/CAMPAIGN_V3_DESIGN.md`。把单局牌局串成一次可重复的调查：从起点沿分层 DAG
+地图推进，经 7 层抵达 Boss，节点之间让牌组与遗物成长。整段 run 完全确定性（固定 seed 可复现），
+不引入商店、卡牌升级、跨 run 元进度或新卡牌。
+
+1. **六类节点**：普通战斗 `battle`、精英 `elite`、叙事事件 `event`、休整 `rest`、宝藏 `treasure`、
+   终点 `boss`。事件为带条件分支的叙事选择；休整可领物资或移除一张卡；宝藏给遗物。
+2. **成长**：战斗胜利后从牌堆池三选一加卡（精英额外给遗物），遗物提供单局或 run 层被动（共 8 件）；
+   单一货币 `supplies` 贯穿，奖励与事件均经结构化操作 DSL 落库。
+3. **难度梯度（不新增规则）**：精英/Boss 用 `createGame` 既有配置制造压力——起手手牌 8/7/6、
+   起始理智 6/5/4。为此引擎把 `startingHand` 与 `startingSanity` 对齐为支持双玩家数组的配置泛化。
+   受控校准（固定基线牌组、同种子、只变节点类型，300 组/类型，固化于 `docs/campaign-final-check.json`）：
+
+   | 节点 | 学会 Society | 教团 Cult |
+   | --- | --- | --- |
+   | 普通 battle | 50.67% | 49.33% |
+   | 精英 elite | 40.00% | 29.00% |
+   | Boss | 30.67% | 16.33% |
+
+   普通战斗接近公平、精英/Boss 逐级加难且仍可通关；该数据为无成长基线口径，真实 run 中加卡与遗物会抬高实际胜率。
+
+战役元层位于 `src/campaign/`（地图、池、操作、奖励、战斗翻译、run 状态机及数据），交互界面位于
+`src/ui-v2/campaign/`（控制器 + 纯函数模板），样式 `src/styles-v2/campaign.css`。专项测试
+`tests/campaign/`（53 项）。`scripts/campaign-soak.mjs` 做全 run 浸泡（0 崩溃、状态守恒），
+`scripts/campaign-balance.mjs` 做受控难度校准、`campaign-balance-final.mjs` 出定稿数据。
+
 ## 氛围层（阶段 3.4）
 
 - `fx/view-diff.mjs` 纯函数比较前后 `buildView`：入场 uid、理↔狂翻面、理智变化、新封印/腐化、夜切换、终局。
@@ -123,10 +154,11 @@ research/           来源数据、QA 记录与审计产物
 
 ```bash
 npm test                                            # 根目录遗留套件：104 通过 / 2 E2E 默认跳过
-node --test 'tests/v2/*.test.mjs'                   # 引擎套件：117 项（v1.3 机制 19 项 + v1.4 目标 13 项）
+node --test 'tests/campaign/*.test.mjs'             # 战役套件：53 项
+node --test 'tests/v2/*.test.mjs'                   # 引擎套件：118 项（v1.3 机制 19 + v1.4 目标 13 + 起手数组 1）
 node --test 'tests/ai-v2/*.test.mjs'                # AI 套件：7 项
 node --test 'tests/ui-v2/*.test.mjs'                # UI + 氛围层：82 项
-node --test 'tests/**/*.test.mjs'                   # 全量：310 通过 + 2 跳过
+node --test 'tests/**/*.test.mjs'                   # 全量：364 通过 + 2 跳过
 node scripts/e2e.mjs --mode=smoke                   # 可选：Playwright 浏览器冒烟
 ```
 

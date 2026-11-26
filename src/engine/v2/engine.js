@@ -191,9 +191,19 @@ function normalizeOptions(options = {}) {
   }
   const decks = rawDecks.map((spec) => resolveDeckSpec(spec, cardIndex));
 
-  const startingHand = options.startingHand ?? 8;
-  if (!Number.isInteger(startingHand) || startingHand < 0) {
-    throw new Error('startingHand must be a non-negative integer');
+  // startingHand accepts a scalar (both seats) or a two-entry array so the
+  // campaign can give elite/boss opponents a resource advantage without a new
+  // game rule — mirroring how startingSanity accepts a per-player array.
+  const handOption = options.startingHand ?? 8;
+  const startingHand = (Array.isArray(handOption) ? handOption : [handOption, handOption])
+    .map((value) => {
+      if (!Number.isInteger(value) || value < 0) {
+        throw new Error('startingHand must be a non-negative integer');
+      }
+      return value;
+    });
+  if (startingHand.length !== 2) {
+    throw new Error('startingHand array must contain two entries');
   }
 
   const sanityOption = options.startingSanity ?? 6;
@@ -429,7 +439,7 @@ export class EngineV2 {
       decks: this.config.decks.map((d) => d.name),
     });
     for (const p of [0, 1]) {
-      const count = this._draw(p, this.config.startingHand, false);
+      const count = this._draw(p, this.config.startingHand[p], false);
       this._emit({ type: 'deal', player: p, count });
     }
     for (const p of [0, 1]) this._syncHandFaces(p);

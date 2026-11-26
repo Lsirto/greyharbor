@@ -1,0 +1,98 @@
+{
+  "ok": true,
+  "gamesPerType": 300,
+  "seedPrefix": "campaign-final",
+  "methodology": "Fresh baseline deck vs opposing preset; identical battle seed across node types; only node type changes (player opening hand 8/7/6, starting sanity 6/5/4). In a live run, deck growth and relics raise real odds above this baseline.",
+  "difficulty": {
+    "battle": {
+      "openingHand": 8,
+      "startingSanity": 6
+    },
+    "elite": {
+      "openingHand": 7,
+      "startingSanity": 5
+    },
+    "boss": {
+      "openingHand": 6,
+      "startingSanity": 4
+    }
+  },
+  "factions": {
+    "society": {
+      "battle": {
+        "nodeType": "battle",
+        "games": 300,
+        "wins": 152,
+        "losses": 148,
+        "winRate": 0.5067,
+        "reasons": {
+          "nightWins": 136,
+          "objective": 105,
+          "sanity": 59
+        }
+      },
+      "elite": {
+        "nodeType": "elite",
+        "games": 300,
+        "wins": 120,
+        "losses": 180,
+        "winRate": 0.4,
+        "reasons": {
+          "nightWins": 153,
+          "sanity": 65,
+          "objective": 82
+        }
+      },
+      "boss": {
+        "nodeType": "boss",
+        "games": 300,
+        "wins": 92,
+        "losses": 208,
+        "winRate": 0.3067,
+        "reasons": {
+          "nightWins": 191,
+          "objective": 56,
+          "sanity": 53
+        }
+      }
+    },
+    "cult": {
+      "battle": {
+        "nodeType": "battle",
+        "games": 300,
+        "wins": 148,
+        "losses": 152,
+        "winRate": 0.4933,
+        "reasons": {
+          "objective": 96,
+          "sanity": 80,
+          "nightWins": 124
+        }
+      },
+      "elite": {
+        "nodeType": "elite",
+        "games": 300,
+        "wins": 87,
+        "losses": 213,
+        "winRate": 0.29,
+        "reasons": {
+          "sanity": 140,
+          "nightWins": 93,
+          "objective": 67
+        }
+      },
+      "boss": {
+        "nodeType": "boss",
+        "games": 300,
+        "wins": 49,
+        "losses": 251,
+        "winRate": 0.1633,
+        "reasons": {
+          "objective": 40,
+          "sanity": 188,
+          "nightWins": 72
+        }
+      }
+    }
+  }
+}

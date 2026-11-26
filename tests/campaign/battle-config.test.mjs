@@ -17,6 +17,7 @@ test('normal battle config: derived seed, decks, sanity and mechanics', () => {
   assert.equal(cfg.decks[0].leader, run.leaderId);
   assert.deepEqual(cfg.decks[0].cards, run.deck);
   assert.equal(cfg.decks[1], 'cult'); // society run faces the cult preset
+  assert.deepEqual(cfg.startingHand, [8, 8]);
   assert.deepEqual(cfg.startingSanity, [6, 6]);
   assert.deepEqual(cfg.mechanics, { anomaly: true, chaosBag: true, objectives: true });
   assert.equal(cfg.firstPlayerCompensation, undefined);
@@ -28,10 +29,14 @@ test('cult run faces a society opponent', () => {
   assert.equal(buildBattleConfig(run, node).decks[1], 'society');
 });
 
-test('elite and boss lower starting sanity', () => {
+test('elite and boss reduce starting hand and sanity', () => {
   const run = createRun({ seed: 'cfg-3' });
-  assert.deepEqual(buildBattleConfig(run, findNode(run, 'elite')).startingSanity, [5, 6]);
-  assert.deepEqual(buildBattleConfig(run, findNode(run, 'boss')).startingSanity, [4, 6]);
+  const elite = buildBattleConfig(run, findNode(run, 'elite'));
+  const boss = buildBattleConfig(run, findNode(run, 'boss'));
+  assert.deepEqual(elite.startingHand, [7, 8]);
+  assert.deepEqual(elite.startingSanity, [5, 6]);
+  assert.deepEqual(boss.startingHand, [6, 8]);
+  assert.deepEqual(boss.startingSanity, [4, 6]);
 });
 
 test('battle relics translate to mechanics toggles and mulligan', () => {
