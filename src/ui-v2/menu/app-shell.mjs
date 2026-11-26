@@ -14,6 +14,7 @@
 import { createGameController } from '../game-controller.mjs';
 import { createFxController } from '../fx/fx-controller.mjs';
 import { createCampaignController } from '../campaign/campaign-controller.mjs';
+import { createArenaController } from '../arena/arena-controller.mjs';
 import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
 import {
   FACTION_CARDS,
@@ -26,7 +27,7 @@ import {
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'tutorial', 'multiplayer']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'tutorial', 'multiplayer']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -47,6 +48,7 @@ export function createAppShell(options = {}) {
   let currentScreen = 'menu';
   let controller = null;
   let campaign = null;
+  let arena = null;
   let tutorial = null;
   let fx = null;
 
@@ -77,6 +79,9 @@ export function createAppShell(options = {}) {
         <span class="gh2-game-top__tag">灰港三夜 · 战役模式</span>
       </header>
       <div class="gh2-campaign-host" data-app="campaign"></div>
+    </section>
+    <section class="gh2-screen gh2-screen--arena" data-screen="arena" hidden>
+      <div class="gh2-arena-host" data-app="arena"></div>
     </section>
     <section class="gh2-screen gh2-screen--tutorial" data-screen="tutorial" hidden>
       <header class="gh2-game-top">
@@ -116,18 +121,24 @@ export function createAppShell(options = {}) {
   const controlsRoot = el.querySelector('[data-app="controls"]');
   const resultLayer = el.querySelector('[data-app="result"]');
   const campaignHost = el.querySelector('[data-app="campaign"]');
+  const arenaHost = el.querySelector('[data-app="arena"]');
   const tutorialBoard = el.querySelector('[data-app="tutorial-board"]');
   const tutorialControls = el.querySelector('[data-app="tutorial-controls"]');
   const gameScreen = screenNodes['in-game'];
 
   function renderFactionScreen() {
-    factionHost.innerHTML = renderFactionSelect({ selected: selectedFaction, seedMode });
+    factionHost.innerHTML = renderFactionSelect({
+      selected: selectedFaction,
+      seedMode,
+      arena: entryMode === 'arena',
+    });
   }
 
   function renderCharacterScreen() {
     characterHost.innerHTML = renderCharacterSelect({
       faction: selectedFaction,
       selected: selectedCharacter,
+      arena: entryMode === 'arena',
     });
   }
 
@@ -225,6 +236,62 @@ export function createAppShell(options = {}) {
     });
     showScreen('campaign');
     return campaign;
+  }
+
+  function destroyArena() {
+    if (!arena) return;
+    const old = arena;
+    arena = null;
+    try { old.destroy(); } catch (_) { /* a half-built arena must not block routing */ }
+    if (arenaHost) arenaHost.innerHTML = '';
+  }
+
+  /** Fresh arena seed: injected generator, then browser crypto, then a local fallback. */
+  function makeArenaSeed() {
+    if (typeof opts.seedGenerator === 'function') return String(opts.seedGenerator());
+    const webCrypto = typeof globalThis !== 'undefined' ? globalThis.crypto : null;
+    if (webCrypto && typeof webCrypto.randomUUID === 'function') return webCrypto.randomUUID();
+    return `arena-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  }
+
+  function startArenaDraft() {
+    destroyController();
+    destroyCampaign();
+    destroyArena();
+    const meta = getCharacterCard(selectedCharacter);
+    arena = createArenaController({
+      host: arenaHost,
+      faction: selectedFaction,
+      leader: selectedCharacter,
+      leaderName: meta ? `${meta.title} · ${meta.nameZh}` : selectedCharacter,
+      seed: makeArenaSeed(),
+      onExit: () => {
+        destroyArena();
+        showScreen('menu');
+      },
+      onComplete: (battleOptions) => startArenaBattle(battleOptions),
+    });
+    showScreen('arena');
+    return arena;
+  }
+
+  /** Mount the drafted deck into the existing human-vs-AI controller. */
+  function startArenaBattle(battleOptions) {
+    destroyArena();
+    destroyController();
+    fx = createFxController({ boardRoot, controlsRoot });
+    controller = createGameController({
+      boardRoot,
+      controlsRoot,
+      battleOptions,
+      aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
+      hooks: fx.hooks,
+      onGameOver: (info) => showResult(info),
+    });
+    if (typeof window !== 'undefined') window.__greyharborGame = controller;
+    hideResult();
+    showScreen('in-game');
+    return controller;
   }
 
   function destroyTutorial() {
@@ -335,6 +402,9 @@ export function createAppShell(options = {}) {
     } else if (action === 'start-campaign') {
       entryMode = 'campaign';
       showScreen('faction-select');
+    } else if (action === 'start-arena') {
+      entryMode = 'arena';
+      showScreen('faction-select');
     } else if (action === 'start-tutorial') {
       startTutorial();
     } else if (action === 'start-multiplayer') {
@@ -344,8 +414,8 @@ export function createAppShell(options = {}) {
       if (entryMode === 'campaign') {
         startCampaign();
       } else {
-        // Skirmish: default the character to the faction's first character,
-        // then let the player pick one before the match starts.
+        // Skirmish / arena: default the character to the faction's first
+        // character, then let the player pick one before proceeding.
         const ids = characterIdsFor(selectedFaction);
         if (!ids.includes(selectedCharacter)) selectedCharacter = ids[0] ?? null;
         showScreen('character-select');
@@ -353,7 +423,8 @@ export function createAppShell(options = {}) {
     } else if (action === 'character-back') {
       showScreen('faction-select');
     } else if (action === 'start-character-match') {
-      startMatch();
+      if (entryMode === 'arena') startArenaDraft();
+      else startMatch();
     } else if (action === 'rematch') {
       hideResult();
       if (controller) controller.restart();
@@ -370,9 +441,11 @@ export function createAppShell(options = {}) {
     showScreen,
     startMatch,
     startCampaign,
+    startArenaDraft,
     startTutorial,
     getController: () => controller,
     getCampaign: () => campaign,
+    getArena: () => arena,
     getTutorial: () => tutorial,
     getScreen: () => currentScreen,
     getSelection: () => ({
@@ -383,6 +456,7 @@ export function createAppShell(options = {}) {
     destroy() {
       destroyController();
       destroyCampaign();
+      destroyArena();
       destroyTutorial();
       el.removeEventListener('click', handleClick);
       el.remove();

@@ -88,20 +88,24 @@ export function renderStartButton(selected = 'society') {
 }
 
 /**
- * @param {{selected?: string, seedMode?: string}} options
+ * @param {{selected?: string, seedMode?: string, arena?: boolean}} options
  */
 export function renderFactionSelect(options = {}) {
   const input = options && typeof options === 'object' ? options : {};
+  const arena = input.arena === true;
   const selected = FACTION_CARDS[input.selected] ? input.selected : 'society';
   const cards = FACTION_IDS.map((id) => renderFactionCard(id, id === selected)).join('');
+  const intro = arena
+    ? '竞技场：选定阵营与调查员后，从随机候选池三选一构筑牌组'
+    : '对手自动成为另一阵营 · 人类固定坐在先手席';
   return `<section class="gh2-faction-select" aria-label="阵营选择">
     <header class="gh2-faction-select__head">
       <button type="button" class="gh2-back-btn" data-menu-action="back" aria-label="返回主菜单">← 返回</button>
-      <div><h2>选择你的阵营</h2><p>对手自动成为另一阵营 · 人类固定坐在先手席</p></div>
+      <div><h2>选择你的阵营</h2><p>${escapeHtml(intro)}</p></div>
     </header>
     <div class="gh2-faction-select__grid">${cards}</div>
     <footer class="gh2-faction-select__foot">
-      ${renderModeToggle({ seedMode: input.seedMode })}
+      ${arena ? '' : renderModeToggle({ seedMode: input.seedMode })}
       <div class="gh2-faction-select__start" data-role="start">${renderStartButton(selected)}</div>
     </footer>
   </section>`;

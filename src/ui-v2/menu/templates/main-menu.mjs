@@ -13,6 +13,8 @@ export const MAIN_MENU_TEXT = Object.freeze({
   startHint: '选择阵营与牌局模式，进入人机对战',
   campaignLabel: '战役模式',
   campaignHint: 'Roguelike 调查之旅，节点间成长牌组与遗物',
+  arenaLabel: '竞技场选牌',
+  arenaHint: '随机候选池三选一构筑牌组，再与人机对战',
   tutorialLabel: '新手教程',
   tutorialHint: '交互式引导，几分钟学会换牌、出牌与理智规则',
   multiplayerLabel: '多人对战',
@@ -39,6 +41,10 @@ export function renderMainMenu(options = {}) {
       <button type="button" class="gh2-menu-btn" data-menu-action="start-campaign">
         <span class="gh2-menu-btn__icon" aria-hidden="true">❖</span>
         <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.campaignLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.campaignHint)}</small></span>
+      </button>
+      <button type="button" class="gh2-menu-btn" data-menu-action="start-arena">
+        <span class="gh2-menu-btn__icon" aria-hidden="true">🎲</span>
+        <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.arenaLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.arenaHint)}</small></span>
       </button>
       <button type="button" class="gh2-menu-btn" data-menu-action="start-tutorial">
         <span class="gh2-menu-btn__icon" aria-hidden="true">✦</span>

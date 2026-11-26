@@ -13,8 +13,9 @@
 - **数据驱动的角色系统**：6 名调查员的主动 / 被动技能全部由效果注册表（`effects/registry.js`）以数据描述，引擎不含 per-id 分支；新增角色只需新增数据，无需改引擎。
 - **确定性引擎**：所有随机走注入式 rng（无 `Math.random`），同种子可完全复现，便于复盘、自对弈与锁步防作弊。
 - **启发式 AI 对手**：合法动作生成 + 评估函数打分，注入式随机，支持固定种子与随机牌局。
+- **竞技场选牌（Arena Draft）**：从随机候选池逐轮三选一构筑 19 张牌，再用该牌进入人机对战；选牌过程确定性、可复现，复用现有引擎与控制器，无 per-id 分支。
 - **锁步对战框架**：可插拔座位驱动 + 确定性输入校验，已用假传输完成两客户端完整对局（菜单入口暂标注“开发中”）。
-- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **409 项自动化测试**通过。
+- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **426 项自动化测试**通过。
 
 ## 技术栈
 
@@ -38,7 +39,7 @@ npm start                        # node server.mjs → http://127.0.0.1:8788/
 
 | 地址 | 内容 |
 |---|---|
-| `/` 或 `/index.html` | **v2 正式入口**：主菜单 → 阵营选择 → 人机对战（含氛围层）或战役 Roguelike |
+| `/` 或 `/index.html` | **v2 正式入口**：主菜单 → 阵营选择 → 人机对战（含氛围层）、战役 Roguelike 或竞技场选牌 |
 | `/app.html` | 同款 app shell（阶段 3.3 入口，保留兼容） |
 | `/play.html` | 阶段 3.2 人机对战直入（固定种子） |
 | `/game.html` | 阶段 3.1 自动棋盘演示 |
@@ -176,6 +177,27 @@ research/           来源数据、QA 记录与审计产物
 `tests/campaign/`（53 项）。`scripts/campaign-soak.mjs` 做全 run 浸泡（0 崩溃、状态守恒），
 `scripts/campaign-balance.mjs` 做受控难度校准、`campaign-balance-final.mjs` 出定稿数据。
 
+## 竞技场选牌（Arena Draft）
+
+主菜单「竞技场选牌」进入。先选阵营与调查员（领袖），再从随机候选池逐轮**三选一**，构筑一副
+19 张非领袖牌后用该牌进入人机对战。整套玩法数据驱动、复用现有确定性引擎与启发式 AI，不新增
+引擎规则、不含 per-id 分支。
+
+![竞技场选牌](screenshots/arena-draft.png)
+
+1. **候选池**：本阵营 11 张非领袖卡 + 6 张中立卡 = 17 张；每轮随机出 3 张互不相同的候选，
+   单卡最多 2 份，达到上限的卡不再进入候选。
+2. **确定性**：每轮 RNG 由「种子 + 轮次」派生，渲染不推进随机状态；同种子、同选择序列必然得到
+   相同候选与牌组。每次进入竞技场生成一颗新种子（浏览器用 `crypto.randomUUID`）。
+3. **合法性**：选满 19 张后用 `validateDeck` 校验（阵营/中立、份数、张数、领袖合规），再翻译成
+   `createGame` 的 `battleOptions`——人类为构筑牌、对手为另一阵营预设牌——经控制器既有的
+   `battleOptions` 注入点开打，驱动循环、AI 与结算面板完全不变。
+
+纯逻辑位于 `src/arena/draft.mjs`（候选池、每轮 offer、份数、牌组与 battleOptions 构建），交互界面
+位于 `src/ui-v2/arena/`（控制器 + 纯函数模板），样式见 `src/styles-v2/menu.css` 的 Arena Draft 段。
+专项测试 `tests/arena/draft.test.mjs`（11 项）与 `tests/ui-v2/arena-template.test.mjs`（6 项），
+含 headless 整局打完与 HTML 转义验收。
+
 ## 氛围层（阶段 3.4）
 
 - `fx/view-diff.mjs` 纯函数比较前后 `buildView`：入场 uid、理↔狂翻面、理智变化、新封印/腐化、夜切换、终局。
@@ -191,10 +213,11 @@ npm test                                            # 根目录套件：104 通�
 node --test tests/campaign/*.test.mjs               # 战役套件：53 项
 node --test tests/v2/*.test.mjs                     # 引擎套件：130 项
 node --test tests/ai-v2/*.test.mjs                  # AI 套件：7 项
-node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择：88 项
+node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择 + 竞技场模板：94 项
+node --test tests/arena/*.test.mjs                  # 竞技场选牌纯逻辑：11 项
 node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架：11 项
 node --test tests/tutorial/*.test.mjs               # 交互式教程：14 项
-node --test                                         # 全量递归：409 项 = 407 通过 + 2 跳过，0 失败
+node --test                                         # 全量递归：426 项 = 424 通过 + 2 跳过，0 失败
 ```
 
 `npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。

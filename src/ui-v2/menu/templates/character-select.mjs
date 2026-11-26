@@ -85,16 +85,21 @@ export function renderCharacterCard(id, selected = false) {
 }
 
 /**
- * @param {{faction?: string, selected?: string}} options
+ * @param {{faction?: string, selected?: string, arena?: boolean}} options
  */
 export function renderCharacterSelect(options = {}) {
   const input = options && typeof options === 'object' ? options : {};
+  const arena = input.arena === true;
   const faction = CHARACTER_ROSTER[input.faction] ? input.faction : 'society';
   const ids = characterIdsFor(faction);
   const selected = ids.includes(input.selected) ? input.selected : ids[0];
   const selectedCard = getCharacterCard(selected);
   const factionName = FACTION_CARDS[faction]?.nameZh ?? faction;
   const cards = ids.map((id) => renderCharacterCard(id, id === selected)).join('');
+  const buttonTitle = arena ? '进入竞技场选牌' : '开始对局';
+  const buttonHint = arena
+    ? `以 ${selectedCard?.title ?? ''} · ${selectedCard?.nameZh ?? ''} 进入随机三选一`
+    : `以 ${selectedCard?.title ?? ''} · ${selectedCard?.nameZh ?? ''} 出战`;
   return `<section class="gh2-character-select" aria-label="角色选择">
     <header class="gh2-character-select__head">
       <button type="button" class="gh2-back-btn" data-menu-action="character-back">← 返回</button>
@@ -105,8 +110,8 @@ export function renderCharacterSelect(options = {}) {
       <button type="button" class="gh2-menu-btn gh2-menu-btn--primary gh2-character-start" data-menu-action="start-character-match">
         <span class="gh2-menu-btn__icon" aria-hidden="true">⚔</span>
         <span class="gh2-menu-btn__body">
-          <b>开始对局</b>
-          <small>以 ${escapeHtml(selectedCard?.title ?? '')} · ${escapeHtml(selectedCard?.nameZh ?? '')} 出战</small>
+          <b>${escapeHtml(buttonTitle)}</b>
+          <small>${escapeHtml(buttonHint)}</small>
         </span>
       </button>
     </footer>
