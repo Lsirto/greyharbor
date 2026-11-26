@@ -81,6 +81,7 @@ export function createCampaignController(options = {}) {
       controlsRoot: battleControls,
       battleOptions,
       aiDelay: opts.aiDelay,
+      aiDifficulty: opts.aiDifficulty,
       hooks: opts.hooks,
       onGameOver: handleBattleOver,
     });

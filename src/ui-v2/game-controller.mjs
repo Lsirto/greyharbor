@@ -25,6 +25,7 @@
 
 import { createGame, CARDS, PRESET_DECKS } from '../engine/v2/index.js';
 import { chooseAction } from '../ai/v2/ai.mjs';
+import { DEFAULT_DIFFICULTY, isDifficulty } from '../ai/v2/difficulty.mjs';
 import { createBoardRenderer } from './board-render.mjs';
 import { publicActionLabel } from './demo-controller.mjs';
 import { findMatchingActions, matchAction } from './action-matcher.mjs';
@@ -150,6 +151,9 @@ export function createGameController(options = {}) {
   const maxAiSteps = Number.isFinite(opts.maxAiSteps) && opts.maxAiSteps > 0
     ? Math.trunc(opts.maxAiSteps)
     : 500;
+  // AI decision profile for the whole match; an invalid value can never start
+  // a broken match because it falls back to the default difficulty.
+  const aiDifficulty = isDifficulty(opts.aiDifficulty) ? opts.aiDifficulty : DEFAULT_DIFFICULTY;
   const schedule = typeof opts.schedule === 'function'
     ? opts.schedule
     : (fn, ms) => setTimeout(fn, ms);
@@ -881,7 +885,7 @@ export function createGameController(options = {}) {
     }
 
     const aiView = engine.viewFor(AI);
-    const action = chooseAction(aiView, { seed: `${seed}:p1` });
+    const action = chooseAction(aiView, { seed: `${seed}:p1`, difficulty: aiDifficulty });
     if (!action || !asArray(aiView.actions).includes(action)) {
       say('对手没有合法动作，已停止自动化', 'error');
       inputLocked = false;
@@ -1420,6 +1424,7 @@ export function createGameController(options = {}) {
     return {
       mode,
       seed,
+      aiDifficulty,
       selectedUid,
       markedUids: selection.markedUids,
       limit: selection.limit,

@@ -21,6 +21,7 @@ import { createShopController } from '../shop/shop-controller.mjs';
 import { createDeckController } from '../deck/deck-controller.mjs';
 import { buildDeckBattleOptions } from '../../deck/battle.mjs';
 import { createStorage } from '../storage.mjs';
+import { readDifficulty, writeDifficulty } from '../../ai/v2/difficulty.mjs';
 import {
   DAILY_COMPLETION_REWARD,
   DAILY_FIRST_WIN_REWARD,
@@ -58,6 +59,8 @@ export function createAppShell(options = {}) {
   let seedMode = opts.seedMode === 'random' ? 'random' : 'fixed';
   // The chosen character (leader id); defaults to the faction's first character.
   let selectedCharacter = characterIdsFor(selectedFaction)[0] ?? null;
+  // Chosen AI difficulty; lazily loaded from storage on first use.
+  let aiDifficulty = null;
   let entryMode = 'skirmish';
   let currentScreen = 'menu';
   let controller = null;
@@ -174,6 +177,7 @@ export function createAppShell(options = {}) {
       faction: selectedFaction,
       selected: selectedCharacter,
       arena: entryMode === 'arena',
+      difficulty: getAiDifficulty(),
     });
   }
 
@@ -232,6 +236,7 @@ export function createAppShell(options = {}) {
       boardRoot,
       controlsRoot,
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
+      aiDifficulty: getAiDifficulty(),
       baseSeed: opts.baseSeed,
       seedGenerator: opts.seedGenerator,
       cardBackId: getEquippedCardBack(persistence),
@@ -268,6 +273,7 @@ export function createAppShell(options = {}) {
       faction: selectedFaction,
       seed: opts.campaignSeed,
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
+      aiDifficulty: getAiDifficulty(),
       hooks: fx ? fx.hooks : undefined,
       onExit: () => {
         destroyCampaign();
@@ -332,6 +338,7 @@ export function createAppShell(options = {}) {
       battleOptions,
       cardBackId: getEquippedCardBack(persistence),
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
+      aiDifficulty: getAiDifficulty(),
       hooks: fx.hooks,
       onGameOver: (info) => {
         if (typeof handleGameOver === 'function') handleGameOver(info);
@@ -349,6 +356,21 @@ export function createAppShell(options = {}) {
   function getStorage() {
     if (!storage) storage = createStorage(opts.storage);
     return storage;
+  }
+
+  /** Resolve the current difficulty, loading the persisted choice once. */
+  function getAiDifficulty() {
+    if (aiDifficulty === null) aiDifficulty = readDifficulty(getStorage());
+    return aiDifficulty;
+  }
+
+  /** Store a new difficulty choice and persist it across sessions. */
+  function setAiDifficulty(id) {
+    if (writeDifficulty(getStorage(), id)) {
+      aiDifficulty = id;
+      return true;
+    }
+    return false;
   }
 
   // Non-daily matches (skirmish / arena / campaign) pay a small per-win amount.
@@ -530,6 +552,20 @@ export function createAppShell(options = {}) {
       }
       return;
     }
+    const difficultyButton = target.closest('[data-difficulty]');
+    if (difficultyButton) {
+      const id = difficultyButton.dataset.difficulty;
+      if (!setAiDifficulty(id)) return;
+      const group = difficultyButton.closest('.gh2-difficulty');
+      if (group) {
+        for (const button of group.querySelectorAll('[data-difficulty]')) {
+          const active = button.dataset.difficulty === id;
+          button.classList.toggle('is-selected', active);
+          button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        }
+      }
+      return;
+    }
     const factionButton = target.closest('[data-faction]');
     if (factionButton) {
       const faction = factionButton.dataset.faction;
@@ -658,6 +694,7 @@ export function createAppShell(options = {}) {
       humanFaction: selectedFaction,
       humanLeader: selectedCharacter,
       seedMode,
+      aiDifficulty: getAiDifficulty(),
     }),
     destroy() {
       destroyController();

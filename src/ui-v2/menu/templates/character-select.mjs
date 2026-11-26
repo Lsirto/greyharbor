@@ -10,6 +10,7 @@
 
 import { CARDS } from '../../../engine/v2/cards.js';
 import { escapeHtml } from '../../utils.mjs';
+import { DEFAULT_DIFFICULTY, DIFFICULTY_LIST, isDifficulty } from '../../../ai/v2/difficulty.mjs';
 import { FACTION_CARDS } from './faction-select.mjs';
 
 /**
@@ -84,8 +85,30 @@ export function renderCharacterCard(id, selected = false) {
   </button>`;
 }
 
+/** Segmented AI difficulty selector used on the pre-battle screen. */
+export function renderDifficultySelect(selected = DEFAULT_DIFFICULTY) {
+  const current = isDifficulty(selected) ? selected : DEFAULT_DIFFICULTY;
+  const buttons = DIFFICULTY_LIST.map((profile) => {
+    const active = profile.id === current;
+    return `<button type="button"
+        class="gh2-difficulty__option${active ? ' is-selected' : ''}"
+        data-difficulty="${escapeHtml(profile.id)}"
+        aria-pressed="${active ? 'true' : 'false'}">
+      <b>${escapeHtml(profile.label)}</b>
+      <small>${escapeHtml(profile.description)}</small>
+    </button>`;
+  }).join('');
+  return `<div class="gh2-difficulty" role="group" aria-label="AI 难度">
+    <div class="gh2-difficulty__head">
+      <span class="gh2-difficulty__mark">AI 难度</span>
+      <span class="gh2-difficulty__hint">选择对手的决策强度</span>
+    </div>
+    <div class="gh2-difficulty__options">${buttons}</div>
+  </div>`;
+}
+
 /**
- * @param {{faction?: string, selected?: string, arena?: boolean}} options
+ * @param {{faction?: string, selected?: string, arena?: boolean, difficulty?: string}} options
  */
 export function renderCharacterSelect(options = {}) {
   const input = options && typeof options === 'object' ? options : {};
@@ -106,6 +129,7 @@ export function renderCharacterSelect(options = {}) {
       <div><h2>选择你的调查员</h2><p>${escapeHtml(factionName)}阵营 · 每名角色拥有不同的主动技与被动技</p></div>
     </header>
     <div class="gh2-character-select__grid">${cards}</div>
+    ${renderDifficultySelect(input.difficulty)}
     <footer class="gh2-character-select__foot">
       <button type="button" class="gh2-menu-btn gh2-menu-btn--primary gh2-character-start" data-menu-action="start-character-match">
         <span class="gh2-menu-btn__icon" aria-hidden="true">⚔</span>

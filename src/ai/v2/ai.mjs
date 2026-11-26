@@ -12,6 +12,7 @@
 import { hashSeed, nextRandom } from '../../engine/rng.js';
 import { CONFIG } from './config.mjs';
 import { buildPosition, scoreAction, scoreMulligan } from './evaluate.mjs';
+import { STRICT_PROFILE, resolveDifficulty } from './difficulty.mjs';
 
 function makeRng(options) {
   if (options && typeof options.rngState === 'number' && Number.isFinite(options.rngState)) {
@@ -47,11 +48,51 @@ export function chooseAction(view, options = {}) {
   }
   if (!Number.isFinite(best)) return actions[0];
 
-  const epsilon = CONFIG.rng.tieEpsilon;
   const rng = makeRng(options);
+  // Mulligan keeps strict scoring; in-play decisions follow the difficulty.
+  const profile = isMulligan ? STRICT_PROFILE : resolveDifficulty(options.difficulty);
+  return selectAction(actions, scores, best, rng, profile);
+}
+
+/**
+ * Turn the computed scores into a decision using a difficulty profile.
+ * See difficulty.mjs for the meaning of mistakeChance / noiseRatio.
+ */
+function selectAction(actions, scores, best, rng, profile) {
+  const count = actions.length;
+
+  // Deliberate blunder: ignore the scores and take a uniform legal action.
+  if (profile.mistakeChance > 0 && nextRandom(rng) < profile.mistakeChance) {
+    const index = Math.floor(nextRandom(rng) * count);
+    return actions[Math.min(Math.max(index, 0), count - 1)];
+  }
+
+  // Noisy evaluation: jitter each score by a fraction of the score spread.
+  if (profile.noiseRatio > 0) {
+    let worst = Infinity;
+    for (const value of scores) {
+      if (Number.isFinite(value) && value < worst) worst = value;
+    }
+    const spread = Number.isFinite(worst) ? Math.max(0, best - worst) : 0;
+    const amplitude = spread * profile.noiseRatio;
+    let chosenIndex = -1;
+    let chosenKey = -Infinity;
+    for (let index = 0; index < count; index += 1) {
+      if (!Number.isFinite(scores[index])) continue;
+      const key = scores[index] + (nextRandom(rng) - 0.5) * 2 * amplitude;
+      if (key > chosenKey) {
+        chosenKey = key;
+        chosenIndex = index;
+      }
+    }
+    return actions[chosenIndex >= 0 ? chosenIndex : 0];
+  }
+
+  // Strict: only near-best actions compete; exact ties are broken by the RNG.
+  const epsilon = CONFIG.rng.tieEpsilon;
   let chosenIndex = -1;
   let chosenKey = -Infinity;
-  for (let index = 0; index < scores.length; index += 1) {
+  for (let index = 0; index < count; index += 1) {
     if (scores[index] < best - epsilon) continue;
     const key = nextRandom(rng);
     if (key > chosenKey) {

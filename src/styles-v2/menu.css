@@ -265,6 +265,50 @@
   background: rgba(232, 201, 138, 0.08);
 }
 
+/* ── AI difficulty selector ───────────────────────────────── */
+
+.gh2-difficulty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: var(--gh2-radius);
+  background: rgba(13, 24, 26, 0.6);
+}
+.gh2-difficulty__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.gh2-difficulty__mark { color: var(--gh2-lamp); font-size: 12px; letter-spacing: 0.18em; }
+.gh2-difficulty__hint { color: var(--gh2-silver-faint); font-size: 12px; }
+.gh2-difficulty__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.gh2-difficulty__option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  color: var(--gh2-silver-dim);
+  text-align: left;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: var(--gh2-ink-1);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.gh2-difficulty__option b { color: var(--gh2-silver); font-size: 15px; }
+.gh2-difficulty__option small { color: var(--gh2-silver-faint); font-size: 11px; line-height: 1.5; }
+.gh2-difficulty__option:hover { transform: translateY(-2px); border-color: var(--gh2-lamp-dim); }
+.gh2-difficulty__option.is-selected {
+  border-color: var(--gh2-lamp);
+  color: var(--gh2-lamp);
+  background: rgba(232, 201, 138, 0.16);
+  box-shadow: var(--gh2-glow-lamp), inset 0 0 0 1px rgba(232, 201, 138, 0.25);
+}
+.gh2-difficulty__option.is-selected b { color: var(--gh2-lamp); }
+.gh2-difficulty__option.is-selected small { color: var(--gh2-parchment-dim); }
+
 /* ── character select ──────────────────────────────────────── */
 
 .gh2-character-select {
@@ -401,6 +445,8 @@
   .gh2-character-select__grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
   .gh2-character-card { min-height: 0; }
   .gh2-character-start { min-width: 240px; }
+  .gh2-difficulty { padding: 14px; }
+  .gh2-difficulty__options { grid-template-columns: 1fr; }
 }
 
 /* ── Arena Draft ───────────────────────────────────────────── */
