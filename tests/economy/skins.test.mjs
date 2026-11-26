@@ -16,6 +16,7 @@ import {
   RARE_PITY,
   EPIC_PITY,
   equipSkin,
+  unequipSkin,
   getEquippedSkin,
   getEquippedPortrait,
   getSkinCollection,
@@ -184,6 +185,20 @@ test('equipSkin：未拥有/角色不符均拒绝，拥有后可装备', () => {
   const ok = equipSkin(storage, 'harold-ashby', 'harold-ashby-voidkeeper');
   assert.equal(ok.ok, true);
   assert.equal(getEquippedSkin(storage, 'harold-ashby'), 'harold-ashby-voidkeeper');
+});
+
+test('unequipSkin：卸下后还原基础形象，未知角色被拒绝', () => {
+  const storage = memStorage();
+  seed(storage, {
+    ownedSkins: ['harold-ashby-voidkeeper'],
+    equippedSkins: { 'harold-ashby': 'harold-ashby-voidkeeper' },
+  });
+  const result = unequipSkin(storage, 'harold-ashby');
+  assert.equal(result.ok, true);
+  assert.equal(result.equipped, null);
+  assert.equal(getEquippedSkin(storage, 'harold-ashby'), null);
+  assert.equal(getEquippedPortrait(storage, 'harold-ashby').src, basePortraitSrc('harold-ashby'));
+  assert.equal(unequipSkin(storage, 'no-such-character').ok, false);
 });
 
 test('getSkinCollection：带拥有/装备标记，getEquippedPortrait 解析当前皮肤', () => {

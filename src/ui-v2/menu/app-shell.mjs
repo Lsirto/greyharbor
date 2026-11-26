@@ -27,9 +27,13 @@ import {
   DAILY_COMPLETION_REWARD,
   DAILY_FIRST_WIN_REWARD,
   addCoins,
+  equipSkin,
   getEquippedCardBack,
   getEquippedPortrait,
+  getEquippedSkin,
+  getSkinCollection,
   grantReward,
+  unequipSkin,
 } from '../../economy/economy.mjs';
 import { writeDailyResult } from '../../daily/daily.mjs';
 import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
@@ -41,6 +45,7 @@ import {
   renderFactionSelect,
   renderMainMenu,
   renderResultPanel,
+  renderSkinSwitcher,
   renderStartButton,
 } from './templates/index.mjs';
 
@@ -61,6 +66,8 @@ export function createAppShell(options = {}) {
   let seedMode = opts.seedMode === 'random' ? 'random' : 'fixed';
   // The chosen character (leader id); defaults to the faction's first character.
   let selectedCharacter = characterIdsFor(selectedFaction)[0] ?? null;
+  // Transient skin-switcher preview (skin id, or 'default' for the base look).
+  let previewSkinId = undefined;
   // Chosen AI difficulty; lazily loaded from storage on first use.
   let aiDifficulty = null;
   let entryMode = 'skirmish';
@@ -179,11 +186,29 @@ export function createAppShell(options = {}) {
     });
   }
 
+  // Ownership and the equipped look for every character in the faction.
+  function readSkinState() {
+    const persistence = getStorage();
+    const collection = getSkinCollection(persistence);
+    const result = {};
+    for (const id of characterIdsFor(selectedFaction)) {
+      const ownedIds = collection
+        .filter((item) => item.characterId === id && item.owned)
+        .map((item) => item.id);
+      result[id] = { ownedIds, equippedId: getEquippedSkin(persistence, id) };
+    }
+    return result;
+  }
+
   function renderCharacterScreen() {
     const persistence = getStorage();
     const portraits = {};
     for (const id of characterIdsFor(selectedFaction)) {
       portraits[id] = getEquippedPortrait(persistence, id);
+    }
+    // A fresh screen opens on the equipped look; an in-progress preview survives.
+    if (previewSkinId === undefined) {
+      previewSkinId = getEquippedSkin(persistence, selectedCharacter) ?? 'default';
     }
     characterHost.innerHTML = renderCharacterSelect({
       faction: selectedFaction,
@@ -191,7 +216,21 @@ export function createAppShell(options = {}) {
       arena: entryMode === 'arena',
       difficulty: getAiDifficulty(),
       portraits,
+      skinState: readSkinState(),
+      previewId: previewSkinId,
     });
+  }
+
+  // Re-render just the switcher after preview/equip changes (no full re-render).
+  function refreshSkinPanel() {
+    const host = characterHost.querySelector('[data-role="skin-switcher-host"]');
+    if (!host) return;
+    const state = readSkinState();
+    host.innerHTML = renderSkinSwitcher(
+      selectedCharacter,
+      state[selectedCharacter] ?? null,
+      previewSkinId,
+    );
   }
 
   function showScreen(name) {
@@ -205,7 +244,10 @@ export function createAppShell(options = {}) {
       node.classList.toggle('is-active', active);
     }
     if (name === 'faction-select') renderFactionScreen();
-    if (name === 'character-select') renderCharacterScreen();
+    if (name === 'character-select') {
+      previewSkinId = undefined;
+      renderCharacterScreen();
+    }
     if (name !== 'in-game') hideResult();
     return true;
   }
@@ -623,6 +665,50 @@ export function createAppShell(options = {}) {
       if (startHost) startHost.innerHTML = renderStartButton(selectedFaction);
       return;
     }
+    // ── In-screen skin switcher (character-select) ──
+    const skinActionEl = target.closest('[data-skin-action]');
+    if (skinActionEl) {
+      const skinAction = skinActionEl.dataset.skinAction;
+      if (skinAction === 'go-shop') {
+        startShop();
+        return;
+      }
+      if (skinAction === 'equip') {
+        const skinId = skinActionEl.dataset.skinId;
+        const persistence = getStorage();
+        // An empty skin id means the base look: clear the equipped skin.
+        const result = skinId
+          ? equipSkin(persistence, selectedCharacter, skinId)
+          : unequipSkin(persistence, selectedCharacter);
+        if (result.ok) {
+          previewSkinId = result.equipped ?? 'default';
+          renderCharacterScreen();
+        }
+        return;
+      }
+      return;
+    }
+    const skinNavEl = target.closest('[data-skin-nav]');
+    if (skinNavEl) {
+      const host = characterHost.querySelector('[data-role="skin-switcher-host"]');
+      const thumbs = host ? [...host.querySelectorAll('[data-skin-preview]')] : [];
+      if (thumbs.length) {
+        const activeIndex = thumbs.findIndex(
+          (button) => button.getAttribute('aria-pressed') === 'true',
+        );
+        const delta = skinNavEl.dataset.skinNav === 'prev' ? -1 : 1;
+        const nextIndex = (activeIndex + delta + thumbs.length) % thumbs.length;
+        previewSkinId = thumbs[nextIndex].dataset.skinPreview;
+        refreshSkinPanel();
+      }
+      return;
+    }
+    const skinPreviewEl = target.closest('[data-skin-preview]');
+    if (skinPreviewEl) {
+      previewSkinId = skinPreviewEl.dataset.skinPreview;
+      refreshSkinPanel();
+      return;
+    }
     const characterButton = target.closest('[data-character]');
     if (characterButton) {
       const character = characterButton.dataset.character;
@@ -639,6 +725,9 @@ export function createAppShell(options = {}) {
         startButton.querySelector('.gh2-menu-btn__body small').textContent =
           `以 ${meta.title} · ${meta.nameZh} 出战`;
       }
+      // Switching character resets the switcher to that character's equipped look.
+      previewSkinId = getEquippedSkin(getStorage(), character) ?? 'default';
+      refreshSkinPanel();
       return;
     }
     const campaignBack = target.closest('[data-app="campaign-menu"]');

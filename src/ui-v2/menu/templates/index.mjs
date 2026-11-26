@@ -17,5 +17,6 @@ export {
   getCharacterCard,
   renderCharacterCard,
   renderCharacterSelect,
+  renderSkinSwitcher,
   renderDifficultySelect,
 } from './character-select.mjs';

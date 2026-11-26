@@ -26,6 +26,10 @@ import {
   skinsByRarity,
 } from './skins.mjs';
 
+const KNOWN_CHARACTER_IDS = new Set(
+  CHARACTER_SKINS.map((skin) => skin.characterId),
+);
+
 export const ECONOMY_KEY = 'greyharbor.economy.v1';
 export const GACHA_COST = 100;
 export const RARE_PITY = 10; // every 10th pull without rare+ is rare+
@@ -343,6 +347,17 @@ export function equipSkin(storage, characterId, skinId) {
   state.equippedSkins[characterId] = skinId;
   writeEconomy(storage, state);
   return { ok: true, characterId, equipped: skinId };
+}
+
+/** Revert a character to the base portrait by clearing its equipped skin. */
+export function unequipSkin(storage, characterId) {
+  const state = readEconomy(storage);
+  if (!KNOWN_CHARACTER_IDS.has(characterId)) {
+    return { ok: false, reason: 'unknown-character', equipped: null };
+  }
+  delete state.equippedSkins[characterId];
+  writeEconomy(storage, state);
+  return { ok: true, characterId, equipped: null };
 }
 
 export function getSkinCollection(storage) {
