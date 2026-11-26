@@ -849,3 +849,190 @@
   .gh2-achievements { width: 96vw; padding: 20px 14px 28px; }
   .gh2-ach-grid { grid-template-columns: 1fr; gap: 12px; }
 }
+
+/* ============================================================
+   神秘商店：货币、抽卡、卡背收藏
+   ============================================================ */
+.gh2-shop {
+  width: min(980px, 94vw);
+  margin: 0 auto;
+  padding: 26px 26px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.gh2-shop__head { display: flex; align-items: center; gap: 18px; }
+.gh2-shop__heading { flex: 1; }
+.gh2-shop__heading h2 {
+  margin: 0;
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 28px;
+}
+.gh2-shop__heading p { margin: 4px 0 0; color: var(--gh2-silver-faint); font-size: 13px; }
+.gh2-shop__balance {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gh2-lamp);
+  padding: 8px 14px;
+  border: 1px solid rgba(232, 201, 138, 0.4);
+  border-radius: 999px;
+  background: rgba(232, 201, 138, 0.08);
+  white-space: nowrap;
+}
+
+.gh2-shop__gacha {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 22px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: rgba(4, 8, 10, 0.55);
+}
+.gh2-shop__gacha-info h3 {
+  margin: 0 0 6px;
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 19px;
+}
+.gh2-shop__gacha-info p { margin: 4px 0; color: var(--gh2-silver-dim); font-size: 13px; }
+.gh2-shop__rates {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  display: flex;
+  gap: 10px;
+}
+.gh2-shop__rates li {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+}
+.gh2-shop__rates li b { color: var(--gh2-lamp); }
+.gh2-shop__pity { font-size: 12px; color: var(--gh2-silver-faint); }
+.gh2-shop__pity b { color: var(--gh2-silver-dim); }
+
+.gh2-shop__pull {
+  cursor: pointer;
+  min-width: 150px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(232, 201, 138, 0.5);
+  border-radius: var(--gh2-radius);
+  background: linear-gradient(160deg, rgba(232, 201, 138, 0.16), rgba(4, 8, 10, 0.7));
+  color: var(--gh2-parchment);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.gh2-shop__pull:hover { transform: translateY(-2px); box-shadow: var(--gh2-glow-lamp); }
+.gh2-shop__pull-icon { font-size: 34px; line-height: 1; }
+.gh2-shop__pull-label { font-weight: 700; font-size: 16px; }
+.gh2-shop__pull small { color: var(--gh2-silver-dim); font-size: 12px; }
+.gh2-shop__pull.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: var(--gh2-line);
+  background: rgba(255, 255, 255, 0.04);
+}
+.gh2-shop__pull.is-disabled:hover { transform: none; box-shadow: none; }
+
+.gh2-shop__result {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--gh2-line);
+  font-size: 14px;
+  background: rgba(4, 8, 10, 0.6);
+}
+.gh2-shop__result--common { color: var(--gh2-silver-dim); }
+.gh2-shop__result--rare { color: var(--gh2-lamp); border-color: rgba(232, 201, 138, 0.45); }
+.gh2-shop__result--epic {
+  color: var(--gh2-corruption);
+  border-color: rgba(139, 122, 181, 0.55);
+  box-shadow: 0 0 14px rgba(139, 122, 181, 0.25);
+}
+.gh2-shop__result--warn { color: var(--gh2-danger); border-color: rgba(189, 106, 91, 0.45); }
+
+.gh2-shop__collection-title {
+  margin: 6px 0 0;
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 18px;
+}
+.gh2-shop__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.gh2-shop__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 12px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: rgba(4, 8, 10, 0.55);
+  text-align: center;
+}
+.gh2-shop__item-icon { font-size: 32px; line-height: 1.2; }
+.gh2-shop__item-name { color: var(--gh2-parchment); font-size: 14px; }
+.gh2-shop__item-rarity { font-size: 11px; color: var(--gh2-silver-faint); }
+.gh2-shop__item-desc {
+  font-size: 11px;
+  color: var(--gh2-silver-faint);
+  min-height: 30px;
+  line-height: 1.4;
+}
+.gh2-shop__item[data-rarity="rare"] { border-color: rgba(232, 201, 138, 0.4); }
+.gh2-shop__item[data-rarity="rare"] .gh2-shop__item-rarity { color: var(--gh2-lamp); }
+.gh2-shop__item[data-rarity="epic"] {
+  border-color: rgba(139, 122, 181, 0.55);
+  box-shadow: 0 0 14px rgba(139, 122, 181, 0.2);
+}
+.gh2-shop__item[data-rarity="epic"] .gh2-shop__item-rarity { color: var(--gh2-corruption); }
+.gh2-shop__item.is-locked { opacity: 0.6; }
+.gh2-shop__item.is-equipped {
+  border-color: rgba(67, 162, 145, 0.55);
+  background: linear-gradient(160deg, rgba(67, 162, 145, 0.12), rgba(4, 8, 10, 0.7));
+}
+.gh2-shop__equip {
+  cursor: pointer;
+  margin-top: 6px;
+  padding: 6px 18px;
+  border: 1px solid rgba(67, 162, 145, 0.5);
+  border-radius: 999px;
+  background: rgba(67, 162, 145, 0.12);
+  color: var(--gh2-cult-glow);
+  font-size: 13px;
+}
+.gh2-shop__equip:hover { background: rgba(67, 162, 145, 0.24); }
+.gh2-shop__equipped-tag {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--gh2-cult-glow);
+}
+.gh2-shop__locked-tag {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--gh2-silver-faint);
+}
+
+@media (max-width: 1024px) {
+  .gh2-shop { width: 96vw; padding: 20px 14px 28px; }
+  .gh2-shop__gacha { grid-template-columns: 1fr; }
+  .gh2-shop__pull { width: 100%; }
+  .gh2-shop__grid { grid-template-columns: repeat(2, 1fr); }
+  .gh2-shop__rates { flex-direction: column; }
+}

@@ -74,7 +74,7 @@ export function renderLocationColumn(options = {}) {
     if (!entry) {
       return `<div class="gh2-location__slot gh2-location__slot--empty" data-slot="${index}"><span>${index + 1}</span></div>`;
     }
-    return `<div class="gh2-location__slot" data-slot="${index}">${renderCard(entry, { size: 'board' })}</div>`;
+    return `<div class="gh2-location__slot" data-slot="${index}">${renderCard(entry, { size: 'board', cardBackId: opts.cardBackId })}</div>`;
   }).join('');
 
   return `<section class="gh2-location gh2-location--${location}" data-location="${location}" data-player="${playerIndex}" data-subtotal="${escapeHtml(subtotal)}">
@@ -104,6 +104,7 @@ export function renderLocationGrid(player, options = {}) {
     locationCard: locations[location],
     subtotal: scoreLocations[location],
     anomaly: opts.anomaly ?? null,
+    cardBackId: opts.cardBackId,
   })).join('');
 
   return `<div class="gh2-location-grid" data-player="${playerIndex}">${columns}</div>`;

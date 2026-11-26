@@ -17,7 +17,15 @@ import { createCampaignController } from '../campaign/campaign-controller.mjs';
 import { createArenaController } from '../arena/arena-controller.mjs';
 import { createDailyController } from '../daily/daily-controller.mjs';
 import { createAchievementsController } from '../achievements/achievements-controller.mjs';
+import { createShopController } from '../shop/shop-controller.mjs';
 import { createStorage } from '../storage.mjs';
+import {
+  DAILY_COMPLETION_REWARD,
+  DAILY_FIRST_WIN_REWARD,
+  addCoins,
+  getEquippedCardBack,
+  grantReward,
+} from '../../economy/economy.mjs';
 import { writeDailyResult } from '../../daily/daily.mjs';
 import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
 import {
@@ -31,7 +39,7 @@ import {
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'daily', 'achievements', 'tutorial', 'multiplayer']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'daily', 'achievements', 'shop', 'tutorial', 'multiplayer']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -55,6 +63,7 @@ export function createAppShell(options = {}) {
   let arena = null;
   let daily = null;
   let achievements = null;
+  let shop = null;
   let storage = null;
   let tutorial = null;
   let fx = null;
@@ -95,6 +104,9 @@ export function createAppShell(options = {}) {
     </section>
     <section class="gh2-screen gh2-screen--achievements" data-screen="achievements" hidden>
       <div class="gh2-achievements-host" data-app="achievements"></div>
+    </section>
+    <section class="gh2-screen gh2-screen--shop" data-screen="shop" hidden>
+      <div class="gh2-shop-host" data-app="shop"></div>
     </section>
     <section class="gh2-screen gh2-screen--tutorial" data-screen="tutorial" hidden>
       <header class="gh2-game-top">
@@ -137,6 +149,7 @@ export function createAppShell(options = {}) {
   const arenaHost = el.querySelector('[data-app="arena"]');
   const dailyHost = el.querySelector('[data-app="daily"]');
   const achievementsHost = el.querySelector('[data-app="achievements"]');
+  const shopHost = el.querySelector('[data-app="shop"]');
   const tutorialBoard = el.querySelector('[data-app="tutorial-board"]');
   const tutorialControls = el.querySelector('[data-app="tutorial-controls"]');
   const gameScreen = screenNodes['in-game'];
@@ -207,19 +220,24 @@ export function createAppShell(options = {}) {
   function startMatch() {
     destroyController();
     fx = createFxController({ boardRoot, controlsRoot });
+    const persistence = getStorage();
     controller = createGameController({
       boardRoot,
       controlsRoot,
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
       baseSeed: opts.baseSeed,
       seedGenerator: opts.seedGenerator,
+      cardBackId: getEquippedCardBack(persistence),
       matchConfig: {
         humanFaction: selectedFaction,
         seedMode,
         humanLeader: selectedCharacter,
       },
       hooks: fx.hooks,
-      onGameOver: (info) => showResult(info),
+      onGameOver: (info) => {
+        grantMatchWinReward(info, persistence);
+        showResult(info);
+      },
     });
     if (typeof window !== 'undefined') window.__greyharborGame = controller;
     hideResult();
@@ -299,15 +317,18 @@ export function createAppShell(options = {}) {
     destroyArena();
     destroyDaily();
     destroyController();
+    const persistence = getStorage();
     fx = createFxController({ boardRoot, controlsRoot });
     controller = createGameController({
       boardRoot,
       controlsRoot,
       battleOptions,
+      cardBackId: getEquippedCardBack(persistence),
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
       hooks: fx.hooks,
       onGameOver: (info) => {
         if (typeof handleGameOver === 'function') handleGameOver(info);
+        grantMatchWinReward(info, persistence);
         showResult(info);
       },
     });
@@ -321,6 +342,12 @@ export function createAppShell(options = {}) {
   function getStorage() {
     if (!storage) storage = createStorage(opts.storage);
     return storage;
+  }
+
+  // Non-daily matches (skirmish / arena / campaign) pay a small per-win amount.
+  const MATCH_WIN_REWARD = 25;
+  function grantMatchWinReward(info, persistence) {
+    if (info?.result?.winner === 0) addCoins(persistence, MATCH_WIN_REWARD);
   }
 
   function destroyDaily() {
@@ -352,6 +379,10 @@ export function createAppShell(options = {}) {
           const winner = info?.result?.winner;
           if (winner === 0 || winner === 1) {
             writeDailyResult(persistence, config.dateKey, winner === 0);
+            grantReward(persistence, `daily:${config.dateKey}:completion`, DAILY_COMPLETION_REWARD);
+            if (winner === 0) {
+              grantReward(persistence, `daily:${config.dateKey}:firstwin`, DAILY_FIRST_WIN_REWARD);
+            }
           }
         });
       },
@@ -386,6 +417,33 @@ export function createAppShell(options = {}) {
     });
     showScreen('achievements');
     return achievements;
+  }
+
+  function destroyShop() {
+    if (!shop) return;
+    const old = shop;
+    shop = null;
+    try { old.destroy(); } catch (_) { /* a half-built shop must not block routing */ }
+    if (shopHost) shopHost.innerHTML = '';
+  }
+
+  function startShop() {
+    destroyController();
+    destroyCampaign();
+    destroyArena();
+    destroyDaily();
+    destroyAchievements();
+    destroyShop();
+    shop = createShopController({
+      host: shopHost,
+      storage: getStorage(),
+      onExit: () => {
+        destroyShop();
+        showScreen('menu');
+      },
+    });
+    showScreen('shop');
+    return shop;
   }
 
   function destroyTutorial() {
@@ -503,6 +561,8 @@ export function createAppShell(options = {}) {
       startDaily();
     } else if (action === 'start-achievements') {
       startAchievements();
+    } else if (action === 'start-shop') {
+      startShop();
     } else if (action === 'start-tutorial') {
       startTutorial();
     } else if (action === 'start-multiplayer') {
@@ -542,12 +602,14 @@ export function createAppShell(options = {}) {
     startArenaDraft,
     startDaily,
     startAchievements,
+    startShop,
     startTutorial,
     getController: () => controller,
     getCampaign: () => campaign,
     getArena: () => arena,
     getDaily: () => daily,
     getAchievements: () => achievements,
+    getShop: () => shop,
     getTutorial: () => tutorial,
     getScreen: () => currentScreen,
     getSelection: () => ({
@@ -561,6 +623,7 @@ export function createAppShell(options = {}) {
       destroyArena();
       destroyDaily();
       destroyAchievements();
+      destroyShop();
       destroyTutorial();
       el.removeEventListener('click', handleClick);
       el.remove();

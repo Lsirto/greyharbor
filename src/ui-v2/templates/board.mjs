@@ -162,7 +162,7 @@ export function renderBoardMarkup(view, options = {}) {
           ${renderLeaderZone(me.leader, { playerIndex: pov, label: '己方领袖' })}
         </aside>
         <div class="gh2-table__main">
-          ${renderLocationGrid(me, { playerIndex: pov, anomaly: data.anomaly })}
+          ${renderLocationGrid(me, { playerIndex: pov, anomaly: data.anomaly, cardBackId: opts.cardBackId })}
         </div>
       </div>
     </div>

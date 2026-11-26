@@ -148,6 +148,34 @@ test('盖牌只渲染统一卡背，不泄露身份/战力/关键词/uid', () =>
   assert.equal(html, renderCardBack(), 'hidden 卡与统一卡背走同一条渲染路径');
 });
 
+test('装备卡背：renderCardBack 按 id 输出修饰类与数据属性，非法 id 回退默认', () => {
+  const custom = renderCardBack({ cardBackId: 'oldgod' });
+  assert.match(custom, /gh2-card--back-oldgod/);
+  assert.match(custom, /data-card-back="oldgod"/);
+  // hidden card forwards the equipped id through renderCard.
+  const hiddenCard = renderCard({ hidden: true }, { size: 'board', cardBackId: 'tide' });
+  assert.match(hiddenCard, /gh2-card--back-tide/);
+  assert.match(hiddenCard, /data-card-back="tide"/);
+  // unsafe / unknown-shaped ids fall back to the default and never inject classes.
+  const unsafe = renderCardBack({ cardBackId: 'x" onclick="evil' });
+  assert.match(unsafe, /data-card-back="default"/);
+  assert.ok(!unsafe.includes('gh2-card--back-x'));
+});
+
+test('卡背 id 经 location grid 透传到盖牌，对手手牌保持默认', () => {
+  const player = {
+    board: {
+      scene: [{ hidden: true, uid: 'a' }],
+      archive: [],
+      dream: [],
+    },
+  };
+  const grid = renderLocationGrid(player, { cardBackId: 'abyss' });
+  assert.match(grid, /gh2-card--back-abyss/);
+  const opponent = renderHandZone({ visible: false, count: 3 });
+  assert.ok(!opponent.includes('gh2-card--back-abyss'), '对手盖牌不使用己方卡背');
+});
+
 test('双面卡按 face 取对应样式与当前战力', () => {
   const card = unit({ reasonPower: 3, madnessPower: 6 });
   const reason = renderCard({ ...card, face: 'reason', power: 3 });

@@ -159,7 +159,8 @@ export function createGameController(options = {}) {
 
   const boardRoot = opts.boardRoot && typeof opts.boardRoot.querySelector === 'function' ? opts.boardRoot : null;
   const controlsRoot = opts.controlsRoot && typeof opts.controlsRoot.innerHTML === 'string' ? opts.controlsRoot : null;
-  const renderer = opts.renderer ?? (boardRoot ? createBoardRenderer(boardRoot, { pov: HUMAN }) : null);
+  const renderer = opts.renderer
+    ?? (boardRoot ? createBoardRenderer(boardRoot, { pov: HUMAN, cardBackId: opts.cardBackId }) : null);
   if (!renderer || typeof renderer.render !== 'function') {
     throw new TypeError('createGameController needs a renderer or a boardRoot');
   }

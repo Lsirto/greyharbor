@@ -15,7 +15,10 @@ import {
   typeLabel,
 } from '../card-view.mjs';
 import { asObject, escapeHtml } from '../utils.mjs';
+import { DEFAULT_CARD_BACK } from '../../economy/card-backs.mjs';
 import { hasIcon, icon } from './icons.mjs';
+
+const BACK_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 
 function keywordIcon(id) {
   return hasIcon(id) ? icon(id) : icon('corruption');
@@ -58,9 +61,13 @@ function renderStatuses(view) {
 
 /** The one and only face-down rendering: no uid, name, power or keywords. */
 export function renderCardBack(options = {}) {
-  const size = asObject(options).size;
-  const safeSize = ['xs', 'sm', 'board', 'env', 'hand', 'leader'].includes(size) ? size : 'board';
-  return `<div class="gh2-card gh2-card--hidden gh2-card--back gh2-card--size-${safeSize}" data-hidden="true" aria-label="盖牌" role="img">
+  const opts = asObject(options);
+  const safeSize = ['xs', 'sm', 'board', 'env', 'hand', 'leader'].includes(opts.size) ? opts.size : 'board';
+  const backId = typeof opts.cardBackId === 'string' && BACK_ID_PATTERN.test(opts.cardBackId)
+    ? opts.cardBackId
+    : DEFAULT_CARD_BACK;
+  const backClass = backId === DEFAULT_CARD_BACK ? '' : ` gh2-card--back-${backId}`;
+  return `<div class="gh2-card gh2-card--hidden gh2-card--back gh2-card--size-${safeSize}${backClass}" data-hidden="true" data-card-back="${backId}" aria-label="盖牌" role="img">
     <div class="gh2-card__back-frame">
       <div class="gh2-card__back-sigil">${icon('back')}</div>
       <span class="gh2-card__back-label">盖牌 · FACE DOWN</span>
