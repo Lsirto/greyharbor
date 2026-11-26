@@ -23,7 +23,7 @@ import {
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'in-game', 'campaign', 'tutorial']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'in-game', 'campaign', 'tutorial', 'multiplayer']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -77,6 +77,24 @@ export function createAppShell(options = {}) {
       </header>
       <div class="gh2-play-controls-host" data-app="tutorial-controls"></div>
       <main class="gh2-board" data-app="tutorial-board" aria-label="新手教程棋盘"></main>
+    </section>
+    <section class="gh2-screen gh2-screen--multiplayer" data-screen="multiplayer" hidden>
+      <header class="gh2-game-top">
+        <button type="button" class="gh2-back-btn" data-app="multiplayer-menu">← 返回主菜单</button>
+        <span class="gh2-game-top__tag">灰港三夜 · 多人对战</span>
+      </header>
+      <div class="gh2-mp-lobby">
+        <h2 class="gh2-mp-lobby__title">多人对战大厅</h2>
+        <p class="gh2-mp-lobby__note">真人在线对战正在开发中。底层已预留确定性锁步接口与房间号协议，待接入 WebSocket 通道即可开局。</p>
+        <label class="gh2-mp-lobby__field">
+          <span>房间号</span>
+          <input type="text" placeholder="输入 6 位房间号" disabled aria-disabled="true">
+        </label>
+        <div class="gh2-mp-lobby__actions">
+          <button type="button" class="gh2-menu-btn gh2-menu-btn--primary" disabled aria-disabled="true">创建房间</button>
+          <button type="button" class="gh2-menu-btn" disabled aria-disabled="true">加入房间</button>
+        </div>
+      </div>
     </section>`;
   root.appendChild(el);
 
@@ -260,6 +278,11 @@ export function createAppShell(options = {}) {
       showScreen('menu');
       return;
     }
+    const multiplayerBack = target.closest('[data-app="multiplayer-menu"]');
+    if (multiplayerBack) {
+      showScreen('menu');
+      return;
+    }
     const appButton = target.closest('[data-app="menu"]');
     if (appButton) {
       destroyController();
@@ -275,6 +298,8 @@ export function createAppShell(options = {}) {
       showScreen('faction-select');
     } else if (action === 'start-tutorial') {
       startTutorial();
+    } else if (action === 'start-multiplayer') {
+      showScreen('multiplayer');
     } else if (action === 'back') showScreen('menu');
     else if (action === 'start-match') {
       if (entryMode === 'campaign') startCampaign();
