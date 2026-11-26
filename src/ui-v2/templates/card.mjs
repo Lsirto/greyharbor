@@ -70,7 +70,7 @@ export function renderCardBack(options = {}) {
   return `<div class="gh2-card gh2-card--hidden gh2-card--back gh2-card--size-${safeSize}${backClass}" data-hidden="true" data-card-back="${backId}" aria-label="盖牌" role="img">
     <div class="gh2-card__back-frame">
       <div class="gh2-card__back-sigil">${icon('back')}</div>
-      <span class="gh2-card__back-label">盖牌 · FACE DOWN</span>
+      <span class="gh2-card__back-label">盖牌</span>
     </div>
   </div>`;
 }
@@ -82,7 +82,6 @@ export function renderCard(card, options = {}) {
 
   const classes = cardClasses(view, opts).join(' ');
   const nameZh = view.nameZh || view.name || '未知卡牌';
-  const nameEn = view.name || view.nameZh;
   const slotAttr = view.slot === null ? '' : ` data-slot="${escapeHtml(view.slot)}"`;
   const costBadge = view.sanityCost > 0
     ? `<span class="gh2-card__cost" title="理智代价">${icon('eye')}${escapeHtml(view.sanityCost)}</span>`
@@ -120,7 +119,6 @@ export function renderCard(card, options = {}) {
       </div>
       <div class="gh2-card__plate">
         <span class="gh2-card__name-zh">${escapeHtml(nameZh)}</span>
-        <span class="gh2-card__name-en">${escapeHtml(nameEn)}</span>
       </div>
       ${renderPrintedPower(view)}
       ${renderKeywords(view)}

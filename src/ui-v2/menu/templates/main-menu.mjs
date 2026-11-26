@@ -7,7 +7,7 @@ import { escapeHtml } from '../../utils.mjs';
 
 export const MAIN_MENU_TEXT = Object.freeze({
   title: '灰港三夜',
-  subtitle: 'THREE NIGHTS AT GREYHARBOR',
+  subtitle: '克苏鲁主题 · 原创卡牌对局',
   tagline: '三夜牌局，两族明暗；灯火与深渊之间，由你落子。',
   startLabel: '开始对局',
   startHint: '选择阵营与牌局模式，进入人机对战',

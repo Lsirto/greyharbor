@@ -83,7 +83,6 @@ function renderCodexCard(card) {
     </div>
     <div class="gh2-codex-card__head">
       <span class="gh2-codex-card__name-zh">${escapeHtml(card.nameZh)}</span>
-      <span class="gh2-codex-card__name-en">${escapeHtml(card.nameEn)}</span>
     </div>
     <div class="gh2-codex-card__tags">
       <span class="gh2-codex-card__tag">${escapeHtml(FACTION_LABELS[card.faction] ?? card.faction)}</span>

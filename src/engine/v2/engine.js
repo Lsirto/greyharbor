@@ -403,7 +403,7 @@ export class EngineV2 {
       ...this._legalReveals(p),
       ...this._legalPlays(p),
       ...this._legalLeaderActions(p),
-      { type: 'pass', player: p, label: 'Pass' },
+      { type: 'pass', player: p, label: '过牌' },
     ];
   }
 
@@ -1000,7 +1000,7 @@ export class EngineV2 {
       player: p,
       leaderId,
       targetUid: target.uid,
-      label: `${leaderId}: ${effectDef.id} ${target.uid}`,
+      label: `${this.cardIndex[leaderId]?.nameZh ?? leaderId} 主动技 → ${this.cardIndex[target?.cardId ?? target?.inst?.cardId]?.nameZh ?? target.uid}`,
     }));
   }
 
@@ -1063,7 +1063,6 @@ export class EngineV2 {
         }).filter((placement) => !blockedLocation || placement.location !== blockedLocation);
         for (const placement of placements) {
           for (const replaceWithUid of iteration.replacementOptions) {
-            const costText = iteration.sacrificeUid ? `sacrifice ${iteration.sacrificeUid} → ` : '';
             actions.push({
               type: 'useLeader',
               player: p,
@@ -1073,7 +1072,7 @@ export class EngineV2 {
               cardUid: card.uid,
               location: placement.location,
               slot: placement.slot,
-              label: `${leaderId}: ${costText}${card.cardId} @ ${placement.location}#${placement.slot}`,
+              label: `${this.cardIndex[leaderId]?.nameZh ?? leaderId}：${iteration.sacrificeUid ? '献祭己方单位，' : ''}召唤「${this.cardIndex[card.cardId]?.nameZh ?? card.cardId}」到${LOCATION_LABELS[placement.location]}第 ${placement.slot + 1} 槽`,
             });
           }
         }
@@ -2414,7 +2413,7 @@ export class EngineV2 {
     const hand = this.state.players[p].hand;
     const uids = hand.map((inst) => inst.uid);
     const limit = Math.min(this._mulliganLimit(p), uids.length);
-    const actions = [{ type: 'mulligan', player: p, uids: [], label: 'Keep hand' }];
+    const actions = [{ type: 'mulligan', player: p, uids: [], label: '保留手牌，不换' }];
     for (let count = 1; count <= limit; count++) {
       const emit = (start, chosen) => {
         if (chosen.length === count) {
@@ -2422,7 +2421,7 @@ export class EngineV2 {
             type: 'mulligan',
             player: p,
             uids: chosen.map((i) => uids[i]),
-            label: `Mulligan ${count} cards`,
+            label: `换掉 ${count} 张牌`,
           });
           return;
         }
@@ -2472,7 +2471,7 @@ export class EngineV2 {
                 secondaryUids: choice.secondaryUids ?? [],
                 replaceWithUid: choice.replaceWithUid ?? null,
               },
-              label: `Reveal ${this.cardIndex[inst.cardId]?.name ?? inst.cardId} (${choice.label})`,
+              label: `翻开「${this.cardIndex[inst.cardId]?.nameZh ?? inst.cardId}」：${choice.label}`,
             });
           }
         } else {
@@ -2480,13 +2479,13 @@ export class EngineV2 {
             type: 'reveal',
             player: p,
             uids: [inst.uid],
-            label: `Reveal ${this.cardIndex[inst.cardId]?.name ?? inst.cardId} at ${LOCATION_LABELS[location]}#${slot}`,
+            label: `翻开「${this.cardIndex[inst.cardId]?.nameZh ?? inst.cardId}」（${LOCATION_LABELS[location]} 第 ${slot + 1} 槽）`,
           });
         }
       }
     }
     if (all.length > 1 && !modalPending) {
-      actions.push({ type: 'reveal', player: p, uids: all, label: 'Reveal all face-down cards' });
+      actions.push({ type: 'reveal', player: p, uids: all, label: '翻开全部盖牌' });
     }
     return actions;
   }
@@ -2544,7 +2543,7 @@ export class EngineV2 {
                       secondaryUids: choice.secondaryUids ?? [],
                       replaceWithUid: choice.replaceWithUid ?? null,
                     },
-                    label: `Play ${card.name} → ${LOCATION_LABELS[location]}#${slot}${faceDown ? ' (face-down)' : ''} (${choice.label})`,
+                    label: `打出「${card.nameZh}」到${LOCATION_LABELS[location]}第 ${slot + 1} 槽${faceDown ? '（盖牌）' : ''}：${choice.label}`,
                   });
                 }
               } else {
@@ -2558,7 +2557,7 @@ export class EngineV2 {
                   faceDown,
                   face,
                   choice: null,
-                  label: `Play ${card.name} → ${LOCATION_LABELS[location]}#${slot}${faceDown ? ' (face-down)' : ''}`,
+                  label: `打出「${card.nameZh}」到${LOCATION_LABELS[location]}第 ${slot + 1} 槽${faceDown ? '（盖牌）' : ''}`,
                 });
               }
             }
@@ -2588,7 +2587,7 @@ export class EngineV2 {
                 secondaryUids: choice.secondaryUids ?? [],
                 replaceWithUid: choice.replaceWithUid ?? null,
               },
-              label: `Play ${card.name} (${choice.label})`,
+              label: `打出「${card.nameZh}」：${choice.label}`,
             });
           }
         } else {
@@ -2602,7 +2601,7 @@ export class EngineV2 {
             faceDown: false,
             face,
             choice: null,
-            label: `Play ${card.name}`,
+            label: `打出「${card.nameZh}」`,
           });
         }
         continue;
@@ -2624,7 +2623,7 @@ export class EngineV2 {
               location,
               slot,
               face,
-              label: `Attach ${card.name} → ${LOCATION_LABELS[location]}#${slot}`,
+              label: `装备「${card.nameZh}」到${LOCATION_LABELS[location]}第 ${slot + 1} 槽`,
             });
           }
         }
@@ -2641,7 +2640,7 @@ export class EngineV2 {
             location: card.location,
             slot: null,
             face,
-            label: `Play ${card.name} → ${LOCATION_LABELS[card.location]} location slot`,
+            label: `打出「${card.nameZh}」到${LOCATION_LABELS[card.location]}据点槽`,
           });
         }
         continue;
@@ -2658,7 +2657,7 @@ export class EngineV2 {
           location: null,
           slot: null,
           face,
-          label: `Play ${card.name}`,
+          label: `打出「${card.nameZh}」`,
         });
       }
     }

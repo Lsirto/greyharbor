@@ -424,6 +424,13 @@ function replacementSelections(engine, ctx, replacements, primaryUid) {
   return [null, ...candidates.map((inst) => inst.uid)];
 }
 
+/** Plain Chinese name for a target/instance candidate used in choice labels. */
+function displayTargetName(engine, target) {
+  const cardId = target?.cardId ?? target?.inst?.cardId ?? null;
+  const card = cardId ? engine.cardIndex[cardId] : null;
+  return card?.nameZh ?? card?.name ?? target?.uid ?? cardId ?? '未知卡牌';
+}
+
 /**
  * Enumerate every legal (mode, targetUid, secondaryUids, replaceWithUid) tuple
  * for a modal effect.  Returns `[]` for non-modal effects and `[null]` when
@@ -469,12 +476,17 @@ export function enumerateEffectChoices(engine, ctx, effectDef) {
       for (const secondary of secondaries) {
         for (const replaceWithUid of replacements) {
           let optionLabel = choice.label ?? choice.id;
-          // Discover-style choices append the target card's public name so the
-          // modal can distinguish otherwise identical options.
-          if (choice.labelWithTarget === true && primary) {
-            const targetCard = engine.cardIndex[primary.cardId];
-            const targetName = targetCard?.nameZh ?? targetCard?.name ?? primary.cardId;
-            optionLabel = `${optionLabel} · ${targetName}`;
+          // Append target names so otherwise identical options are distinct.
+          if (choice.labelWithTarget === true) {
+            const secondaryNames = secondary.map((entry) => displayTargetName(engine, entry));
+            if (secondaryNames.length) {
+              const parts = [];
+              if (primary) parts.push(`弃 ${displayTargetName(engine, primary)}`);
+              parts.push(`取 ${secondaryNames.join('、')}`);
+              optionLabel = `${optionLabel}（${parts.join('，')}）`;
+            } else if (primary) {
+              optionLabel = `${optionLabel} · ${displayTargetName(engine, primary)}`;
+            }
           }
           out.push({
             mode: choice.id,

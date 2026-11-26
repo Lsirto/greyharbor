@@ -53,7 +53,6 @@ function renderCandidate(cardId, owned) {
       ${ownedTag}
     </span>
     <span class="gh2-arena-card__name">${escapeHtml(card.nameZh)}</span>
-    <span class="gh2-arena-card__en">${escapeHtml(card.nameEn)}</span>
     <span class="gh2-arena-card__meta">
       <span class="gh2-arena-card__type">${escapeHtml(TYPES_ZH[card.type] ?? card.type)}</span>
       ${renderCost(card)}

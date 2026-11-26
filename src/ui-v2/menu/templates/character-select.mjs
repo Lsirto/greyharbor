@@ -56,7 +56,6 @@ export function getCharacterCard(id) {
     id,
     faction: card.faction,
     nameZh: card.nameZh,
-    nameEn: card.nameEn,
     title: meta.title,
     icon: meta.icon,
     archetype: meta.archetype,
@@ -86,7 +85,6 @@ export function renderCharacterCard(id, selected = false, portrait = null) {
     </span>
     <span class="gh2-character-card__title">${escapeHtml(card.title)}</span>
     <span class="gh2-character-card__name">${escapeHtml(card.nameZh)}</span>
-    <span class="gh2-character-card__en">${escapeHtml(card.nameEn)}</span>
     <span class="gh2-character-card__archetype">${escapeHtml(card.archetype)}</span>
     <span class="gh2-character-card__effect">${escapeHtml(card.effect)}</span>
     <span class="gh2-character-card__flavor">“${escapeHtml(card.flavor)}”</span>

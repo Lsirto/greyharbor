@@ -104,7 +104,6 @@ test('卡牌模板字段齐全且做 HTML 转义', () => {
   }), { size: 'hand' });
 
   assert.match(html, /&lt;img src=x onerror=&quot;boom\(\)&quot;&gt;诺拉/);
-  assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;Nora/);
   // The template's own art <img> is allowed; injected payloads must still be escaped.
   assert.ok(!html.includes('<img src=x'), '原始 img 标签不得进入 HTML');
   assert.ok(!html.includes('<script'), '原始 script 标签不得进入 HTML');
@@ -321,7 +320,6 @@ test('对手手牌只输出数量，己方手牌输出卡牌', () => {
   const mine = renderHandZone({ visible: true, count: 1, cards: [unit()] });
   assert.match(mine, /data-hand-visible="true"/);
   assert.match(mine, /诺拉·威尔斯/);
-  assert.match(mine, /Nora Wells/);
 });
 
 test('环境行、领袖区与玩家信息条渲染状态', () => {

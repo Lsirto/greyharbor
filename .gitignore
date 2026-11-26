@@ -6,6 +6,9 @@
 # dependencies
 node_modules/
 
+# desktop build output
+dist/
+
 # python caches
 __pycache__/
 *.pyc

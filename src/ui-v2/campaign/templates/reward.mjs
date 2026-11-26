@@ -49,7 +49,6 @@ export function renderRelicReward(run) {
       <span class="gh2-creward-relic__glyph" aria-hidden="true">⚜</span>
       <div class="gh2-creward-relic__body">
         <b>${escapeHtml(relic.nameZh ?? id)}</b>
-        <small>${escapeHtml(relic.nameEn ?? id)}</small>
         <p>${escapeHtml(relic.description ?? '')}</p>
       </div>
     </div>`;

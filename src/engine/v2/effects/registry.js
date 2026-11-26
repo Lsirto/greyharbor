@@ -676,7 +676,8 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'discardAndPick',
-          label: 'Discard 1 card, then take 1 of the top 3',
+          label: '弃掉 1 张手牌，再从牌堆顶 3 张中拿取 1 张',
+          labelWithTarget: true,
           condition: {
             kind: 'all',
             conditions: [
@@ -713,7 +714,8 @@ export const EFFECT_REGISTRY = Object.freeze({
         },
         {
           id: 'discardOnly',
-          label: 'Discard 1 card (deck is empty)',
+          label: '弃掉 1 张手牌（牌堆已空）',
+          labelWithTarget: true,
           condition: {
             kind: 'all',
             conditions: [
@@ -733,7 +735,8 @@ export const EFFECT_REGISTRY = Object.freeze({
         },
         {
           id: 'pickOnly',
-          label: 'Take 1 of the top 3 (hand is empty)',
+          label: '从牌堆顶 3 张中拿取 1 张（手牌已空）',
+          labelWithTarget: true,
           condition: {
             kind: 'all',
             conditions: [
