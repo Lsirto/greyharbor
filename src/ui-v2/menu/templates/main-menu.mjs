@@ -11,6 +11,8 @@ export const MAIN_MENU_TEXT = Object.freeze({
   tagline: '三夜牌局，两族明暗；灯火与深渊之间，由你落子。',
   startLabel: '开始对局',
   startHint: '选择阵营与牌局模式，进入人机对战',
+  campaignLabel: '战役模式',
+  campaignHint: 'Roguelike 调查之旅，节点间成长牌组与遗物',
   demoLabel: '自动演示',
   rulesLabel: '规则简介',
 });
@@ -30,6 +32,10 @@ export function renderMainMenu(options = {}) {
       <button type="button" class="gh2-menu-btn gh2-menu-btn--primary" data-menu-action="start">
         <span class="gh2-menu-btn__icon" aria-hidden="true">⚔</span>
         <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.startLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.startHint)}</small></span>
+      </button>
+      <button type="button" class="gh2-menu-btn" data-menu-action="start-campaign">
+        <span class="gh2-menu-btn__icon" aria-hidden="true">❖</span>
+        <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.campaignLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.campaignHint)}</small></span>
       </button>
       <a class="gh2-menu-btn gh2-menu-btn--link" href="./game.html">
         <span class="gh2-menu-btn__icon" aria-hidden="true">▷</span>

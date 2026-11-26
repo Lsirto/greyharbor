@@ -13,6 +13,7 @@
 
 import { createGameController } from '../game-controller.mjs';
 import { createFxController } from '../fx/fx-controller.mjs';
+import { createCampaignController } from '../campaign/campaign-controller.mjs';
 import {
   FACTION_CARDS,
   renderFactionSelect,
@@ -21,7 +22,7 @@ import {
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'in-game']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'in-game', 'campaign']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -36,8 +37,10 @@ export function createAppShell(options = {}) {
 
   let selectedFaction = FACTION_CARDS[opts.humanFaction] ? opts.humanFaction : 'society';
   let seedMode = opts.seedMode === 'random' ? 'random' : 'fixed';
+  let entryMode = 'skirmish';
   let currentScreen = 'menu';
   let controller = null;
+  let campaign = null;
   let fx = null;
 
   const el = document.createElement('div');
@@ -57,6 +60,13 @@ export function createAppShell(options = {}) {
       <div class="gh2-play-controls-host" data-app="controls"></div>
       <main class="gh2-board" data-app="board" aria-label="灰港三夜人机对战棋盘"></main>
       <div class="gh2-result-layer" data-app="result" hidden></div>
+    </section>
+    <section class="gh2-screen gh2-screen--campaign" data-screen="campaign" hidden>
+      <header class="gh2-game-top">
+        <button type="button" class="gh2-back-btn" data-app="campaign-menu">← 返回主菜单</button>
+        <span class="gh2-game-top__tag">灰港三夜 · 战役模式</span>
+      </header>
+      <div class="gh2-campaign-host" data-app="campaign"></div>
     </section>`;
   root.appendChild(el);
 
@@ -68,6 +78,7 @@ export function createAppShell(options = {}) {
   const boardRoot = el.querySelector('[data-app="board"]');
   const controlsRoot = el.querySelector('[data-app="controls"]');
   const resultLayer = el.querySelector('[data-app="result"]');
+  const campaignHost = el.querySelector('[data-app="campaign"]');
   const gameScreen = screenNodes['in-game'];
 
   function renderFactionScreen() {
@@ -139,6 +150,32 @@ export function createAppShell(options = {}) {
     return controller;
   }
 
+  function destroyCampaign() {
+    if (!campaign) return;
+    const old = campaign;
+    campaign = null;
+    try { old.destroy(); } catch (_) { /* a half-built campaign must not block routing */ }
+    if (campaignHost) campaignHost.innerHTML = '';
+  }
+
+  function startCampaign() {
+    destroyController();
+    destroyCampaign();
+    campaign = createCampaignController({
+      host: campaignHost,
+      faction: selectedFaction,
+      seed: opts.campaignSeed,
+      aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
+      hooks: fx ? fx.hooks : undefined,
+      onExit: () => {
+        destroyCampaign();
+        showScreen('menu');
+      },
+    });
+    showScreen('campaign');
+    return campaign;
+  }
+
   function handleClick(event) {
     const target = event?.target;
     if (!target || typeof target.closest !== 'function') return;
@@ -166,6 +203,12 @@ export function createAppShell(options = {}) {
       if (startHost) startHost.innerHTML = renderStartButton(selectedFaction);
       return;
     }
+    const campaignBack = target.closest('[data-app="campaign-menu"]');
+    if (campaignBack) {
+      destroyCampaign();
+      showScreen('menu');
+      return;
+    }
     const appButton = target.closest('[data-app="menu"]');
     if (appButton) {
       destroyController();
@@ -173,10 +216,17 @@ export function createAppShell(options = {}) {
       return;
     }
     const action = target.closest('[data-menu-action]')?.dataset.menuAction;
-    if (action === 'start') showScreen('faction-select');
-    else if (action === 'back') showScreen('menu');
-    else if (action === 'start-match') startMatch();
-    else if (action === 'rematch') {
+    if (action === 'start') {
+      entryMode = 'skirmish';
+      showScreen('faction-select');
+    } else if (action === 'start-campaign') {
+      entryMode = 'campaign';
+      showScreen('faction-select');
+    } else if (action === 'back') showScreen('menu');
+    else if (action === 'start-match') {
+      if (entryMode === 'campaign') startCampaign();
+      else startMatch();
+    } else if (action === 'rematch') {
       hideResult();
       if (controller) controller.restart();
     } else if (action === 'menu') {
@@ -191,11 +241,14 @@ export function createAppShell(options = {}) {
     el,
     showScreen,
     startMatch,
+    startCampaign,
     getController: () => controller,
+    getCampaign: () => campaign,
     getScreen: () => currentScreen,
     getSelection: () => ({ humanFaction: selectedFaction, seedMode }),
     destroy() {
       destroyController();
+      destroyCampaign();
       el.removeEventListener('click', handleClick);
       el.remove();
     },

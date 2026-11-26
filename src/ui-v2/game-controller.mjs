@@ -238,6 +238,19 @@ export function createGameController(options = {}) {
   }
 
   function newEngine() {
+    aiSteps = 0;
+    gameOverNotified = false;
+
+    // Generic engine-options override (used by the campaign: run deck + relic
+    // translation + difficulty).  The human-vs-AI driving loop is unchanged.
+    if (opts.battleOptions && typeof opts.battleOptions === 'object') {
+      engine = createGame(opts.battleOptions);
+      seed = typeof opts.battleOptions.seed === 'string'
+        ? opts.battleOptions.seed
+        : matchConfig.baseSeed;
+      return;
+    }
+
     seed = matchConfig.seedMode === 'random'
       ? String(seedGenerator())
       : matchConfig.baseSeed;
@@ -249,8 +262,6 @@ export function createGameController(options = {}) {
       names: [`你 · ${myFaction}`, `AI · ${foeFaction}`],
       decks,
     });
-    aiSteps = 0;
-    gameOverNotified = false;
   }
 
   /** Display labels come from the human view; candidate values come from actions. */

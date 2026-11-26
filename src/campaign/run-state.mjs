@@ -124,10 +124,18 @@ export function resolveEvent(run, choiceIndex) {
 /** Run the pending battle headlessly; on a win open the reward step. */
 export function resolveBattle(run) {
   if (run.pending?.kind !== 'battle') return bad('not a battle step');
-  const node = currentNode(run);
-  const result = runHeadlessBattle(run, node);
+  const result = runHeadlessBattle(run, currentNode(run));
+  return applyBattleOutcome(run, result);
+}
 
-  if (result.winner !== 0) {
+/**
+ * Apply an externally resolved battle result (interactive human play or a
+ * headless run).  Reward pools still consume the run rng deterministically.
+ */
+export function applyBattleOutcome(run, result) {
+  if (run.pending?.kind !== 'battle') return bad('not a battle step');
+  const node = currentNode(run);
+  if (result?.winner !== 0) {
     run.status = 'lost';
     run.pending = null;
     record(run, '战斗失败，调查终止');

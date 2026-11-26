@@ -1,0 +1,253 @@
+/* ============================================================
+   styles-v2/campaign.css — Roguelike campaign screens.
+   One-screen discipline (514×676 / 1280×720): the campaign screen fills
+   100dvh with no page scroll; only the map body / deck list may scroll.
+   Tokens come from theme.css; no external resources.
+   ============================================================ */
+
+/* ── screen + hosts ───────────────────────────────────────── */
+.gh2-screen--campaign.is-active {
+  height: 100dvh;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 5px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+.gh2-campaign-host { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.gh2-campaign-view,
+.gh2-campaign-battle { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* display:flex above would otherwise override the hidden attribute. */
+.gh2-campaign-view[hidden],
+.gh2-campaign-battle[hidden] { display: none !important; }
+.gh2-campaign-battle { gap: 4px; }
+.gh2-campaign-battle-top { display: flex; align-items: center; padding: 0; }
+.gh2-campaign-battle .gh2-board { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.gh2-campaign-battle .gh2-shell--compact { width: 100%; }
+
+/* Shared section frame for map/event/reward/rest/result. */
+.gh2-cmap,
+.gh2-cevent,
+.gh2-creward,
+.gh2-crest,
+.gh2-cresult {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── map ──────────────────────────────────────────────────── */
+.gh2-cmap { gap: 8px; max-width: 920px; }
+.gh2-cmap-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gh2-cmap-head h2 { font-family: var(--gh2-font-display); letter-spacing: 0.08em; color: var(--gh2-parchment); }
+.gh2-cmap-stats { display: flex; gap: 16px; list-style: none; padding: 0; }
+.gh2-cmap-stats li { display: flex; flex-direction: column; align-items: center; min-width: 38px; }
+.gh2-cmap-stats b { color: var(--gh2-lamp); font-size: 18px; }
+.gh2-cmap-stats small { color: var(--gh2-silver-faint); font-size: 10px; }
+.gh2-cmap-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: var(--gh2-radius);
+  background: rgba(8, 16, 18, 0.55);
+}
+.gh2-cmap-tier { display: flex; align-items: center; gap: 10px; }
+.gh2-cmap-tier__num {
+  flex: 0 0 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--gh2-lamp-dim);
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: 50%;
+}
+.gh2-cmap-tier__nodes { display: flex; gap: 8px; flex-wrap: wrap; }
+.gh2-cmap-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: 999px;
+  color: var(--gh2-silver-faint);
+  background: rgba(4, 8, 10, 0.6);
+}
+.gh2-cmap-node__glyph { font-size: 13px; }
+.gh2-cmap-node__label { font-size: 12px; }
+.gh2-cmap-node.is-completed { opacity: 0.5; }
+.gh2-cmap-node.is-current {
+  color: var(--gh2-lamp);
+  border-color: var(--gh2-lamp-dim);
+  box-shadow: var(--gh2-glow-lamp);
+}
+.gh2-cmap-node.is-reachable {
+  color: var(--gh2-cult-glow);
+  border-color: var(--gh2-cult);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+.gh2-cmap-node.is-reachable:hover { transform: translateY(-2px); box-shadow: var(--gh2-glow-cult); }
+.gh2-cmap-hint { flex: 0 0 auto; color: var(--gh2-silver-faint); font-size: 11px; text-align: center; }
+
+/* ── event ───────────────────────────────────────────────── */
+.gh2-cevent { gap: 14px; max-width: 720px; }
+.gh2-cevent-kicker,
+.gh2-creward-kicker,
+.gh2-crest-kicker {
+  color: var(--gh2-lamp-dim);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+}
+.gh2-cevent-head { display: flex; flex-direction: column; gap: 4px; }
+.gh2-cevent-head h2,
+.gh2-creward-head h2,
+.gh2-crest-head h2 {
+  font-family: var(--gh2-font-display);
+  color: var(--gh2-parchment);
+  letter-spacing: 0.06em;
+}
+.gh2-cevent-flavor { line-height: 1.75; color: var(--gh2-silver-dim); }
+.gh2-cevent-choices { display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0; }
+.gh2-cevent-choice {
+  padding: 11px 15px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  cursor: pointer;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+.gh2-cevent-choice:hover { border-color: var(--gh2-lamp); transform: translateX(3px); }
+.gh2-cevent-choice.is-disabled { opacity: 0.42; cursor: not-allowed; transform: none; }
+
+/* ── rewards ─────────────────────────────────────────────── */
+.gh2-creward { gap: 12px; max-width: 980px; }
+.gh2-creward-head { display: flex; flex-direction: column; gap: 4px; }
+.gh2-creward-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 10px;
+}
+.gh2-creward-card {
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  overflow: hidden;
+  background: var(--gh2-ink-2);
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+.gh2-creward-card:hover { transform: translateY(-3px); border-color: var(--gh2-lamp-dim); }
+.gh2-creward-card__art { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; }
+.gh2-creward-card__plate { padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.gh2-creward-card__plate b { color: var(--gh2-parchment); font-size: 13px; }
+.gh2-creward-card__plate small { color: var(--gh2-silver-faint); font-size: 10px; }
+.gh2-creward-card__type { color: var(--gh2-lamp-dim); font-size: 10px; }
+.gh2-creward-relics { display: flex; flex-direction: column; gap: 10px; }
+.gh2-creward-relic {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 13px 15px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: var(--gh2-ink-2);
+  cursor: pointer;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+.gh2-creward-relic:hover { border-color: var(--gh2-lamp-dim); transform: translateX(3px); }
+.gh2-creward-relic__glyph { font-size: 22px; color: var(--gh2-lamp); }
+.gh2-creward-relic__body { display: flex; flex-direction: column; gap: 2px; }
+.gh2-creward-relic__body b { color: var(--gh2-parchment); }
+.gh2-creward-relic__body small { color: var(--gh2-silver-faint); font-size: 10px; }
+.gh2-creward-relic__body p { color: var(--gh2-silver-dim); font-size: 12px; line-height: 1.6; }
+.gh2-creward-skip {
+  align-self: center;
+  padding: 7px 16px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: transparent;
+  color: var(--gh2-silver-dim);
+  cursor: pointer;
+}
+.gh2-creward-skip:hover { border-color: var(--gh2-lamp); color: var(--gh2-lamp); }
+
+/* ── rest ────────────────────────────────────────────────── */
+.gh2-crest { gap: 14px; max-width: 720px; }
+.gh2-crest-head { display: flex; flex-direction: column; gap: 4px; }
+.gh2-crest-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gh2-crest-option {
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: var(--gh2-ink-2);
+  color: var(--gh2-parchment);
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+.gh2-crest-option:hover { border-color: var(--gh2-lamp-dim); }
+.gh2-crest-option small { color: var(--gh2-silver-dim); }
+.gh2-crest-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  list-style: none;
+}
+.gh2-crest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 13px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: var(--gh2-radius);
+  cursor: pointer;
+}
+.gh2-crest-item:hover { border-color: var(--gh2-lamp-dim); }
+.gh2-crest-item__name { color: var(--gh2-parchment); font-size: 13px; }
+.gh2-crest-item__en { color: var(--gh2-silver-faint); font-size: 10px; }
+
+/* ── result ──────────────────────────────────────────────── */
+.gh2-cresult {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  max-width: 560px;
+}
+.gh2-cresult__sigil { font-size: 50px; color: var(--gh2-lamp); }
+.gh2-cresult.is-lost .gh2-cresult__sigil { color: var(--gh2-danger); }
+.gh2-cresult__kicker { letter-spacing: 0.3em; color: var(--gh2-silver-faint); font-size: 12px; }
+.gh2-cresult h2 { font-family: var(--gh2-font-display); color: var(--gh2-parchment); font-size: 32px; }
+.gh2-cresult__detail { color: var(--gh2-silver-dim); line-height: 1.7; }
+.gh2-cresult-stats { display: flex; gap: 22px; list-style: none; padding: 0; }
+.gh2-cresult-stats li { display: flex; flex-direction: column; }
+.gh2-cresult-stats b { color: var(--gh2-lamp); font-size: 20px; }
+.gh2-cresult-stats small { color: var(--gh2-silver-faint); font-size: 10px; }
+
+/* ── narrow windows ──────────────────────────────────────── */
+@media (max-width: 900px) {
+  .gh2-cmap-stats { gap: 10px; }
+  .gh2-creward-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+}
