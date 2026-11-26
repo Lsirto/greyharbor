@@ -11,3 +11,10 @@ export {
 } from './faction-select.mjs';
 export { SEED_MODES, renderModeToggle } from './mode-toggle.mjs';
 export { RESULT_REASON_ZH, renderResultPanel } from './result-panel.mjs';
+export {
+  CHARACTER_ROSTER,
+  characterIdsFor,
+  getCharacterCard,
+  renderCharacterCard,
+  renderCharacterSelect,
+} from './character-select.mjs';

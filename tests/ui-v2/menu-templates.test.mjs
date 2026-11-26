@@ -18,11 +18,12 @@ import {
   renderStartButton,
 } from '../../src/ui-v2/menu/templates/index.mjs';
 
-test('主菜单：标题 / 开始对局 / 自动演示链接 / 折叠规则简介', () => {
+test('主菜单：标题 / 开始对局 / 各模式入口 / 折叠规则简介', () => {
   const html = renderMainMenu();
   assert.match(html, /灰港三夜/);
   assert.match(html, /data-menu-action="start"/);
-  assert.match(html, /href="\.\/game\.html"/);
+  // The self-play demo entry was removed; the menu must no longer link to it.
+  assert.ok(!html.includes('game.html'));
   assert.match(html, /<details class="gh2-rules">/);
   assert.match(html, /summary>\s*规则简介/);
   assert.match(html, /理智归零/);

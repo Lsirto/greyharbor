@@ -29,12 +29,12 @@ const NULL_WHITELIST = Object.freeze({
   'frank-holt': '引擎原语已完整覆盖：相邻己方卡连锁 +1 上限 +3 由 KEYWORD_SPECS.chain + scoring.chainCount 共享原语实现（§6.5/§11.1）',
 });
 
-test('card table declares exactly 30 unique card ids', () => {
-  assert.equal(cardIds.length, 30, 'the normalized card table has 30 cards');
-  assert.equal(new Set(cardIds).size, 30, 'card ids are unique');
+test('card table declares exactly 34 unique card ids', () => {
+  assert.equal(cardIds.length, 34, 'the normalized card table has 34 cards');
+  assert.equal(new Set(cardIds).size, 34, 'card ids are unique');
 });
 
-test('all 30 cards are covered by a non-empty effect array or the explicit null whitelist', () => {
+test('all 34 cards are covered by a non-empty effect array or the explicit null whitelist', () => {
   for (const id of cardIds) {
     assert.ok(
       Object.prototype.hasOwnProperty.call(EFFECT_REGISTRY, id),

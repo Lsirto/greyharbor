@@ -1,9 +1,9 @@
 {
-  "name": "gwent-classic-web",
+  "name": "greyharbor",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Web-based Gwent (The Witcher 3) with faithful rules, full card pool, upgraded visuals and effects.",
+  "description": "Three Nights in Greyharbor — an original Cthulhu-themed card game with deterministic engine, heuristic AI, six investigators and a lockstep multiplayer framework.",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test 'tests/*.test.mjs'",

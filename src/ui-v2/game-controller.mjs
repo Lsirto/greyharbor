@@ -23,7 +23,7 @@
  * `crypto.randomUUID` in the browser.
  */
 
-import { createGame } from '../engine/v2/index.js';
+import { createGame, CARDS, PRESET_DECKS } from '../engine/v2/index.js';
 import { chooseAction } from '../ai/v2/ai.mjs';
 import { createBoardRenderer } from './board-render.mjs';
 import { publicActionLabel } from './demo-controller.mjs';
@@ -47,6 +47,7 @@ const FACTION_NAMES_ZH = Object.freeze({ society: '学会', cult: '教团' });
 
 export const DEFAULT_MATCH_CONFIG = Object.freeze({
   humanFaction: 'society',
+  humanLeader: 'harold-ashby',
   seedMode: 'fixed',
   baseSeed: DEFAULT_PLAY_SEED,
 });
@@ -59,6 +60,17 @@ const AI = AI_SEAT;
  * option is accepted as a base seed so play.html and older scripts keep
  * working unchanged.
  */
+/** Resolve a requested leader id for a faction, falling back to its preset. */
+function resolveLeader(faction, requested) {
+  const fallback = PRESET_DECKS[faction]?.leader ?? null;
+  if (typeof requested !== 'string' || requested.length === 0) return fallback;
+  const card = CARDS[requested];
+  // A character must be a leader card of the same faction; otherwise the
+  // preset leader is used so a bad value can never start a broken match.
+  if (!card || card.type !== 'leader' || card.faction !== faction) return fallback;
+  return requested;
+}
+
 export function normalizeMatchConfig(raw = {}, legacySeed) {
   const input = asObject(raw);
   const humanFaction = input.humanFaction === 'cult' ? 'cult' : 'society';
@@ -67,7 +79,8 @@ export function normalizeMatchConfig(raw = {}, legacySeed) {
   const baseSeed = typeof candidate === 'string' && candidate.length > 0
     ? candidate
     : DEFAULT_PLAY_SEED;
-  return Object.freeze({ humanFaction, seedMode, baseSeed });
+  const humanLeader = resolveLeader(humanFaction, input.humanLeader);
+  return Object.freeze({ humanFaction, humanLeader, seedMode, baseSeed });
 }
 
 function isNodeRuntime() {
@@ -254,9 +267,17 @@ export function createGameController(options = {}) {
     seed = matchConfig.seedMode === 'random'
       ? String(seedGenerator())
       : matchConfig.baseSeed;
-    const decks = FACTION_DECK_ORDER[matchConfig.humanFaction].slice();
+    const factionOrder = FACTION_DECK_ORDER[matchConfig.humanFaction].slice();
+    // Build explicit deck specs so the human seat can override its leader with
+    // the chosen character while the 19-card preset list stays unchanged. The
+    // AI seat keeps its faction's preset leader.
+    const decks = factionOrder.map((faction, seat) => {
+      const preset = PRESET_DECKS[faction];
+      const leader = seat === HUMAN ? matchConfig.humanLeader : preset.leader;
+      return { faction, leader, cards: preset.cards.slice() };
+    });
     const myFaction = FACTION_NAMES_ZH[matchConfig.humanFaction];
-    const foeFaction = FACTION_NAMES_ZH[decks[AI]];
+    const foeFaction = FACTION_NAMES_ZH[factionOrder[AI]];
     engine = createGame({
       seed,
       names: [`你 · ${myFaction}`, `AI · ${foeFaction}`],

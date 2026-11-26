@@ -17,13 +17,16 @@ import { createCampaignController } from '../campaign/campaign-controller.mjs';
 import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
 import {
   FACTION_CARDS,
+  characterIdsFor,
+  getCharacterCard,
+  renderCharacterSelect,
   renderFactionSelect,
   renderMainMenu,
   renderResultPanel,
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'in-game', 'campaign', 'tutorial', 'multiplayer']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'tutorial', 'multiplayer']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -38,6 +41,8 @@ export function createAppShell(options = {}) {
 
   let selectedFaction = FACTION_CARDS[opts.humanFaction] ? opts.humanFaction : 'society';
   let seedMode = opts.seedMode === 'random' ? 'random' : 'fixed';
+  // The chosen character (leader id); defaults to the faction's first character.
+  let selectedCharacter = characterIdsFor(selectedFaction)[0] ?? null;
   let entryMode = 'skirmish';
   let currentScreen = 'menu';
   let controller = null;
@@ -53,6 +58,9 @@ export function createAppShell(options = {}) {
     </section>
     <section class="gh2-screen gh2-screen--faction" data-screen="faction-select" hidden>
       <div data-role="faction"></div>
+    </section>
+    <section class="gh2-screen gh2-screen--character" data-screen="character-select" hidden>
+      <div data-role="character"></div>
     </section>
     <section class="gh2-screen gh2-screen--game" data-screen="in-game" hidden>
       <header class="gh2-game-top">
@@ -103,6 +111,7 @@ export function createAppShell(options = {}) {
     el.querySelector(`[data-screen="${name}"]`),
   ]));
   const factionHost = el.querySelector('[data-role="faction"]');
+  const characterHost = el.querySelector('[data-role="character"]');
   const boardRoot = el.querySelector('[data-app="board"]');
   const controlsRoot = el.querySelector('[data-app="controls"]');
   const resultLayer = el.querySelector('[data-app="result"]');
@@ -113,6 +122,13 @@ export function createAppShell(options = {}) {
 
   function renderFactionScreen() {
     factionHost.innerHTML = renderFactionSelect({ selected: selectedFaction, seedMode });
+  }
+
+  function renderCharacterScreen() {
+    characterHost.innerHTML = renderCharacterSelect({
+      faction: selectedFaction,
+      selected: selectedCharacter,
+    });
   }
 
   function showScreen(name) {
@@ -126,6 +142,7 @@ export function createAppShell(options = {}) {
       node.classList.toggle('is-active', active);
     }
     if (name === 'faction-select') renderFactionScreen();
+    if (name === 'character-select') renderCharacterScreen();
     if (name !== 'in-game') hideResult();
     return true;
   }
@@ -170,7 +187,11 @@ export function createAppShell(options = {}) {
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
       baseSeed: opts.baseSeed,
       seedGenerator: opts.seedGenerator,
-      matchConfig: { humanFaction: selectedFaction, seedMode },
+      matchConfig: {
+        humanFaction: selectedFaction,
+        seedMode,
+        humanLeader: selectedCharacter,
+      },
       hooks: fx.hooks,
       onGameOver: (info) => showResult(info),
     });
@@ -266,6 +287,24 @@ export function createAppShell(options = {}) {
       if (startHost) startHost.innerHTML = renderStartButton(selectedFaction);
       return;
     }
+    const characterButton = target.closest('[data-character]');
+    if (characterButton) {
+      const character = characterButton.dataset.character;
+      if (!getCharacterCard(character)) return;
+      selectedCharacter = character;
+      for (const card of characterHost.querySelectorAll('[data-character]')) {
+        const active = card.dataset.character === character;
+        card.classList.toggle('is-selected', active);
+        card.setAttribute('aria-pressed', active ? 'true' : 'false');
+      }
+      const startButton = characterHost.querySelector('[data-menu-action="start-character-match"]');
+      if (startButton) {
+        const meta = getCharacterCard(character);
+        startButton.querySelector('.gh2-menu-btn__body small').textContent =
+          `以 ${meta.title} · ${meta.nameZh} 出战`;
+      }
+      return;
+    }
     const campaignBack = target.closest('[data-app="campaign-menu"]');
     if (campaignBack) {
       destroyCampaign();
@@ -302,8 +341,19 @@ export function createAppShell(options = {}) {
       showScreen('multiplayer');
     } else if (action === 'back') showScreen('menu');
     else if (action === 'start-match') {
-      if (entryMode === 'campaign') startCampaign();
-      else startMatch();
+      if (entryMode === 'campaign') {
+        startCampaign();
+      } else {
+        // Skirmish: default the character to the faction's first character,
+        // then let the player pick one before the match starts.
+        const ids = characterIdsFor(selectedFaction);
+        if (!ids.includes(selectedCharacter)) selectedCharacter = ids[0] ?? null;
+        showScreen('character-select');
+      }
+    } else if (action === 'character-back') {
+      showScreen('faction-select');
+    } else if (action === 'start-character-match') {
+      startMatch();
     } else if (action === 'rematch') {
       hideResult();
       if (controller) controller.restart();
@@ -325,7 +375,11 @@ export function createAppShell(options = {}) {
     getCampaign: () => campaign,
     getTutorial: () => tutorial,
     getScreen: () => currentScreen,
-    getSelection: () => ({ humanFaction: selectedFaction, seedMode }),
+    getSelection: () => ({
+      humanFaction: selectedFaction,
+      humanLeader: selectedCharacter,
+      seedMode,
+    }),
     destroy() {
       destroyController();
       destroyCampaign();

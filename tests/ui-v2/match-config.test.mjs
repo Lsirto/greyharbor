@@ -39,17 +39,20 @@ test('normalizeMatchConfig：缺省值 / 非法值回退 / 旧 seed 选项兼容
     humanFaction: 'society',
     seedMode: 'fixed',
     baseSeed: DEFAULT_PLAY_SEED,
+    humanLeader: 'harold-ashby',
   });
   assert.deepEqual(DEFAULT_MATCH_CONFIG, normalizeMatchConfig());
   assert.deepEqual(normalizeMatchConfig({ humanFaction: 'CULT', seedMode: 'RANDOM' }), {
     humanFaction: 'society',
     seedMode: 'fixed',
     baseSeed: DEFAULT_PLAY_SEED,
+    humanLeader: 'harold-ashby',
   });
   assert.deepEqual(normalizeMatchConfig({ humanFaction: 'cult', seedMode: 'random', baseSeed: '' }), {
     humanFaction: 'cult',
     seedMode: 'random',
     baseSeed: DEFAULT_PLAY_SEED,
+    humanLeader: 'elias-thorne',
   });
   assert.equal(normalizeMatchConfig({}, 'legacy-seed').baseSeed, 'legacy-seed');
   assert.equal(normalizeMatchConfig({ baseSeed: 'config-seed' }, 'legacy-seed').baseSeed, 'config-seed');
@@ -63,6 +66,7 @@ test('人类选学会：decks 顺序 society/cult，名称与领袖席位正确'
   assert.deepEqual(state.players.map((player) => player.name), ['你 · 学会', 'AI · 教团']);
   assert.deepEqual(controller.getMatchConfig(), {
     humanFaction: 'society', seedMode: 'fixed', baseSeed: DEFAULT_PLAY_SEED,
+    humanLeader: 'harold-ashby',
   });
   controller.destroy();
 });
@@ -75,6 +79,42 @@ test('人类选教团：decks 顺序 cult/society，名称与领袖席位正确'
   assert.deepEqual(state.players.map((player) => player.name), ['你 · 教团', 'AI · 学会']);
   assert.deepEqual(controller.getState().humanFaction, 'cult');
   controller.destroy();
+});
+
+test('humanLeader：覆盖人类座领袖，AI 座保留预设领袖', () => {
+  const society = makeController({
+    matchConfig: { humanFaction: 'society', humanLeader: 'enid-halloway' },
+  });
+  const s = society.controller.getEngine().state;
+  assert.deepEqual(s.players.map((player) => player.leaderId), ['enid-halloway', 'elias-thorne']);
+  assert.equal(society.controller.getMatchConfig().humanLeader, 'enid-halloway');
+  society.controller.destroy();
+
+  const cult = makeController({
+    matchConfig: { humanFaction: 'cult', humanLeader: 'gregor-pestilence' },
+  });
+  const c = cult.controller.getEngine().state;
+  assert.deepEqual(c.players.map((player) => player.leaderId), ['gregor-pestilence', 'harold-ashby']);
+  cult.controller.destroy();
+});
+
+test('humanLeader：非法领袖（异阵营 / 非领袖卡 / 垃圾值）回退阵营预设', () => {
+  const cases = [
+    'vera-crowe',      // cult leader on a society match
+    'finn-calloway',   // a unit, not a leader
+    'no-such-leader',  // unknown id
+    '',
+  ];
+  for (const humanLeader of cases) {
+    const ctx = makeController({ matchConfig: { humanFaction: 'society', humanLeader } });
+    const state = ctx.controller.getEngine().state;
+    assert.equal(state.players[0].leaderId, 'harold-ashby', `case ${humanLeader}`);
+    assert.equal(ctx.controller.getMatchConfig().humanLeader, 'harold-ashby');
+    ctx.controller.destroy();
+  }
+  // Non-string requested value also falls back.
+  const normalized = normalizeMatchConfig({ humanFaction: 'cult', humanLeader: 42 });
+  assert.equal(normalized.humanLeader, 'elias-thorne');
 });
 
 test('固定种子：baseSeed 可复现，restart 沿用同种子与同阵营', () => {

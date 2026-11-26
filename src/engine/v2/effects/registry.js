@@ -84,8 +84,39 @@ const abyssUnitSelector = (overrides = {}) =>
     ...overrides,
   });
 
+// Every face-up unit occupying a normal slot on one side (group buffs).
+const boardUnitsSelector = (side, overrides = {}) =>
+  selector({
+    side,
+    zones: [ZONE.BOARD],
+    types: SLOT_TYPES,
+    face: 'up',
+    count: 'all',
+    required: false,
+    ...overrides,
+  });
+
+const ownBoardUnitsSelector = (overrides = {}) => boardUnitsSelector(SIDE.OWN, overrides);
+const enemyBoardUnitsSelector = (overrides = {}) => boardUnitsSelector(SIDE.ENEMY, overrides);
+
+// A single enemy face-up unit that can still receive corruption (Gregor).
+const corruptibleEnemySelector = (overrides = {}) =>
+  selector({
+    side: SIDE.ENEMY,
+    zones: [ZONE.BOARD],
+    types: SLOT_TYPES,
+    face: 'up',
+    canReceiveCorruption: true,
+    count: 1,
+    required: true,
+    ...overrides,
+  });
+
 export const EFFECT_REGISTRY = Object.freeze({
-  // ── leaders ─────────────────────────────────────────────────────────
+  // ── leaders / characters ────────────────────────────────────────────
+  // Each character bundles a LEADER_ACTIVE skill and, except Elias whose
+  // passive is the first-sacrifice echo (engine-gated), one or more
+  // NIGHT_START effects. Numbers are plain data; no engine branch per id.
   'harold-ashby': Object.freeze([
     Object.freeze(
       effect(TRIGGER.LEADER_ACTIVE, [
@@ -96,6 +127,58 @@ export const EFFECT_REGISTRY = Object.freeze({
         targetKey: 'targetUid',
         target: boardCardSelector(),
       }),
+    ),
+    Object.freeze(
+      effect(TRIGGER.NIGHT_START, [
+        { op: 'sanity', who: 'self', delta: 1, reason: 'societyPassive' },
+      ], {
+        id: 'harold-night',
+        condition: { kind: 'sanityAtMost', side: SIDE.OWN, value: 5 },
+      }),
+    ),
+  ]),
+  'enid-halloway': Object.freeze([
+    Object.freeze({
+      id: 'enid-summon',
+      trigger: TRIGGER.LEADER_ACTIVE,
+      leader: {
+        // No sacrifice: the cost is 1 sanity, the pool is any unit.
+        sacrifice: null,
+        summon: {
+          filter: 'unit',
+          faceUp: true,
+          paySanityCost: false,
+          sanityCost: 1,
+        },
+        requirePlacement: true,
+      },
+      operations: [
+        { op: 'sanity', who: 'self', delta: -1, reason: 'leaderEnid' },
+        { op: 'playFromDeck', cardKey: 'cardUid', placementKey: 'placement', faceUp: true, paySanityCost: false },
+      ],
+    }),
+    Object.freeze(
+      effect(TRIGGER.NIGHT_START, [
+        { op: 'draw', count: 1 },
+      ], { id: 'enid-night' }),
+    ),
+  ]),
+  'augustus-wayne': Object.freeze([
+    Object.freeze(
+      effect(TRIGGER.LEADER_ACTIVE, [
+        { op: 'seal', targetKey: 'targetUid', duration: DURATION.UNTIL_NEXT_NIGHT },
+        // The +2 lands automatically on the strongest friendly face-up unit.
+        { op: 'buffThisNight', selector: ownBoardUnitsSelector({ highestCurrentPower: true }), amount: 2 },
+      ], {
+        id: 'augustus-strike',
+        targetKey: 'targetUid',
+        target: boardCardSelector(),
+      }),
+    ),
+    Object.freeze(
+      effect(TRIGGER.NIGHT_START, [
+        { op: 'buffThisNight', selector: ownBoardUnitsSelector(), amount: 1 },
+      ], { id: 'augustus-night' }),
     ),
   ]),
   'elias-thorne': Object.freeze([
@@ -123,6 +206,50 @@ export const EFFECT_REGISTRY = Object.freeze({
         { op: 'playFromDeck', cardKey: 'cardUid', placementKey: 'placement', faceUp: true, paySanityCost: false },
       ],
     }),
+  ]),
+  'vera-crowe': Object.freeze([
+    Object.freeze({
+      id: 'vera-summon',
+      trigger: TRIGGER.LEADER_ACTIVE,
+      leader: {
+        // No sacrifice and no sanity cost: the summoned aberration is corrupted.
+        sacrifice: null,
+        summon: {
+          filter: 'aberration',
+          faceUp: true,
+          paySanityCost: false,
+          attachCorruption: 1,
+        },
+        requirePlacement: true,
+      },
+      operations: [
+        { op: 'playFromDeck', cardKey: 'cardUid', placementKey: 'placement', faceUp: true, paySanityCost: false },
+      ],
+    }),
+    Object.freeze(
+      effect(TRIGGER.NIGHT_START, [
+        { op: 'draw', count: 1 },
+      ], {
+        id: 'vera-night',
+        condition: { kind: 'sanityAtMost', side: SIDE.OWN, value: 3 },
+      }),
+    ),
+  ]),
+  'gregor-pestilence': Object.freeze([
+    Object.freeze(
+      effect(TRIGGER.LEADER_ACTIVE, [
+        { op: 'corrupt', targetKey: 'targetUid', amount: 2 },
+      ], {
+        id: 'gregor-corrupt',
+        targetKey: 'targetUid',
+        target: corruptibleEnemySelector(),
+      }),
+    ),
+    Object.freeze(
+      effect(TRIGGER.NIGHT_START, [
+        { op: 'buffThisNight', selector: enemyBoardUnitsSelector(), amount: -1 },
+      ], { id: 'gregor-night' }),
+    ),
   ]),
 
   // ── society ─────────────────────────────────────────────────────────

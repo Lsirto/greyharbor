@@ -41,6 +41,7 @@ import {
   choiceEntryMatches,
   enumerateEffectChoices,
   makeContext,
+  runEffect,
   runTrigger,
 } from './effects/interpreter.js';
 import { enumerateCandidates, resolveTargetByUid } from './effects/targets.js';
@@ -979,8 +980,8 @@ export class EngineV2 {
     const effectDef = this._leaderEffect(p);
     const leaderId = state.players[p].leaderId;
 
-    if (effectDef.leader?.sacrifice) {
-      return this._eliasActions(p, leaderId, effectDef);
+    if (effectDef.leader) {
+      return this._summonComposerActions(p, leaderId, effectDef);
     }
 
     const ctx = makeContext(this, p, {
@@ -999,57 +1000,85 @@ export class EngineV2 {
       player: p,
       leaderId,
       targetUid: target.uid,
-      label: `${leaderId}: seal ${target.uid}`,
+      label: `${leaderId}: ${effectDef.id} ${target.uid}`,
     }));
   }
 
-  _eliasActions(p, leaderId, effectDef) {
-    const state = this.state;
-    const player = state.players[p];
-    const sacrificeTargets = this._sacrificeTargets(p);
-    if (!sacrificeTargets.length) return [];
+  /**
+   * Enumerate every legal leader action for a data-driven summon composer.
+   * One composer covers Elias (sacrifice → aberration), Enid (1 sanity → any
+   * unit) and Vera (no cost → corrupted aberration). The cost/pool differences
+   * all come from `effectDef.leader`; this method only builds the cross
+   * product of cost branch × deck card × placement.
+   */
+  _summonComposerActions(p, leaderId, effectDef) {
+    const player = this.state.players[p];
+    const spec = effectDef.leader;
+    const summon = spec.summon ?? {};
+    const blockedLocation = this._leaderBlockedLocation();
 
-    const aberrations = [];
+    // 1. Sacrifice iterations. A sacrifice spec yields one per sacrificeable
+    //    own unit, each carrying its Hooded Acolyte replacement options; a
+    //    no-sacrifice spec yields one iteration with a single null option.
+    //    The replacement stays the innermost loop below so the generated
+    //    action order is identical to the original Elias enumeration and the
+    //    evaluation AI's deterministic tie-breaks do not shift.
+    const sacrificeIterations = [];
+    if (spec.sacrifice) {
+      const sacrificeTargets = this._sacrificeTargets(p);
+      if (!sacrificeTargets.length) return [];
+      for (const sacrifice of sacrificeTargets) {
+        const replacementOptions = [null];
+        for (const acolyte of this._replacementCandidates(p, sacrifice.inst.uid)) {
+          replacementOptions.push(acolyte.uid);
+        }
+        sacrificeIterations.push({ sacrificeUid: sacrifice.inst.uid, replacementOptions });
+      }
+    } else {
+      sacrificeIterations.push({ sacrificeUid: null, replacementOptions: [null] });
+    }
+
+    // 2. Summonable deck cards, unique by card id, filtered by summon.filter.
+    const summonable = [];
     const seen = new Set();
     for (const inst of player.deck) {
       if (seen.has(inst.cardId)) continue;
-      if (!this._isAberration(inst.cardId)) continue;
-      seen.add(inst.cardId);
-      aberrations.push(inst);
-    }
-    if (!aberrations.length) return [];
-
-    const acolytes = this._replacementCandidates(p, null);
-    const actions = [];
-    for (const sacrifice of sacrificeTargets) {
-      const replacementOptions = [null];
-      for (const acolyte of this._replacementCandidates(p, sacrifice.inst.uid)) {
-        replacementOptions.push(acolyte.uid);
+      if (summon.filter === 'aberration') {
+        if (!this._isAberration(inst.cardId)) continue;
+      } else if (summon.filter === 'unit') {
+        if (!isUnitCard(this.cardIndex[inst.cardId])) continue;
       }
-      const blockedLocation = this._leaderBlockedLocation();
-      for (const aberration of aberrations) {
-        const placements = this._legalEffectPlacements(p, aberration.cardId, {
+      seen.add(inst.cardId);
+      summonable.push(inst);
+    }
+    if (!summonable.length) return [];
+
+    // 3. Cross product in the original order: sacrifice → card → placement →
+    //    replacement (innermost).
+    const actions = [];
+    for (const iteration of sacrificeIterations) {
+      for (const card of summonable) {
+        const placements = this._legalEffectPlacements(p, card.cardId, {
           requireFaceUp: true,
         }).filter((placement) => !blockedLocation || placement.location !== blockedLocation);
         for (const placement of placements) {
-          for (const replaceWithUid of replacementOptions) {
+          for (const replaceWithUid of iteration.replacementOptions) {
+            const costText = iteration.sacrificeUid ? `sacrifice ${iteration.sacrificeUid} → ` : '';
             actions.push({
               type: 'useLeader',
               player: p,
               leaderId,
-              sacrificeUid: sacrifice.inst.uid,
+              sacrificeUid: iteration.sacrificeUid,
               replaceWithUid,
-              cardUid: aberration.uid,
+              cardUid: card.uid,
               location: placement.location,
               slot: placement.slot,
-              label: `${leaderId}: sacrifice ${sacrifice.inst.uid} → ${aberration.cardId} @ ${placement.location}#${placement.slot}`,
+              label: `${leaderId}: ${costText}${card.cardId} @ ${placement.location}#${placement.slot}`,
             });
           }
         }
       }
     }
-    void acolytes;
-    void effectDef;
     return actions;
   }
 
@@ -1069,30 +1098,34 @@ export class EngineV2 {
     const effectDef = this._leaderEffect(p);
     if (!effectDef) return fail('this leader has no active skill');
 
-    if (effectDef.leader?.sacrifice) {
-      return this._applyElias(p, effectDef, action);
+    if (effectDef.leader) {
+      return this._applySummonComposer(p, effectDef, action);
     }
-    return this._applyHarold(p, effectDef, action);
+    return this._applySimpleLeader(p, effectDef, action);
   }
 
-  _applyHarold(p, effectDef, action) {
+  /** Generic single-target leader skill (Harold seal, Gregor corruption, ...). */
+  _applySimpleLeader(p, effectDef, action) {
     const leaderId = this.state.players[p].leaderId;
     const ctx = makeContext(this, p, {
       kind: 'leader', cardId: leaderId, player: p, location: null, slot: null, inst: null,
     }, { trigger: TRIGGER.LEADER_ACTIVE });
     const legal = effectDef.target ? enumerateCandidates(this, ctx, effectDef.target) : [];
     const target = legal.find((entry) => entry.uid === action.targetUid);
-    if (!target) return fail('Harold needs a legal enemy face-up board card');
+    if (!target) return fail('illegal leader target');
+    // runEffect hands operations a null choice, so pin the validated target on
+    // the context; target-keyed operations resolve it instead of re-enumerating.
+    ctx.selected[effectDef.targetKey ?? 'targetUid'] = [target];
 
     this._emit({
       type: 'leaderSkill',
       player: p,
       leaderId,
       targetUid: target.uid,
-      mode: 'seal',
+      mode: effectDef.id,
     });
-    this._sealTarget(target, 'untilNextNight', ctx);
-    this._changeSanity(p, 1, 'leaderHarold');
+    // Every effect (seal / corrupt / buff / sanity) is a generic registry op.
+    runEffect(this, ctx, effectDef);
     this.state.players[p].leaderUsedThisNight = true;
 
     if (this._checkSanityZero()) return { ok: true };
@@ -1101,50 +1134,86 @@ export class EngineV2 {
     return { ok: true };
   }
 
-  _applyElias(p, effectDef, action) {
-    const state = this.state;
-    const player = state.players[p];
+  /** Data-driven summon composer (Elias / Enid / Vera). */
+  _applySummonComposer(p, effectDef, action) {
+    const player = this.state.players[p];
     const leaderId = player.leaderId;
+    const spec = effectDef.leader;
+    const summon = spec.summon ?? {};
 
-    const sacrificeTargets = this._sacrificeTargets(p);
-    const sacrifice = sacrificeTargets.find((entry) => entry.inst.uid === action.sacrificeUid);
-    if (!sacrifice) return fail('Elias needs a sacrificeable own unit');
-
-    let replaceWithUid = action.replaceWithUid ?? null;
-    if (replaceWithUid !== null) {
-      const replacement = this._replacementCandidates(p, sacrifice.inst.uid)
-        .find((entry) => entry.uid === replaceWithUid);
-      if (!replacement) return fail('replacement must be an eligible Hooded Acolyte');
+    // 1. Resolve the sacrifice cost (no-op when the spec has no sacrifice).
+    let sacrificeUid = null;
+    let replaceWithUid = null;
+    if (spec.sacrifice) {
+      const sacrifice = this._sacrificeTargets(p)
+        .find((entry) => entry.inst.uid === action.sacrificeUid);
+      if (!sacrifice) return fail('leader needs a sacrificeable own unit');
+      sacrificeUid = sacrifice.inst.uid;
+      replaceWithUid = action.replaceWithUid ?? null;
+      if (replaceWithUid !== null) {
+        const replacement = this._replacementCandidates(p, sacrificeUid)
+          .find((entry) => entry.uid === replaceWithUid);
+        if (!replacement) return fail('replacement must be an eligible Hooded Acolyte');
+      }
     }
 
+    // 2. The deck card must match the declared summon filter.
     const deckIndex = player.deck.findIndex((inst) => inst.uid === action.cardUid);
-    if (deckIndex < 0) return fail('Elias must summon a card from the deck');
+    if (deckIndex < 0) return fail('leader must summon a card from the deck');
     const summonedId = player.deck[deckIndex].cardId;
-    if (!this._isAberration(summonedId)) return fail('Elias may only summon an aberration unit');
+    if (summon.filter === 'aberration' && !this._isAberration(summonedId)) {
+      return fail('this leader may only summon an aberration unit');
+    }
+    if (summon.filter === 'unit' && !isUnitCard(this.cardIndex[summonedId])) {
+      return fail('this leader may only summon a unit');
+    }
 
+    // 3. The placement must be legal.
     const placement = this._legalEffectPlacements(p, summonedId, { requireFaceUp: true })
       .find((entry) => entry.location === action.location && entry.slot === action.slot);
-    if (!placement) return fail('Elias has no legal placement for that aberration');
+    if (!placement) return fail('no legal placement for that card');
 
     this._emit({
       type: 'leaderSkill',
       player: p,
       leaderId,
-      sacrificeUid: sacrifice.inst.uid,
+      sacrificeUid,
       replaceWithUid,
       cardUid: action.cardUid,
       location: placement.location,
       slot: placement.slot,
     });
 
-    this._sacrificeUnit(p, sacrifice.inst.uid, {
-      replacementUid: replaceWithUid,
-      sourceUid: null,
-      allowReplacement: true,
-    });
+    // 4. Pay costs: sacrifice first, then a fixed sanity cost (Enid).
+    if (sacrificeUid) {
+      this._sacrificeUnit(p, sacrificeUid, {
+        replacementUid: replaceWithUid,
+        sourceUid: null,
+        allowReplacement: true,
+      });
+    }
+    if (summon.sanityCost) {
+      this._changeSanity(p, -summon.sanityCost, 'leaderEnid');
+    }
 
+    // 5. Move the card from the deck onto the board.
     const inst = player.deck.splice(deckIndex, 1)[0];
     this._placeFromDeck(p, inst, placement, { byLeader: leaderId });
+
+    // 6. Optional attached corruption (Vera).
+    if (summon.attachCorruption) {
+      const corruptionCtx = makeContext(this, p, {
+        kind: 'leader', cardId: leaderId, player: p,
+      }, { trigger: TRIGGER.LEADER_ACTIVE });
+      this._applyCorruption(p, {
+        kind: 'unit',
+        uid: inst.uid,
+        inst,
+        player: p,
+        location: placement.location,
+        slot: placement.slot,
+      }, summon.attachCorruption, corruptionCtx);
+    }
 
     player.leaderUsedThisNight = true;
     if (this._checkSanityZero()) return { ok: true };
@@ -1343,7 +1412,9 @@ export class EngineV2 {
 
   _triggerCultEcho(p) {
     const player = this.state.players[p];
-    if (player.faction !== 'cult') return;
+    // The first-sacrifice echo is Elias Thorne's character passive, not a
+    // faction-wide rule, so other cult characters do not trigger it.
+    if (player.leaderId !== 'elias-thorne') return;
     if (player.flags.cultSacrificeTriggered) return;
     player.flags.cultSacrificeTriggered = true;
     this._emit({
@@ -1894,7 +1965,7 @@ export class EngineV2 {
     for (const p of [state.firstPlayer, 1 - state.firstPlayer]) {
       this._corruptionTick(p);
       this._forcedSanityLoss(p);
-      this._societyPassive(p);
+      this._leaderNightStart(p);
       this._runNightStartEffects(p);
     }
 
@@ -1999,11 +2070,24 @@ export class EngineV2 {
     }
   }
 
-  _societyPassive(p) {
+  /**
+   * Run the selected character's NIGHT_START effects. A sealed leader does not
+   * trigger its passive; the registry entries themselves carry any conditions.
+   */
+  _leaderNightStart(p) {
     const player = this.state.players[p];
-    if (player.faction !== 'society') return;
-    if (player.sanity >= 6) return;
-    this._changeSanity(p, 1, 'societyPassive');
+    if (!player.leaderId || player.leaderSealed) return;
+    const entries = effectsFor(player.leaderId) ?? [];
+    if (!entries.some((entry) => entry.trigger === TRIGGER.NIGHT_START)) return;
+    const ctx = makeContext(this, p, {
+      kind: 'leader',
+      cardId: player.leaderId,
+      player: p,
+      location: null,
+      slot: null,
+      inst: null,
+    }, { trigger: TRIGGER.NIGHT_START });
+    runTrigger(this, ctx, TRIGGER.NIGHT_START);
   }
 
   _runNightStartEffects(p) {

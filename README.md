@@ -8,11 +8,19 @@
 **《灰港三夜》是本项目的新版正式入口（`index.html`）。** 旧版《昆特牌》网页复刻完整保留在
 `gwent.html`，作为参考实现与遗留套件，不参与新版规则。
 
+## 设计亮点
+
+- **数据驱动的角色系统**：6 名调查员的主动 / 被动技能全部由效果注册表（`effects/registry.js`）以数据描述，引擎不含 per-id 分支；新增角色只需新增数据，无需改引擎。
+- **确定性引擎**：所有随机走注入式 rng（无 `Math.random`），同种子可完全复现，便于复盘、自对弈与锁步防作弊。
+- **启发式 AI 对手**：合法动作生成 + 评估函数打分，注入式随机，支持固定种子与随机牌局。
+- **锁步对战框架**：可插拔座位驱动 + 确定性输入校验，已用假传输完成两客户端完整对局（菜单入口暂标注“开发中”）。
+- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **409 项自动化测试**通过。
+
 ## 技术栈
 
 - 原生 **ES Modules** + HTML + CSS，**零运行时依赖、零构建步骤、零外部 CDN**。
 - 测试只用 Node 内置 `node:test` / `node:assert`，浏览器侧无 jsdom、无 Playwright 运行依赖。
-- 引擎确定性：所有随机走注入式 rng，无 `Math.random`；30 张卡面插画与背景为本地美术资源（`assets/`，加载失败自动降级为内联 SVG），音效为 WebAudio 实时合成。
+- 引擎确定性：所有随机走注入式 rng，无 `Math.random`；卡面插画、6 张调查员立绘与背景均为本地美术资源（`assets/`，加载失败自动降级为内联 SVG），音效为 WebAudio 实时合成。
 - 对局界面为一屏式布局：对手、棋盘、手牌与操作台全部容纳在 `100dvh` 内，无需页面滚动。
 - 静态服务器 `server.mjs` 仅用 Node 内置模块；默认监听 `127.0.0.1:8788`。
 
@@ -38,13 +46,39 @@ npm start                        # node server.mjs → http://127.0.0.1:8788/
 
 > 页面必须通过本地服务器打开（`file://` 下模块与 fetch 会被浏览器拦截）。
 
+## 调查员名册（6 角色 · 立绘卡）
+
+选定阵营后进入角色选择屏：每名调查员是一张**顶部立绘 + 文字**的立绘卡（写实油画风，统一 512×683），
+点击切换选中描边并更新出战文案，确认后以该角色的 `leaderId` 开局。各角色主动技每夜一次、被动多在每夜开始触发，
+规则全部数据化（见 `src/ui-v2/menu/templates/character-select.mjs` 与 `effects/registry.js`）。
+
+**学会 Society**
+
+| 角色（称号） | 定位 | 主动技 | 被动 |
+|---|---|---|---|
+| 🕯 哈罗德·阿什比（守夜督察） | 稳健 · 封印回复 | 封印一张敌方卡直到下一夜并回复 1 理智 | 每夜开始若理智低于 6 则回复 1 理智 |
+| 📜 伊妮德·哈洛威（档案召唤师） | 铺场 · 召唤过牌 | 支付 1 理智，无需献祭，从牌堆直接将 1 个单位明放到空槽 | 每夜开始抽 1 张牌 |
+| ⚔ 奥古斯都·韦恩（驱魔审判官） | 进攻 · 群体增益 | 封印 1 个敌方单位，并使己方战力最高的明牌单位本夜 +2 战力 | 每夜开始己方全体明牌单位本夜 +1 战力 |
+
+**教团 Cult**
+
+| 角色（称号） | 定位 | 主动技 | 被动 |
+|---|---|---|---|
+| 🔔 伊莱亚斯·索恩（深海祭司） | 献祭 · 召唤连招 | 献祭一张己方卡，从牌堆直接打出一个异怪单位 | 每夜首次献祭触发额外回响 |
+| 🚪 薇拉·克洛（唤灵者） | 空降 · 风险召唤 | 无需献祭，从牌堆召唤 1 个异怪单位明放，但该异怪获得 1 腐化 | 每夜开始若理智不超过 3 则抽 1 张牌 |
+| ☣ 格里高尔·瘟钟（腐化使徒） | 压制 · 腐化削弱 | 使 1 个敌方明牌单位获得 2 腐化 | 每夜开始敌方全体明牌单位本夜 −1 战力 |
+
+![学会角色选择立绘卡](screenshots/character-select-society.png)
+
+![教团角色选择立绘卡](screenshots/character-select-cult.png)
+
 ## 目录地图
 
 ```
 index.html / app.html / play.html / game.html / gwent.html
 server.mjs · 启动游戏.bat · README.md · LICENSE
 assets/
-├─ art/             30 张卡面插画（JPG，按 card-id 命名）
+├─ art/             卡面插画与 6 张调查员立绘（JPG，按 card-id 命名，统一 512×683）
 └─ bg/              页面背景图
 src/
 ├─ engine/v2/       新版规则引擎：确定性状态机、效果 DSL、buildView、计分、anomalies、chaos-bag、objectives
@@ -153,13 +187,14 @@ research/           来源数据、QA 记录与审计产物
 ## 测试
 
 ```bash
-npm test                                            # 根目录遗留套件：104 通过 / 2 E2E 默认跳过
-node --test 'tests/campaign/*.test.mjs'             # 战役套件：53 项
-node --test 'tests/v2/*.test.mjs'                   # 引擎套件：118 项（v1.3 机制 19 + v1.4 目标 13 + 起手数组 1）
-node --test 'tests/ai-v2/*.test.mjs'                # AI 套件：7 项
-node --test 'tests/ui-v2/*.test.mjs'                # UI + 氛围层：82 项
-node --test 'tests/**/*.test.mjs'                   # 全量：364 通过 + 2 跳过
-node scripts/e2e.mjs --mode=smoke                   # 可选：Playwright 浏览器冒烟
+npm test                                            # 根目录套件：104 通过 / 2 E2E 默认跳过（共 106）
+node --test tests/campaign/*.test.mjs               # 战役套件：53 项
+node --test tests/v2/*.test.mjs                     # 引擎套件：130 项
+node --test tests/ai-v2/*.test.mjs                  # AI 套件：7 项
+node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择：88 项
+node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架：11 项
+node --test tests/tutorial/*.test.mjs               # 交互式教程：14 项
+node --test                                         # 全量递归：409 项 = 407 通过 + 2 跳过，0 失败
 ```
 
 `npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。
@@ -198,7 +233,7 @@ node scripts/e2e.mjs --mode=smoke                   # 可选：Playwright 浏览
 
 ## 已知限制
 
-- 仅支持单机对 AI，没有联机、账号或战绩系统。
+- 正式可玩内容为单机对 AI；联机仅有确定性锁步框架与测试（菜单入口标注“开发中”），没有账号或战绩系统。
 - AI 是启发式评估，不做深度搜索。
 - 浏览器自动播放策略要求首次点击/按键后才会有声音；`file://` 直接打开不可用。
 - 粒子仅用于四类关键反馈（理智归零 / 腐化 / 封印 / 出牌），非全屏天气系统。
