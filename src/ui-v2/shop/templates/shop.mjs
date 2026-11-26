@@ -63,7 +63,7 @@ export function renderShop(input = {}) {
       <button type="button" class="gh2-back-btn" data-shop="exit">← 返回主菜单</button>
       <div class="gh2-shop__heading">
         <h2>神秘商店</h2>
-        <p>抽取并装备卡背 · 纯外观，不影响平衡</p>
+        <p>抽取并装备卡背</p>
       </div>
       <span class="gh2-shop__balance" title="理智币">🪙 ${coins}</span>
     </header>
