@@ -26,9 +26,16 @@ export function renderLeaderZone(leader, options = {}) {
   const status = sealed ? '已被封印' : used ? '本夜已使用' : '本夜可用';
   const tone = sealed ? 'sealed' : used ? 'used' : 'ready';
 
+  const portrait = asObject(opts.leaderPortrait);
+  const cardOptions = { size: 'leader' };
+  if (typeof portrait.src === 'string') {
+    cardOptions.artSrc = portrait.src;
+    if (portrait.filter) cardOptions.artFilter = portrait.filter;
+  }
+
   return `<section class="gh2-leader-zone" data-player="${index}">
     <h3 class="gh2-leader-zone__title">${escapeHtml(label)} · LEADER</h3>
-    ${renderCard(leaderAsCard(data), { size: 'leader' })}
+    ${renderCard(leaderAsCard(data), cardOptions)}
     <div class="gh2-leader-zone__status gh2-leader-zone__status--${tone}">${icon(sealed ? 'seal' : 'crown')}${escapeHtml(status)}</div>
   </section>`;
 }

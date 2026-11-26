@@ -18,11 +18,21 @@ import {
   getAllCardBacks,
   getCardBack,
 } from './card-backs.mjs';
+import {
+  CHARACTER_SKINS,
+  getAllSkins,
+  getSkin,
+  resolvePortrait,
+  skinsByRarity,
+} from './skins.mjs';
 
 export const ECONOMY_KEY = 'greyharbor.economy.v1';
 export const GACHA_COST = 100;
 export const RARE_PITY = 10; // every 10th pull without rare+ is rare+
 export const EPIC_PITY = 50; // every 50th pull is epic
+export const SKIN_GACHA_COST = 100;
+export const SKIN_TEN_COST = 1000; // ten pulls at full price, guaranteed rare+
+export const SKIN_TEN_COUNT = 10;
 export const DAILY_COMPLETION_REWARD = 40;
 export const DAILY_FIRST_WIN_REWARD = 120;
 
@@ -36,6 +46,11 @@ function defaultState() {
     owned: [DEFAULT_CARD_BACK],
     equipped: DEFAULT_CARD_BACK,
     granted: {},
+    skinPulls: 0,
+    skinPity: 0,
+    skinEpicPity: 0,
+    ownedSkins: [],
+    equippedSkins: {},
   };
 }
 
@@ -54,6 +69,22 @@ export function normalizeEconomy(raw) {
   const equipped = typeof data.equipped === 'string' && owned.includes(data.equipped)
     ? data.equipped
     : DEFAULT_CARD_BACK;
+
+  const knownSkin = (id) => getSkin(id) !== null;
+  const ownedSkins = Array.isArray(data.ownedSkins)
+    ? [...new Set(data.ownedSkins.filter((id) => typeof id === 'string' && knownSkin(id)))]
+    : [];
+  const rawEquippedSkins = data.equippedSkins && typeof data.equippedSkins === 'object'
+    ? data.equippedSkins
+    : {};
+  const equippedSkins = {};
+  for (const [characterId, skinId] of Object.entries(rawEquippedSkins)) {
+    const skin = typeof skinId === 'string' ? getSkin(skinId) : null;
+    if (skin && skin.characterId === characterId && ownedSkins.includes(skinId)) {
+      equippedSkins[characterId] = skinId;
+    }
+  }
+
   return {
     coins: nonNegInt(data.coins, base.coins),
     rngState: Number.isFinite(data.rngState) ? data.rngState >>> 0 : base.rngState,
@@ -63,6 +94,11 @@ export function normalizeEconomy(raw) {
     owned,
     equipped,
     granted: data.granted && typeof data.granted === 'object' ? { ...data.granted } : {},
+    skinPulls: nonNegInt(data.skinPulls, base.skinPulls),
+    skinPity: nonNegInt(data.skinPity, base.skinPity),
+    skinEpicPity: nonNegInt(data.skinEpicPity, base.skinEpicPity),
+    ownedSkins,
+    equippedSkins,
   };
 }
 
@@ -184,4 +220,153 @@ export function getEquippedCardBack(storage) {
   return readEconomy(storage).equipped;
 }
 
-export { DEFAULT_BACK, CARD_BACKS, RARITIES };
+function makeRandom(state, injected) {
+  return typeof injected === 'function' ? injected : () => nextRandom(state);
+}
+
+function rollSkinRarity(state, random) {
+  if (state.skinEpicPity >= EPIC_PITY) return 'epic';
+  if (state.skinPity >= RARE_PITY) {
+    const epicShare = RARITIES.epic.weight / (RARITIES.rare.weight + RARITIES.epic.weight);
+    return random() < epicShare ? 'epic' : 'rare';
+  }
+  const roll = random() * TOTAL_RARITY_WEIGHT;
+  let acc = 0;
+  for (const rarity of ['common', 'rare', 'epic']) {
+    acc += RARITIES[rarity].weight;
+    if (roll < acc) return rarity;
+  }
+  return 'common';
+}
+
+/** One skin draw operating on the in-memory state; caller handles cost + save. */
+function drawSkinOnce(state, random, forceRarity = null) {
+  state.skinPulls += 1;
+  state.skinPity += 1;
+  state.skinEpicPity += 1;
+
+  let rarity;
+  if (forceRarity === 'rareplus') {
+    const epicShare = RARITIES.epic.weight / (RARITIES.rare.weight + RARITIES.epic.weight);
+    rarity = random() < epicShare ? 'epic' : 'rare';
+  } else {
+    rarity = rollSkinRarity(state, random);
+  }
+
+  const pool = skinsByRarity(rarity);
+  const skin = pool[Math.floor(random() * pool.length)];
+
+  if (rarity !== 'common') state.skinPity = 0;
+  if (rarity === 'epic') state.skinEpicPity = 0;
+
+  const isNew = !state.ownedSkins.includes(skin.id);
+  let duplicateCoins = 0;
+  if (isNew) {
+    state.ownedSkins.push(skin.id);
+  } else {
+    duplicateCoins = RARITIES[rarity].duplicateCoins;
+    state.coins += duplicateCoins;
+  }
+
+  return {
+    id: skin.id,
+    characterId: skin.characterId,
+    name: skin.name,
+    rarity,
+    kind: skin.kind,
+    icon: skin.icon,
+    isNew,
+    duplicateCoins,
+  };
+}
+
+export function pullSkin(storage, options = {}) {
+  const state = readEconomy(storage);
+  if (state.coins < SKIN_GACHA_COST) {
+    return { ok: false, reason: 'insufficient', coins: state.coins, cost: SKIN_GACHA_COST };
+  }
+  state.coins -= SKIN_GACHA_COST;
+  const random = makeRandom(state, options.random);
+  const item = drawSkinOnce(state, random, null);
+  writeEconomy(storage, state);
+  return {
+    ok: true,
+    ...item,
+    coins: state.coins,
+    cost: SKIN_GACHA_COST,
+    pulls: state.skinPulls,
+    pity: state.skinPity,
+  };
+}
+
+export function pullSkinTen(storage, options = {}) {
+  const state = readEconomy(storage);
+  if (state.coins < SKIN_TEN_COST) {
+    return { ok: false, reason: 'insufficient', coins: state.coins, cost: SKIN_TEN_COST };
+  }
+  state.coins -= SKIN_TEN_COST;
+  const random = makeRandom(state, options.random);
+
+  const items = [];
+  for (let i = 0; i < SKIN_TEN_COUNT - 1; i += 1) {
+    items.push(drawSkinOnce(state, random, null));
+  }
+  const hasRare = items.some((item) => item.rarity !== 'common');
+  // The final draw is forced to rare+ only when the first nine had none.
+  items.push(drawSkinOnce(state, random, hasRare ? null : 'rareplus'));
+
+  writeEconomy(storage, state);
+  return {
+    ok: true,
+    items,
+    count: items.length,
+    newCount: items.filter((item) => item.isNew).length,
+    duplicateCoins: items.reduce((sum, item) => sum + item.duplicateCoins, 0),
+    guaranteed: !hasRare,
+    coins: state.coins,
+    cost: SKIN_TEN_COST,
+    pulls: state.skinPulls,
+    pity: state.skinPity,
+  };
+}
+
+export function equipSkin(storage, characterId, skinId) {
+  const state = readEconomy(storage);
+  const skin = getSkin(skinId);
+  if (!skin || skin.characterId !== characterId || !state.ownedSkins.includes(skinId)) {
+    return {
+      ok: false,
+      reason: 'not-owned',
+      equipped: state.equippedSkins[characterId] ?? null,
+    };
+  }
+  state.equippedSkins[characterId] = skinId;
+  writeEconomy(storage, state);
+  return { ok: true, characterId, equipped: skinId };
+}
+
+export function getSkinCollection(storage) {
+  const state = readEconomy(storage);
+  return getAllSkins().map((skin) => ({
+    ...skin,
+    owned: state.ownedSkins.includes(skin.id),
+    equipped: state.equippedSkins[skin.characterId] === skin.id,
+  }));
+}
+
+export function getEquippedSkin(storage, characterId) {
+  return readEconomy(storage).equippedSkins[characterId] ?? null;
+}
+
+export function getEquippedPortrait(storage, characterId) {
+  return resolvePortrait(characterId, getEquippedSkin(storage, characterId));
+}
+
+export {
+  DEFAULT_BACK,
+  CARD_BACKS,
+  RARITIES,
+  CHARACTER_SKINS,
+  getSkin,
+  resolvePortrait,
+};

@@ -1075,12 +1075,138 @@
   color: var(--gh2-silver-faint);
 }
 
+/* ---- two independent banners ---- */
+.gh2-shop__banner {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 18px;
+  border-top: 1px solid var(--gh2-line);
+}
+.gh2-shop__banner:first-of-type { padding-top: 0; border-top: none; }
+.gh2-shop__pulls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 170px;
+}
+.gh2-shop__pull--ten {
+  border-color: rgba(139, 122, 181, 0.6);
+  background: linear-gradient(160deg, rgba(139, 122, 181, 0.22), rgba(4, 8, 10, 0.72));
+}
+.gh2-shop__pull--ten:hover { box-shadow: 0 0 16px rgba(139, 122, 181, 0.4); }
+
+/* ---- ten-pull result chips ---- */
+.gh2-shop__result--ten { display: flex; flex-direction: column; gap: 10px; }
+.gh2-shop__result--ten p { margin: 0; }
+.gh2-skin-result__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.gh2-skin-result__chip {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border-radius: 8px;
+  border: 1px solid var(--gh2-line);
+  background: rgba(255, 255, 255, 0.04);
+}
+.gh2-skin-result__chip--rare { border-color: rgba(232, 201, 138, 0.55); background: rgba(232, 201, 138, 0.12); }
+.gh2-skin-result__chip--epic { border-color: rgba(139, 122, 181, 0.6); background: rgba(139, 122, 181, 0.16); }
+.gh2-skin-result__new {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-style: normal;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+  color: #fff;
+  background: var(--gh2-danger);
+}
+
+/* ---- skin collection grouped by character ---- */
+.gh2-skin-group { display: flex; flex-direction: column; gap: 10px; }
+.gh2-skin-group__title {
+  margin: 4px 0 0;
+  color: var(--gh2-silver-dim);
+  font-size: 14px;
+  font-weight: 700;
+}
+.gh2-skin-group__cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.gh2-skin-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: rgba(4, 8, 10, 0.55);
+}
+.gh2-skin-card__media {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--gh2-line-soft);
+  background: rgba(0, 0, 0, 0.4);
+}
+.gh2-skin-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gh2-skin-card__kind {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: var(--gh2-parchment);
+  background: rgba(4, 8, 10, 0.78);
+  border: 1px solid var(--gh2-line);
+}
+.gh2-skin-card__lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: rgba(2, 5, 7, 0.5);
+}
+.gh2-skin-card__name { color: var(--gh2-parchment); font-size: 14px; }
+.gh2-skin-card__rarity { font-size: 11px; color: var(--gh2-silver-faint); }
+.gh2-skin-card__desc { font-size: 11px; color: var(--gh2-silver-faint); line-height: 1.4; min-height: 30px; }
+.gh2-skin-card[data-rarity="rare"] { border-color: rgba(232, 201, 138, 0.4); }
+.gh2-skin-card[data-rarity="rare"] .gh2-skin-card__rarity { color: var(--gh2-lamp); }
+.gh2-skin-card[data-rarity="epic"] {
+  border-color: rgba(139, 122, 181, 0.55);
+  box-shadow: 0 0 14px rgba(139, 122, 181, 0.2);
+}
+.gh2-skin-card[data-rarity="epic"] .gh2-skin-card__rarity { color: var(--gh2-corruption); }
+.gh2-skin-card.is-locked { opacity: 0.75; }
+.gh2-skin-card.is-equipped {
+  border-color: rgba(67, 162, 145, 0.55);
+  background: linear-gradient(160deg, rgba(67, 162, 145, 0.12), rgba(4, 8, 10, 0.7));
+}
+
 @media (max-width: 1024px) {
   .gh2-shop { width: 96vw; padding: 20px 14px 28px; }
   .gh2-shop__gacha { grid-template-columns: 1fr; }
-  .gh2-shop__pull { width: 100%; }
+  .gh2-shop__pull,
+  .gh2-shop__pulls { width: 100%; min-width: 0; }
   .gh2-shop__grid { grid-template-columns: repeat(2, 1fr); }
   .gh2-shop__rates { flex-direction: column; }
+  .gh2-skin-group__cards { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* ============================================================

@@ -63,16 +63,22 @@ export function getCharacterCard(id) {
   });
 }
 
-export function renderCharacterCard(id, selected = false) {
+export function renderCharacterCard(id, selected = false, portrait = null) {
   const card = getCharacterCard(id);
   if (!card) return '';
   const active = selected === true;
+  const portraitSrc = portrait && typeof portrait.src === 'string'
+    ? portrait.src
+    : `./assets/art/${encodeURIComponent(card.id)}.jpg`;
+  const filterStyle = portrait && portrait.filter
+    ? ` style="filter:${escapeHtml(portrait.filter)}"`
+    : '';
   return `<button type="button"
       class="gh2-character-card gh2-character-card--${escapeHtml(card.faction)}${active ? ' is-selected' : ''}"
       data-character="${escapeHtml(card.id)}"
       aria-pressed="${active ? 'true' : 'false'}">
     <span class="gh2-character-card__media">
-      <img class="gh2-character-card__portrait" src="./assets/art/${encodeURIComponent(card.id)}.jpg"
+      <img class="gh2-character-card__portrait" src="${escapeHtml(portraitSrc)}"${filterStyle}
         alt="" onerror="this.style.display='none'">
       <span class="gh2-character-card__icon" aria-hidden="true">${escapeHtml(card.icon)}</span>
     </span>
@@ -108,7 +114,8 @@ export function renderDifficultySelect(selected = DEFAULT_DIFFICULTY) {
 }
 
 /**
- * @param {{faction?: string, selected?: string, arena?: boolean, difficulty?: string}} options
+ * @param {{faction?: string, selected?: string, arena?: boolean, difficulty?:
+ *          string, portraits?: Object}} options
  */
 export function renderCharacterSelect(options = {}) {
   const input = options && typeof options === 'object' ? options : {};
@@ -118,7 +125,10 @@ export function renderCharacterSelect(options = {}) {
   const selected = ids.includes(input.selected) ? input.selected : ids[0];
   const selectedCard = getCharacterCard(selected);
   const factionName = FACTION_CARDS[faction]?.nameZh ?? faction;
-  const cards = ids.map((id) => renderCharacterCard(id, id === selected)).join('');
+  const portraits = input.portraits && typeof input.portraits === 'object' ? input.portraits : {};
+  const cards = ids
+    .map((id) => renderCharacterCard(id, id === selected, portraits[id] ?? null))
+    .join('');
   const buttonTitle = arena ? '进入竞技场选牌' : '开始对局';
   const buttonHint = arena
     ? `以 ${selectedCard?.title ?? ''} · ${selectedCard?.nameZh ?? ''} 进入随机三选一`

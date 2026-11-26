@@ -1,13 +1,18 @@
 /**
  * src/ui-v2/shop/shop-controller.mjs — DOM orchestration for the gacha shop.
- * Reads the wallet/collection, runs pulls and equip actions through the pure
- * economy module, then re-renders. No game logic lives here.
+ * Reads the wallet/collections, runs card-back and skin pulls (single/ten) and
+ * equip actions through the pure economy module, then re-renders. No game logic
+ * lives here.
  */
 
 import {
   equipCardBack,
+  equipSkin,
   getCollection,
+  getSkinCollection,
   pullGacha,
+  pullSkin,
+  pullSkinTen,
   readEconomy,
 } from '../../economy/economy.mjs';
 import { asObject } from '../utils.mjs';
@@ -23,6 +28,7 @@ export function createShopController(options = {}) {
 
   let destroyed = false;
   let lastResult = null;
+  let skinResult = null;
 
   function buildView() {
     const state = readEconomy(opts.storage);
@@ -32,11 +38,19 @@ export function createShopController(options = {}) {
       pity: state.pity,
       lastResult,
       collection: getCollection(opts.storage),
+      skinPulls: state.skinPulls,
+      skinPity: state.skinPity,
+      skinResult,
+      skinCollection: getSkinCollection(opts.storage),
     });
   }
 
   function render() {
     host.innerHTML = buildView();
+  }
+
+  function isEnabled(el) {
+    return el && el.getAttribute('aria-disabled') !== 'true';
   }
 
   function handleClick(event) {
@@ -49,16 +63,49 @@ export function createShopController(options = {}) {
       if (typeof opts.onExit === 'function') opts.onExit();
       return;
     }
+
+    const pullSkinTenEl = target.closest('[data-shop="pull-skin-ten"]');
+    if (pullSkinTenEl) {
+      if (isEnabled(pullSkinTenEl)) {
+        skinResult = pullSkinTen(opts.storage);
+        render();
+      }
+      return;
+    }
+
+    const pullSkinEl = target.closest('[data-shop="pull-skin"]');
+    if (pullSkinEl) {
+      if (isEnabled(pullSkinEl)) {
+        skinResult = pullSkin(opts.storage);
+        render();
+      }
+      return;
+    }
+
     const pull = target.closest('[data-shop="pull"]');
-    if (pull && pull.getAttribute('aria-disabled') !== 'true') {
-      lastResult = pullGacha(opts.storage);
+    if (pull) {
+      if (isEnabled(pull)) {
+        lastResult = pullGacha(opts.storage);
+        render();
+      }
+      return;
+    }
+
+    const equipSkinEl = target.closest('[data-shop="equip-skin"]');
+    if (equipSkinEl) {
+      const result = equipSkin(
+        opts.storage,
+        equipSkinEl.dataset.characterId,
+        equipSkinEl.dataset.skinId,
+      );
+      if (result.ok) skinResult = null;
       render();
       return;
     }
+
     const equip = target.closest('[data-shop="equip"]');
     if (equip) {
-      const id = equip.dataset.cardBack;
-      const result = equipCardBack(opts.storage, id);
+      const result = equipCardBack(opts.storage, equip.dataset.cardBack);
       if (result.ok) lastResult = null;
       render();
     }

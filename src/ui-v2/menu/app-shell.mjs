@@ -28,6 +28,7 @@ import {
   DAILY_FIRST_WIN_REWARD,
   addCoins,
   getEquippedCardBack,
+  getEquippedPortrait,
   grantReward,
 } from '../../economy/economy.mjs';
 import { writeDailyResult } from '../../daily/daily.mjs';
@@ -179,11 +180,17 @@ export function createAppShell(options = {}) {
   }
 
   function renderCharacterScreen() {
+    const persistence = getStorage();
+    const portraits = {};
+    for (const id of characterIdsFor(selectedFaction)) {
+      portraits[id] = getEquippedPortrait(persistence, id);
+    }
     characterHost.innerHTML = renderCharacterSelect({
       faction: selectedFaction,
       selected: selectedCharacter,
       arena: entryMode === 'arena',
       difficulty: getAiDifficulty(),
+      portraits,
     });
   }
 
@@ -246,6 +253,7 @@ export function createAppShell(options = {}) {
       baseSeed: opts.baseSeed,
       seedGenerator: opts.seedGenerator,
       cardBackId: getEquippedCardBack(persistence),
+      leaderPortrait: getEquippedPortrait(persistence, selectedCharacter),
       matchConfig: {
         humanFaction: selectedFaction,
         seedMode,
@@ -338,11 +346,13 @@ export function createAppShell(options = {}) {
     destroyController();
     const persistence = getStorage();
     fx = createFxController({ boardRoot, controlsRoot });
+    const humanLeaderId = battleOptions?.decks?.[0]?.leader ?? null;
     controller = createGameController({
       boardRoot,
       controlsRoot,
       battleOptions,
       cardBackId: getEquippedCardBack(persistence),
+      leaderPortrait: humanLeaderId ? getEquippedPortrait(persistence, humanLeaderId) : null,
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
       aiDifficulty: getAiDifficulty(),
       hooks: fx.hooks,

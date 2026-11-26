@@ -159,7 +159,11 @@ export function renderBoardMarkup(view, options = {}) {
             handCount: me.handCount,
             score: scoreMe,
           })}
-          ${renderLeaderZone(me.leader, { playerIndex: pov, label: '己方领袖' })}
+          ${renderLeaderZone(me.leader, {
+            playerIndex: pov,
+            label: '己方领袖',
+            leaderPortrait: opts.leaderPortrait,
+          })}
         </aside>
         <div class="gh2-table__main">
           ${renderLocationGrid(me, { playerIndex: pov, anomaly: data.anomaly, cardBackId: opts.cardBackId })}
