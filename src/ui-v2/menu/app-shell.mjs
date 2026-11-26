@@ -14,6 +14,7 @@
 import { createGameController } from '../game-controller.mjs';
 import { createFxController } from '../fx/fx-controller.mjs';
 import { createCampaignController } from '../campaign/campaign-controller.mjs';
+import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
 import {
   FACTION_CARDS,
   renderFactionSelect,
@@ -22,7 +23,7 @@ import {
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'in-game', 'campaign']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'in-game', 'campaign', 'tutorial']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -41,6 +42,7 @@ export function createAppShell(options = {}) {
   let currentScreen = 'menu';
   let controller = null;
   let campaign = null;
+  let tutorial = null;
   let fx = null;
 
   const el = document.createElement('div');
@@ -67,6 +69,14 @@ export function createAppShell(options = {}) {
         <span class="gh2-game-top__tag">灰港三夜 · 战役模式</span>
       </header>
       <div class="gh2-campaign-host" data-app="campaign"></div>
+    </section>
+    <section class="gh2-screen gh2-screen--tutorial" data-screen="tutorial" hidden>
+      <header class="gh2-game-top">
+        <button type="button" class="gh2-back-btn" data-app="tutorial-menu">← 返回主菜单</button>
+        <span class="gh2-game-top__tag">灰港三夜 · 新手教程</span>
+      </header>
+      <div class="gh2-play-controls-host" data-app="tutorial-controls"></div>
+      <main class="gh2-board" data-app="tutorial-board" aria-label="新手教程棋盘"></main>
     </section>`;
   root.appendChild(el);
 
@@ -79,6 +89,8 @@ export function createAppShell(options = {}) {
   const controlsRoot = el.querySelector('[data-app="controls"]');
   const resultLayer = el.querySelector('[data-app="result"]');
   const campaignHost = el.querySelector('[data-app="campaign"]');
+  const tutorialBoard = el.querySelector('[data-app="tutorial-board"]');
+  const tutorialControls = el.querySelector('[data-app="tutorial-controls"]');
   const gameScreen = screenNodes['in-game'];
 
   function renderFactionScreen() {
@@ -176,6 +188,39 @@ export function createAppShell(options = {}) {
     return campaign;
   }
 
+  function destroyTutorial() {
+    if (!tutorial) return;
+    const old = tutorial;
+    tutorial = null;
+    try { old.destroy(); } catch (_) { /* a half-built tutorial must not block routing */ }
+    if (tutorialBoard) tutorialBoard.innerHTML = '';
+    if (tutorialControls) tutorialControls.innerHTML = '';
+  }
+
+  function startTutorial() {
+    destroyController();
+    destroyCampaign();
+    destroyTutorial();
+    tutorial = createTutorialController({
+      boardRoot: tutorialBoard,
+      controlsRoot: tutorialControls,
+      parent: el,
+      aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
+      // Finish → "开始对局": drop into a normal match.
+      onPlay: () => {
+        destroyTutorial();
+        startMatch();
+      },
+      // Skip / 返回菜单.
+      onExit: () => {
+        destroyTutorial();
+        showScreen('menu');
+      },
+    });
+    showScreen('tutorial');
+    return tutorial;
+  }
+
   function handleClick(event) {
     const target = event?.target;
     if (!target || typeof target.closest !== 'function') return;
@@ -209,6 +254,12 @@ export function createAppShell(options = {}) {
       showScreen('menu');
       return;
     }
+    const tutorialBack = target.closest('[data-app="tutorial-menu"]');
+    if (tutorialBack) {
+      destroyTutorial();
+      showScreen('menu');
+      return;
+    }
     const appButton = target.closest('[data-app="menu"]');
     if (appButton) {
       destroyController();
@@ -222,6 +273,8 @@ export function createAppShell(options = {}) {
     } else if (action === 'start-campaign') {
       entryMode = 'campaign';
       showScreen('faction-select');
+    } else if (action === 'start-tutorial') {
+      startTutorial();
     } else if (action === 'back') showScreen('menu');
     else if (action === 'start-match') {
       if (entryMode === 'campaign') startCampaign();
@@ -242,13 +295,16 @@ export function createAppShell(options = {}) {
     showScreen,
     startMatch,
     startCampaign,
+    startTutorial,
     getController: () => controller,
     getCampaign: () => campaign,
+    getTutorial: () => tutorial,
     getScreen: () => currentScreen,
     getSelection: () => ({ humanFaction: selectedFaction, seedMode }),
     destroy() {
       destroyController();
       destroyCampaign();
+      destroyTutorial();
       el.removeEventListener('click', handleClick);
       el.remove();
     },

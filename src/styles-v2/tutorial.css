@@ -1,0 +1,168 @@
+/* ============================================================
+   styles-v2/tutorial.css — interactive onboarding coach marks.
+   Dim layer + instruction bubble + target ring. The container never blocks
+   clicks itself; input gating is done by the controller's capture listener.
+   ============================================================ */
+
+/* Mirror the in-game screen's one-screen discipline so the fixed board never
+   pushes the tutorial page past the viewport (the base .gh2-screen is a
+   block layout with looser padding and would otherwise overflow). */
+.gh2-screen--tutorial.is-active {
+  height: 100dvh;
+  max-width: 1720px;
+  padding: 5px 14px 8px;
+  gap: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.gh2-screen--tutorial .gh2-play-controls-host,
+.gh2-screen--tutorial .gh2-board { width: 100%; }
+
+.gh2-screen--tutorial .gh2-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gh2-tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.gh2-tut-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 6, 9, 0.55);
+  pointer-events: none;
+}
+
+.gh2-tut-bubble-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.gh2-tut-bubble {
+  position: fixed;
+  top: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(440px, calc(100vw - 24px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  pointer-events: auto;
+
+  background:
+    linear-gradient(180deg, rgba(20, 36, 38, 0.97), rgba(8, 16, 18, 0.97));
+  border: 1px solid var(--gh2-gold);
+  border-radius: var(--gh2-radius);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), var(--gh2-glow-lamp);
+  padding: 14px 16px 12px;
+  font-family: var(--gh2-font-ui);
+}
+
+.gh2-tut-bubble__title {
+  margin: 0 0 8px;
+  font-family: var(--gh2-font-display);
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  color: var(--gh2-lamp);
+}
+
+.gh2-tut-bubble__body {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--gh2-silver);
+}
+
+.gh2-tut-bubble__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gh2-tut-bubble__progress,
+.gh2-tut-bubble__hint {
+  font-size: 12px;
+  color: var(--gh2-silver-faint);
+}
+
+.gh2-tut-bubble__actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.gh2-tut-btn {
+  pointer-events: auto;
+  cursor: pointer;
+  font-family: var(--gh2-font-ui);
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--gh2-line);
+  background: var(--gh2-ink-3);
+  color: var(--gh2-silver);
+  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+.gh2-tut-btn:hover {
+  border-color: var(--gh2-gold);
+  transform: translateY(-1px);
+}
+
+.gh2-tut-btn--primary {
+  background: linear-gradient(180deg, var(--gh2-gold), var(--gh2-lamp-dim));
+  border-color: var(--gh2-gold);
+  color: var(--gh2-ink-0);
+  font-weight: 600;
+}
+
+.gh2-tut-bubble__skip {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  pointer-events: auto;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font-size: 11.5px;
+  color: var(--gh2-silver-faint);
+}
+
+.gh2-tut-bubble__skip:hover { color: var(--gh2-danger); }
+
+/* Prompted element ring. */
+.gh2-tut-target {
+  outline: 2px solid var(--gh2-lamp);
+  outline-offset: 2px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 4px rgba(232, 201, 138, 0.16), 0 0 18px rgba(232, 201, 138, 0.5);
+  animation: gh2-tut-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes gh2-tut-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(232, 201, 138, 0.16), 0 0 14px rgba(232, 201, 138, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(232, 201, 138, 0.26), 0 0 24px rgba(232, 201, 138, 0.65); }
+}
+
+/* Wrong-click nudge. */
+.gh2-tut-bubble--nudge { animation: gh2-tut-nudge 0.4s ease; }
+
+@keyframes gh2-tut-nudge {
+  0%, 100% { transform: translateX(-50%); }
+  25% { transform: translateX(calc(-50% - 7px)); }
+  75% { transform: translateX(calc(-50% + 7px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gh2-tut-target { animation: none; }
+  .gh2-tut-bubble--nudge { animation: none; }
+}
