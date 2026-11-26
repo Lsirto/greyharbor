@@ -21,6 +21,8 @@ export const MAIN_MENU_TEXT = Object.freeze({
   achievementsHint: '解锁长期目标，记录调查员生涯',
   shopLabel: '神秘商店',
   shopHint: '用理智币抽取卡背，概率公示、带保底',
+  deckLabel: '卡组编辑器',
+  deckHint: '自选领袖、自由加减卡牌，保存后用自建牌组出战',
   tutorialLabel: '新手教程',
   tutorialHint: '交互式引导，几分钟学会换牌、出牌与理智规则',
   multiplayerLabel: '多人对战',
@@ -63,6 +65,10 @@ export function renderMainMenu(options = {}) {
       <button type="button" class="gh2-menu-btn" data-menu-action="start-shop">
         <span class="gh2-menu-btn__icon" aria-hidden="true">🪙</span>
         <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.shopLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.shopHint)}</small></span>
+      </button>
+      <button type="button" class="gh2-menu-btn" data-menu-action="start-deck">
+        <span class="gh2-menu-btn__icon" aria-hidden="true">🃏</span>
+        <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.deckLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.deckHint)}</small></span>
       </button>
       <button type="button" class="gh2-menu-btn" data-menu-action="start-tutorial">
         <span class="gh2-menu-btn__icon" aria-hidden="true">✦</span>

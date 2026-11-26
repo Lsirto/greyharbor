@@ -1036,3 +1036,226 @@
   .gh2-shop__grid { grid-template-columns: repeat(2, 1fr); }
   .gh2-shop__rates { flex-direction: column; }
 }
+
+/* ============================================================
+   卡组编辑器 Deck Builder
+   ============================================================ */
+.gh2-deck-editor {
+  width: min(1080px, 96vw);
+  margin: 0 auto;
+  padding: 22px 24px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gh2-deck-editor__head { display: flex; align-items: center; gap: 16px; }
+.gh2-deck-editor__head h2 {
+  flex: 1;
+  margin: 0;
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 26px;
+}
+.gh2-deck-editor__faction {
+  padding: 6px 14px;
+  border: 1px solid var(--gh2-line);
+  border-radius: 999px;
+  color: var(--gh2-lamp);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.gh2-deck-faction,
+.gh2-deck-leaders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.gh2-deck-faction__btn,
+.gh2-deck-leader {
+  cursor: pointer;
+  padding: 8px 18px;
+  border: 1px solid var(--gh2-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--gh2-silver-dim);
+  font-size: 14px;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+.gh2-deck-faction__btn:hover,
+.gh2-deck-leader:hover { border-color: var(--gh2-gold); color: var(--gh2-parchment); }
+.gh2-deck-faction__btn.is-selected,
+.gh2-deck-leader.is-selected {
+  border-color: rgba(232, 201, 138, 0.6);
+  background: rgba(232, 201, 138, 0.12);
+  color: var(--gh2-lamp);
+}
+
+.gh2-deck-body {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 18px;
+}
+.gh2-deck-pool,
+.gh2-deck-current {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: rgba(4, 8, 10, 0.55);
+}
+.gh2-deck-pool h3,
+.gh2-deck-current h3 {
+  margin: 0;
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 17px;
+}
+
+.gh2-deck-pool__list,
+.gh2-deck-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.gh2-deck-card {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--gh2-line-soft);
+  border-left: 3px solid var(--gh2-neutral);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.gh2-deck-card--society { border-left-color: var(--gh2-society); }
+.gh2-deck-card--cult { border-left-color: var(--gh2-cult); }
+.gh2-deck-card__main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.gh2-deck-card__main b { color: var(--gh2-parchment); font-size: 14px; }
+.gh2-deck-card__type,
+.gh2-deck-card__power,
+.gh2-deck-card__cost,
+.gh2-deck-card__kw { color: var(--gh2-silver-faint); font-size: 12px; }
+.gh2-deck-card__cost { color: var(--gh2-lamp); display: inline-flex; align-items: center; gap: 3px; }
+.gh2-deck-card__count {
+  min-width: 22px;
+  text-align: center;
+  color: var(--gh2-lamp);
+  font-weight: 700;
+}
+.gh2-deck-card__add,
+.gh2-deck-list__remove {
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(232, 201, 138, 0.45);
+  border-radius: 50%;
+  background: rgba(232, 201, 138, 0.1);
+  color: var(--gh2-lamp);
+  font-size: 16px;
+  line-height: 1;
+}
+.gh2-deck-card__add:hover { background: rgba(232, 201, 138, 0.22); }
+.gh2-deck-card__add:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  border-color: var(--gh2-line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.gh2-deck-list__row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.gh2-deck-list__row b { color: var(--gh2-parchment); font-size: 14px; }
+.gh2-deck-list__row small { color: var(--gh2-silver-faint); font-size: 12px; }
+.gh2-deck-list__count { color: var(--gh2-lamp); font-weight: 700; }
+.gh2-deck-list__remove {
+  border-color: rgba(189, 106, 91, 0.5);
+  background: rgba(189, 106, 91, 0.12);
+  color: var(--gh2-danger);
+}
+.gh2-deck-list__remove:hover { background: rgba(189, 106, 91, 0.24); }
+.gh2-deck-list__empty { color: var(--gh2-silver-faint); font-size: 13px; padding: 6px 0; }
+
+.gh2-deck-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--gh2-silver-dim);
+}
+.gh2-deck-breakdown b { color: var(--gh2-parchment); }
+
+.gh2-deck-valid {
+  padding: 10px 14px;
+  border: 1px solid rgba(67, 162, 145, 0.5);
+  border-radius: 8px;
+  background: rgba(67, 162, 145, 0.12);
+  color: var(--gh2-cult-glow);
+  font-size: 13px;
+}
+.gh2-deck-invalid {
+  padding: 10px 14px;
+  border: 1px solid rgba(189, 106, 91, 0.45);
+  border-radius: 8px;
+  background: rgba(189, 106, 91, 0.1);
+  color: var(--gh2-silver-dim);
+  font-size: 13px;
+}
+.gh2-deck-invalid b { color: var(--gh2-danger); }
+.gh2-deck-invalid ul { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+
+.gh2-deck-actions { display: flex; gap: 14px; justify-content: flex-end; }
+.gh2-deck-save,
+.gh2-deck-start {
+  cursor: pointer;
+  padding: 11px 26px;
+  border-radius: 999px;
+  font-size: 15px;
+}
+.gh2-deck-save {
+  border: 1px solid var(--gh2-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--gh2-silver-dim);
+}
+.gh2-deck-save:hover { border-color: var(--gh2-gold); color: var(--gh2-parchment); }
+.gh2-deck-start {
+  border: 1px solid rgba(232, 201, 138, 0.6);
+  background: linear-gradient(160deg, rgba(232, 201, 138, 0.2), rgba(4, 8, 10, 0.7));
+  color: var(--gh2-parchment);
+  font-weight: 700;
+}
+.gh2-deck-start:hover { box-shadow: var(--gh2-glow-lamp); }
+.gh2-deck-start.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-color: var(--gh2-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--gh2-silver-faint);
+}
+
+@media (max-width: 1024px) {
+  .gh2-deck-editor { width: 96vw; padding: 16px 12px 24px; }
+  .gh2-deck-body { grid-template-columns: 1fr; }
+  .gh2-deck-pool__list,
+  .gh2-deck-list { max-height: 40vh; }
+  .gh2-deck-actions { justify-content: stretch; }
+  .gh2-deck-save,
+  .gh2-deck-start { flex: 1; }
+}

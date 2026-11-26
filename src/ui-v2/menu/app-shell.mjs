@@ -18,6 +18,8 @@ import { createArenaController } from '../arena/arena-controller.mjs';
 import { createDailyController } from '../daily/daily-controller.mjs';
 import { createAchievementsController } from '../achievements/achievements-controller.mjs';
 import { createShopController } from '../shop/shop-controller.mjs';
+import { createDeckController } from '../deck/deck-controller.mjs';
+import { buildDeckBattleOptions } from '../../deck/battle.mjs';
 import { createStorage } from '../storage.mjs';
 import {
   DAILY_COMPLETION_REWARD,
@@ -39,7 +41,7 @@ import {
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'daily', 'achievements', 'shop', 'tutorial', 'multiplayer']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'daily', 'achievements', 'shop', 'deck', 'tutorial', 'multiplayer']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -64,6 +66,7 @@ export function createAppShell(options = {}) {
   let daily = null;
   let achievements = null;
   let shop = null;
+  let deck = null;
   let storage = null;
   let tutorial = null;
   let fx = null;
@@ -108,6 +111,9 @@ export function createAppShell(options = {}) {
     <section class="gh2-screen gh2-screen--shop" data-screen="shop" hidden>
       <div class="gh2-shop-host" data-app="shop"></div>
     </section>
+    <section class="gh2-screen gh2-screen--deck" data-screen="deck" hidden>
+      <div class="gh2-deck-host" data-app="deck"></div>
+    </section>
     <section class="gh2-screen gh2-screen--tutorial" data-screen="tutorial" hidden>
       <header class="gh2-game-top">
         <button type="button" class="gh2-back-btn" data-app="tutorial-menu">← 返回主菜单</button>
@@ -150,6 +156,7 @@ export function createAppShell(options = {}) {
   const dailyHost = el.querySelector('[data-app="daily"]');
   const achievementsHost = el.querySelector('[data-app="achievements"]');
   const shopHost = el.querySelector('[data-app="shop"]');
+  const deckHost = el.querySelector('[data-app="deck"]');
   const tutorialBoard = el.querySelector('[data-app="tutorial-board"]');
   const tutorialControls = el.querySelector('[data-app="tutorial-controls"]');
   const gameScreen = screenNodes['in-game'];
@@ -446,6 +453,37 @@ export function createAppShell(options = {}) {
     return shop;
   }
 
+  function destroyDeck() {
+    if (!deck) return;
+    const old = deck;
+    deck = null;
+    try { old.destroy(); } catch (_) { /* a half-built deck editor must not block routing */ }
+    if (deckHost) deckHost.innerHTML = '';
+  }
+
+  function startDeck() {
+    destroyController();
+    destroyCampaign();
+    destroyArena();
+    destroyDaily();
+    destroyAchievements();
+    destroyShop();
+    destroyDeck();
+    deck = createDeckController({
+      host: deckHost,
+      storage: getStorage(),
+      onExit: () => {
+        destroyDeck();
+        showScreen('menu');
+      },
+      onBattle: (editor) => {
+        mountBattleOptions(buildDeckBattleOptions(editor, makeArenaSeed()));
+      },
+    });
+    showScreen('deck');
+    return deck;
+  }
+
   function destroyTutorial() {
     if (!tutorial) return;
     const old = tutorial;
@@ -563,6 +601,8 @@ export function createAppShell(options = {}) {
       startAchievements();
     } else if (action === 'start-shop') {
       startShop();
+    } else if (action === 'start-deck') {
+      startDeck();
     } else if (action === 'start-tutorial') {
       startTutorial();
     } else if (action === 'start-multiplayer') {
@@ -603,6 +643,7 @@ export function createAppShell(options = {}) {
     startDaily,
     startAchievements,
     startShop,
+    startDeck,
     startTutorial,
     getController: () => controller,
     getCampaign: () => campaign,
@@ -610,6 +651,7 @@ export function createAppShell(options = {}) {
     getDaily: () => daily,
     getAchievements: () => achievements,
     getShop: () => shop,
+    getDeck: () => deck,
     getTutorial: () => tutorial,
     getScreen: () => currentScreen,
     getSelection: () => ({
@@ -624,6 +666,7 @@ export function createAppShell(options = {}) {
       destroyDaily();
       destroyAchievements();
       destroyShop();
+      destroyDeck();
       destroyTutorial();
       el.removeEventListener('click', handleClick);
       el.remove();

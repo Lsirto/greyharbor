@@ -17,8 +17,9 @@
 - **每日挑战（Daily Challenge）**：把日历日期换算成确定性种子，按日期派生固定阵营与合法领袖，当天所有玩家面对完全相同的一局；结果用本地存档按日期记录，并汇总出当前/最长连续打卡、累计场次、胜率与最近战绩，隐私模式下静默降级。
 - **数据驱动成就墙**：成就由数据定义（指标选择器 + 目标值 + 可选前置），从玩家档案纯函数评估，无 per-id 分支、无引擎改动；解锁时间独立存档，成就墙展示进度条与解锁日期。
 - **货币 · 商店 · 抽卡经济闭环**：理智币有来源（每日对局/首胜、人机胜利）与消耗（抽卡/购买），抽卡产出纯 CSS 生成、可装备的卡背，概率公示并带稀有/史诗保底；卡背库存与装备状态本地存档，并在对局盖牌上真实渲染，全程数据驱动、无 per-id 分支。
+- **卡组编辑器（Deck Builder）**：按阵营自选领袖、从本阵营 + 中立卡池自由加减非领袖卡，受单卡 2 份与 19 张上限约束，实时经 `validateDeck` 校验并按错误码给出中文提示；每阵营一套本地存档，合法后可直接用自建牌组进入人机对局，复用现有引擎、控制器与战斗通道，无 per-id 分支。
 - **锁步对战框架**：可插拔座位驱动 + 确定性输入校验，已用假传输完成两客户端完整对局（菜单入口暂标注“开发中”）。
-- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **482 项自动化测试**通过。
+- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **503 项自动化测试**通过（501 通过 + 2 跳过）。
 
 ## 技术栈
 
@@ -92,6 +93,7 @@ src/
 ├─ daily/           每日挑战纯逻辑（日期→种子 / 阵营 / 领袖 / battleOptions / 记录读写 / 连续与胜率统计）
 ├─ achievements/    成就引擎（档案构建 / 数据化成就目录 / 评估 / 解锁同步 / 成就墙组装）
 ├─ economy/         经济系统（卡背目录 / 钱包 / 抽卡概率与保底 / 库存与装备）
+├─ deck/            卡组编辑器纯逻辑（编辑器状态与规则 / 本地存档 / 出战 battleOptions）
 ├─ data/            卡表 / 领袖 / 阵营 / 预设牌组（唯一数值事实源）
 ├─ ui-v2/           新版 UI
 │  ├─ campaign/     战役控制器 + 纯函数屏幕模板（地图 / 事件 / 奖励 / 休整 / 结算）
@@ -99,6 +101,7 @@ src/
 │  ├─ daily/        每日挑战控制器 + 纯函数模板
 │  ├─ achievements/ 成就墙控制器 + 纯函数模板
 │  ├─ shop/         商店控制器 + 抽卡/卡背纯函数模板
+│  ├─ deck/         卡组编辑器控制器 + 纯函数模板
 │  ├─ menu/         app shell、菜单 / 阵营 / 结果模板
 │  ├─ storage.mjs   通用本地存档封装（注入式后端，默认 localStorage，静默降级）
 │  ├─ templates/    纯字符串模板（data-uid / data-card-id / data-faction）
@@ -114,8 +117,9 @@ tests/
 ├─ daily/           每日挑战纯逻辑 + 统计套件（15 项）
 ├─ achievements/    成就引擎纯逻辑套件（7 项）
 ├─ economy/         经济系统套件（钱包 / 抽卡 / 保底 / 装备，11 项）
+├─ deck/            卡组编辑器纯逻辑套件（15 项）
 ├─ v2/, ai-v2/      新版引擎 / AI 套件
-├─ ui-v2/           新版 UI、控制器、氛围层、存档、各模式模板套件（含商店，注入假对象）
+├─ ui-v2/           新版 UI、控制器、氛围层、存档、各模式模板套件（含商店、卡组编辑器，注入假对象）
 └─ *.test.mjs       旧版引擎 / 数据 / AI / E2E 遗留套件
 scripts/            自对弈、实验台、消融、E2E 等工具（零外部依赖）
 docs/               规则、架构、美术方向、平衡实验报告
@@ -295,6 +299,23 @@ Achievement wall 段。专项测试 `tests/achievements/achievements.test.mjs`�
 专项测试 `tests/economy/economy.test.mjs`（11 项）与 `tests/ui-v2/shop-template.test.mjs`（6 项），
 覆盖幂等发放、概率与保底、重复返还、装备校验、坏存档容错、HTML 转义与盖牌透传。
 
+## 卡组编辑器（Deck Builder）
+
+主菜单「卡组编辑器」进入。编辑器完全数据驱动，规则与对局共用同一套 `DECK_RULES` 与 `validateDeck`：
+
+- **阵营与领袖**：在学会 / 教团间切换，各自从本阵营 3 名领袖中选择 1 名；切换阵营会载入该阵营已保存的牌组，没有则开新牌组。
+- **自由加减卡**：卡池为「本阵营 + 中立」的非领袖卡（每阵营 17 张），可逐张加入或移除；单张卡最多 2 份、非领袖卡总数恰好 19 张，达到上限时加卡按钮自动禁用。
+- **实时校验**：每次变更都经 `validateDeck` 校验，按错误码映射为中文提示（含涉及的卡名），并展示类型统计与 `n/19` 进度；只有合法牌组才能出战。
+- **本地存档**：每阵营一套，写入独立存档键 `greyharbor.custom-decks.v1`，刷新后依旧保留，坏 JSON 容错。
+- **直接出战**：合法牌组经 `buildDeckBattleOptions` 转成 `createGame` 选项，己方用自建牌组、对手用对立阵营预设，走通用 `mountBattleOptions` 通道，驱动循环、AI 与结算面板完全复用。
+
+![卡组编辑器](screenshots/deck-builder.png)
+
+纯逻辑在 `src/deck/`（`editor.mjs` 状态与规则、`decks-store.mjs` 存档、`battle.mjs` 出战选项），
+交互界面位于 `src/ui-v2/deck/`（控制器 + 纯函数模板），样式见 `src/styles-v2/menu.css`。
+专项测试 `tests/deck/editor.test.mjs`（15 项）与 `tests/ui-v2/deck-template.test.mjs`（6 项），
+覆盖池/领袖资格、加减卡、份数与 19 张上限、阵营/领袖切换、存档往返与坏 JSON、出战选项形状，以及用自建牌组由 AI 打完一整局。
+
 ## 氛围层（阶段 3.4）
 
 - `fx/view-diff.mjs` 纯函数比较前后 `buildView`：入场 uid、理↔狂翻面、理智变化、新封印/腐化、夜切换、终局。
@@ -315,9 +336,10 @@ node --test tests/arena/*.test.mjs                  # 竞技场选牌纯逻辑�
 node --test tests/daily/*.test.mjs                  # 每日挑战纯逻辑 + 统计：15 项
 node --test tests/achievements/*.test.mjs           # 成就引擎纯逻辑：7 项
 node --test tests/economy/*.test.mjs                # 经济系统（钱包/抽卡/保底/装备）：11 项
+node --test tests/deck/*.test.mjs                   # 卡组编辑器纯逻辑：15 项
 node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架：11 项
 node --test tests/tutorial/*.test.mjs               # 交互式教程：14 项
-node --test                                         # 全量递归：482 项 = 480 通过 + 2 跳过，0 失败
+node --test                                         # 全量递归：503 项 = 501 通过 + 2 跳过，0 失败
 ```
 
 `npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。
