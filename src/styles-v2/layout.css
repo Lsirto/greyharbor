@@ -27,8 +27,12 @@
 }
 .gh2-back-btn:hover { border-color: var(--gh2-lamp); color: var(--gh2-lamp); }
 
-/* Standalone play.html: same vertical discipline. */
-body:has(.gh2-play-controls-host) { overflow: hidden; }
+/* Standalone play.html: same vertical discipline.
+   In app.html the controls host stays in the DOM while hidden, so scope the
+   lock to the active game screen instead of any descendant, otherwise menu
+   screens (character select etc.) could never scroll. */
+body:has(.gh2-app > .gh2-play-controls-host),
+body:has(.gh2-screen--game.is-active) { overflow: hidden; }
 .gh2-app:has(> .gh2-play-controls-host) {
   height: 100dvh;
   display: flex;

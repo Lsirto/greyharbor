@@ -53,9 +53,10 @@ npm start                        # node server.mjs → http://127.0.0.1:8788/
 
 ## 调查员名册（6 角色 · 立绘卡）
 
-选定阵营后进入角色选择屏：每名调查员是一张**顶部立绘 + 文字**的立绘卡（写实油画风，统一 512×683），
-点击切换选中描边并更新出战文案，确认后以该角色的 `leaderId` 开局。各角色主动技每夜一次、被动多在每夜开始触发，
-规则全部数据化（见 `src/ui-v2/menu/templates/character-select.mjs` 与 `effects/registry.js`）。
+选定阵营后进入角色选择屏：每名调查员是一张**竖版全身立绘 + 文字**的立绘卡（写实油画风，立绘统一 512×683，
+卡片按立绘原比例展示完整全身、不裁切），三张竖卡同屏排列、窄屏自动换行，不再一人占一整页；点击切换选中描边并更新出战文案，
+确认后以该角色的 `leaderId` 开局。各角色主动技每夜一次、被动多在每夜开始触发，规则全部数据化
+（见 `src/ui-v2/menu/templates/character-select.mjs` 与 `effects/registry.js`）。
 
 **学会 Society**
 
@@ -73,9 +74,7 @@ npm start                        # node server.mjs → http://127.0.0.1:8788/
 | 🚪 薇拉·克洛（唤灵者） | 空降 · 风险召唤 | 无需献祭，从牌堆召唤 1 个异怪单位明放，但该异怪获得 1 腐化 | 每夜开始若理智不超过 3 则抽 1 张牌 |
 | ☣ 格里高尔·瘟钟（腐化使徒） | 压制 · 腐化削弱 | 使 1 个敌方明牌单位获得 2 腐化 | 每夜开始敌方全体明牌单位本夜 −1 战力 |
 
-![学会角色选择立绘卡](screenshots/character-select-society.png)
-
-![教团角色选择立绘卡](screenshots/character-select-cult.png)
+![竖版角色选择立绘卡](screenshots/character-vertical.png)
 
 ## 目录地图
 
