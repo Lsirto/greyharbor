@@ -14,9 +14,9 @@
 - **确定性引擎**：所有随机走注入式 rng（无 `Math.random`），同种子可完全复现，便于复盘、自对弈与锁步防作弊。
 - **启发式 AI 对手**：合法动作生成 + 评估函数打分，注入式随机，支持固定种子与随机牌局。
 - **竞技场选牌（Arena Draft）**：从随机候选池逐轮三选一构筑 19 张牌，再用该牌进入人机对战；选牌过程确定性、可复现，复用现有引擎与控制器，无 per-id 分支。
-- **每日挑战（Daily Challenge）**：把日历日期换算成确定性种子，按日期派生固定阵营与合法领袖，当天所有玩家面对完全相同的一局；结果用本地存档按日期记录，隐私模式下静默降级。
+- **每日挑战（Daily Challenge）**：把日历日期换算成确定性种子，按日期派生固定阵营与合法领袖，当天所有玩家面对完全相同的一局；结果用本地存档按日期记录，并汇总出当前/最长连续打卡、累计场次、胜率与最近战绩，隐私模式下静默降级。
 - **锁步对战框架**：可插拔座位驱动 + 确定性输入校验，已用假传输完成两客户端完整对局（菜单入口暂标注“开发中”）。
-- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **443 项自动化测试**通过。
+- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **451 项自动化测试**通过。
 
 ## 技术栈
 
@@ -87,7 +87,7 @@ src/
 ├─ ai/v2/           新版 AI（合法动作 + 启发式评估，注入式随机）
 ├─ campaign/        战役元层：地图、池、操作 DSL、奖励、战斗翻译、run 状态机 + data/（遗物、事件）
 ├─ arena/           竞技场选牌纯逻辑（候选池 / 三选一 / 份数 / 校验 / battleOptions）
-├─ daily/           每日挑战纯逻辑（日期→种子 / 阵营 / 领袖 / battleOptions / 记录读写）
+├─ daily/           每日挑战纯逻辑（日期→种子 / 阵营 / 领袖 / battleOptions / 记录读写 / 连续与胜率统计）
 ├─ data/            卡表 / 领袖 / 阵营 / 预设牌组（唯一数值事实源）
 ├─ ui-v2/           新版 UI
 │  ├─ campaign/     战役控制器 + 纯函数屏幕模板（地图 / 事件 / 奖励 / 休整 / 结算）
@@ -105,7 +105,7 @@ src/
 tests/
 ├─ campaign/        战役套件（地图 / 数据 / run 状态机 / 战斗配置 / 操作 / 模板，53 项）
 ├─ arena/           竞技场选牌纯逻辑套件（11 项）
-├─ daily/           每日挑战纯逻辑套件（8 项）
+├─ daily/           每日挑战纯逻辑 + 统计套件（15 项）
 ├─ v2/, ai-v2/      新版引擎 / AI 套件
 ├─ ui-v2/           新版 UI、控制器、氛围层、存档、竞技场/每日模板套件（103 项，注入假对象）
 └─ *.test.mjs       旧版引擎 / 数据 / AI / E2E 遗留套件
@@ -210,7 +210,8 @@ research/           来源数据、QA 记录与审计产物
 
 主菜单「每日挑战」进入。无需选择阵营与角色：系统把**当天日期**换算成确定性种子，并按日期派生
 固定阵营与该阵营的合法领袖，当天所有玩家面对完全相同的一局预设牌对局。结束后用本地存档按日期
-记录胜负，重进介绍屏会显示「今日已挑战 · 胜利 / 失利」，也可再次挑战同一固定对局。
+记录胜负，重进介绍屏会显示「今日已挑战 · 胜利 / 失利」，并在下方看到连续打卡、胜率与最近战绩，
+也可再次挑战同一固定对局。
 
 ![每日挑战](screenshots/daily-challenge.png)
 
@@ -222,12 +223,16 @@ research/           来源数据、QA 记录与审计产物
 4. **本地存档**：通用存档封装 `src/ui-v2/storage.mjs`（默认 localStorage，可注入后端），每日记录写在
    `greyharbor.daily.challenge.v1` 下的按日期 map；隐私模式 / 配额受限时 try/catch 静默降级，坏 JSON 容错，
    不阻断游玩。
+5. **打卡与战绩**：纯函数 `src/daily/stats.mjs` 从按日期 map 汇总**当前连续 / 最长连续**（当天未打不中断，
+   缺一天即断）、累计场次、胜场与胜率，以及最近 10 天的胜负列表；日期运算走 UTC，避免时区与夏令时漂移。
 
-纯逻辑位于 `src/daily/daily.mjs`（日期格式化、配置派生、battleOptions 构建、记录读写），交互界面位于
+纯逻辑位于 `src/daily/daily.mjs`（日期格式化、配置派生、battleOptions 构建、记录读写）与
+`src/daily/stats.mjs`（连续、胜率、最近战绩汇总），交互界面位于
 `src/ui-v2/daily/`（控制器 + 纯函数模板），通用存档见 `src/ui-v2/storage.mjs`，样式见
 `src/styles-v2/menu.css` 的 Daily Challenge 段。专项测试 `tests/daily/daily.test.mjs`（8 项）、
-`tests/ui-v2/storage.test.mjs`（5 项）与 `tests/ui-v2/daily-template.test.mjs`（4 项），
-含 headless 整局打完、坏记录容错与 HTML 转义验收。
+`tests/daily/stats.test.mjs`（7 项）、`tests/ui-v2/storage.test.mjs`（5 项）与
+`tests/ui-v2/daily-template.test.mjs`（5 项），
+含 headless 整局打完、连续打卡边界、坏记录容错与 HTML 转义验收。
 
 ## 氛围层（阶段 3.4）
 
@@ -246,10 +251,10 @@ node --test tests/v2/*.test.mjs                     # 引擎套件：130 项
 node --test tests/ai-v2/*.test.mjs                  # AI 套件：7 项
 node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择 + 竞技场/每日模板 + 存档：103 项
 node --test tests/arena/*.test.mjs                  # 竞技场选牌纯逻辑：11 项
-node --test tests/daily/*.test.mjs                  # 每日挑战纯逻辑：8 项
+node --test tests/daily/*.test.mjs                  # 每日挑战纯逻辑 + 统计：15 项
 node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架：11 项
 node --test tests/tutorial/*.test.mjs               # 交互式教程：14 项
-node --test                                         # 全量递归：443 项 = 441 通过 + 2 跳过，0 失败
+node --test                                         # 全量递归：451 项 = 449 通过 + 2 跳过，0 失败
 ```
 
 `npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。

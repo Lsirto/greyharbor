@@ -13,6 +13,7 @@ import {
   getDailyConfig,
   readDailyResult,
 } from '../../daily/daily.mjs';
+import { readDailyStats } from '../../daily/stats.mjs';
 import { getCharacterCard } from '../menu/templates/character-select.mjs';
 import { asObject } from '../utils.mjs';
 import { renderDailyIntro } from './templates/index.mjs';
@@ -30,8 +31,9 @@ export function createDailyController(options = {}) {
 
   function buildView() {
     const record = readDailyResult(opts.storage, config.dateKey);
+    const stats = readDailyStats(opts.storage, config.dateKey);
     const leader = getCharacterCard(config.leader) ?? { id: config.leader };
-    return renderDailyIntro({ config, leader, record });
+    return renderDailyIntro({ config, leader, record, stats });
   }
 
   function render() {

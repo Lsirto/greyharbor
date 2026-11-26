@@ -696,3 +696,77 @@
   .gh2-daily-card__media { min-height: 240px; border-right: none; border-bottom: 1px solid var(--gh2-line); }
   .gh2-daily__foot .gh2-menu-btn { min-width: 280px; }
 }
+
+/* ── Daily stats: streaks + history ────────────────────────── */
+
+.gh2-daily-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  padding: 18px 20px 20px;
+  background: rgba(4, 8, 10, 0.55);
+}
+.gh2-daily-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.gh2-daily-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: rgba(232, 201, 138, 0.04);
+}
+.gh2-daily-stat b {
+  color: var(--gh2-lamp);
+  font-family: var(--gh2-font-display);
+  font-size: 24px;
+  line-height: 1.1;
+}
+.gh2-daily-stat span { color: var(--gh2-silver-faint); font-size: 12px; }
+
+.gh2-daily-history-wrap h3 {
+  margin: 0 0 10px;
+  color: var(--gh2-silver-dim);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+.gh2-daily-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gh2-daily-history li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+}
+.gh2-daily-history__date { color: var(--gh2-silver-dim); font-size: 13px; }
+.gh2-daily-history__mark {
+  min-width: 34px;
+  padding: 2px 8px;
+  text-align: center;
+  font-size: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--gh2-line);
+}
+.gh2-daily-history__mark.is-win { color: var(--gh2-lamp); border-color: rgba(232, 201, 138, 0.5); }
+.gh2-daily-history__mark.is-loss { color: var(--gh2-danger); border-color: rgba(178, 62, 62, 0.5); }
+.gh2-daily-history__empty { margin: 0; color: var(--gh2-silver-faint); font-size: 13px; }
+
+@media (max-width: 1024px) {
+  .gh2-daily-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .gh2-daily-stats { padding: 14px 14px 16px; }
+}
