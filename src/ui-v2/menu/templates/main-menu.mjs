@@ -17,6 +17,8 @@ export const MAIN_MENU_TEXT = Object.freeze({
   arenaHint: '随机候选池三选一构筑牌组，再与人机对战',
   dailyLabel: '每日挑战',
   dailyHint: '当天固定一局，所有人同场对局',
+  achievementsLabel: '成就墙',
+  achievementsHint: '解锁长期目标，记录调查员生涯',
   tutorialLabel: '新手教程',
   tutorialHint: '交互式引导，几分钟学会换牌、出牌与理智规则',
   multiplayerLabel: '多人对战',
@@ -51,6 +53,10 @@ export function renderMainMenu(options = {}) {
       <button type="button" class="gh2-menu-btn" data-menu-action="start-daily">
         <span class="gh2-menu-btn__icon" aria-hidden="true">☀</span>
         <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.dailyLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.dailyHint)}</small></span>
+      </button>
+      <button type="button" class="gh2-menu-btn" data-menu-action="start-achievements">
+        <span class="gh2-menu-btn__icon" aria-hidden="true">🏆</span>
+        <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.achievementsLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.achievementsHint)}</small></span>
       </button>
       <button type="button" class="gh2-menu-btn" data-menu-action="start-tutorial">
         <span class="gh2-menu-btn__icon" aria-hidden="true">✦</span>

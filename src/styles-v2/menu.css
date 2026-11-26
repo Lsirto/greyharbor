@@ -770,3 +770,82 @@
   .gh2-daily-stat-grid { grid-template-columns: repeat(2, 1fr); }
   .gh2-daily-stats { padding: 14px 14px 16px; }
 }
+
+/* ── Achievement wall ──────────────────────────────────────── */
+
+.gh2-achievements {
+  width: min(960px, 94vw);
+  margin: 0 auto;
+  padding: 26px 26px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.gh2-achievements__head { display: flex; align-items: center; gap: 20px; }
+.gh2-achievements__heading h2 {
+  margin: 0;
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 28px;
+}
+.gh2-achievements__heading p { margin: 4px 0 0; color: var(--gh2-silver-faint); font-size: 13px; }
+
+.gh2-ach-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+.gh2-ach {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: rgba(4, 8, 10, 0.55);
+}
+.gh2-ach.is-unlocked {
+  border-color: rgba(232, 201, 138, 0.45);
+  background: linear-gradient(160deg, rgba(232, 201, 138, 0.08), rgba(4, 8, 10, 0.7));
+}
+.gh2-ach.is-locked { opacity: 0.72; }
+.gh2-ach__icon {
+  font-size: 28px;
+  line-height: 1;
+  width: 40px;
+  text-align: center;
+  filter: grayscale(0.4);
+}
+.gh2-ach.is-unlocked .gh2-ach__icon { filter: none; }
+.gh2-ach__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.gh2-ach__body b { color: var(--gh2-parchment); font-size: 15px; }
+.gh2-ach__body small { color: var(--gh2-silver-faint); font-size: 12px; }
+.gh2-ach__progress {
+  margin-top: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.gh2-ach__progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--gh2-lamp);
+}
+.gh2-ach.is-locked .gh2-ach__progress span { background: var(--gh2-silver-dim); }
+.gh2-ach__body em { font-style: normal; color: var(--gh2-silver-dim); font-size: 11px; margin-top: 2px; }
+.gh2-ach.is-unlocked .gh2-ach__body em { color: var(--gh2-lamp); }
+
+@media (max-width: 1024px) {
+  .gh2-achievements { width: 96vw; padding: 20px 14px 28px; }
+  .gh2-ach-grid { grid-template-columns: 1fr; gap: 12px; }
+}

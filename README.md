@@ -15,8 +15,9 @@
 - **启发式 AI 对手**：合法动作生成 + 评估函数打分，注入式随机，支持固定种子与随机牌局。
 - **竞技场选牌（Arena Draft）**：从随机候选池逐轮三选一构筑 19 张牌，再用该牌进入人机对战；选牌过程确定性、可复现，复用现有引擎与控制器，无 per-id 分支。
 - **每日挑战（Daily Challenge）**：把日历日期换算成确定性种子，按日期派生固定阵营与合法领袖，当天所有玩家面对完全相同的一局；结果用本地存档按日期记录，并汇总出当前/最长连续打卡、累计场次、胜率与最近战绩，隐私模式下静默降级。
+- **数据驱动成就墙**：成就由数据定义（指标选择器 + 目标值 + 可选前置），从玩家档案纯函数评估，无 per-id 分支、无引擎改动；解锁时间独立存档，成就墙展示进度条与解锁日期。
 - **锁步对战框架**：可插拔座位驱动 + 确定性输入校验，已用假传输完成两客户端完整对局（菜单入口暂标注“开发中”）。
-- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **451 项自动化测试**通过。
+- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **463 项自动化测试**通过。
 
 ## 技术栈
 
@@ -88,11 +89,13 @@ src/
 ├─ campaign/        战役元层：地图、池、操作 DSL、奖励、战斗翻译、run 状态机 + data/（遗物、事件）
 ├─ arena/           竞技场选牌纯逻辑（候选池 / 三选一 / 份数 / 校验 / battleOptions）
 ├─ daily/           每日挑战纯逻辑（日期→种子 / 阵营 / 领袖 / battleOptions / 记录读写 / 连续与胜率统计）
+├─ achievements/    成就引擎（档案构建 / 数据化成就目录 / 评估 / 解锁同步 / 成就墙组装）
 ├─ data/            卡表 / 领袖 / 阵营 / 预设牌组（唯一数值事实源）
 ├─ ui-v2/           新版 UI
 │  ├─ campaign/     战役控制器 + 纯函数屏幕模板（地图 / 事件 / 奖励 / 休整 / 结算）
 │  ├─ arena/        竞技场选牌控制器 + 纯函数模板
 │  ├─ daily/        每日挑战控制器 + 纯函数模板
+│  ├─ achievements/ 成就墙控制器 + 纯函数模板
 │  ├─ menu/         app shell、菜单 / 阵营 / 结果模板
 │  ├─ storage.mjs   通用本地存档封装（注入式后端，默认 localStorage，静默降级）
 │  ├─ templates/    纯字符串模板（data-uid / data-card-id / data-faction）
@@ -106,8 +109,9 @@ tests/
 ├─ campaign/        战役套件（地图 / 数据 / run 状态机 / 战斗配置 / 操作 / 模板，53 项）
 ├─ arena/           竞技场选牌纯逻辑套件（11 项）
 ├─ daily/           每日挑战纯逻辑 + 统计套件（15 项）
+├─ achievements/    成就引擎纯逻辑套件（7 项）
 ├─ v2/, ai-v2/      新版引擎 / AI 套件
-├─ ui-v2/           新版 UI、控制器、氛围层、存档、竞技场/每日模板套件（103 项，注入假对象）
+├─ ui-v2/           新版 UI、控制器、氛围层、存档、各模式模板套件（109 项，注入假对象）
 └─ *.test.mjs       旧版引擎 / 数据 / AI / E2E 遗留套件
 scripts/            自对弈、实验台、消融、E2E 等工具（零外部依赖）
 docs/               规则、架构、美术方向、平衡实验报告
@@ -234,6 +238,28 @@ research/           来源数据、QA 记录与审计产物
 `tests/ui-v2/daily-template.test.mjs`（5 项），
 含 headless 整局打完、连续打卡边界、坏记录容错与 HTML 转义验收。
 
+## 成就墙（Achievements）
+
+主菜单「成就墙」进入。打开时把玩家档案（由每日记录归一化得到）喂给一组**纯数据成就**，逐项评估
+并把新满足的成就写入独立存档（记录解锁时间），再渲染成带进度条的卡片网格：已解锁高亮并显示解锁
+日期，未解锁显示当前进度或前置提示。
+
+![成就墙](screenshots/achievements.png)
+
+1. **数据驱动，无 per-id 分支**：每个成就形如 `{id, name, description, icon, target, metric(profile)}`，
+   统一规则为 `metric(profile) >= target`；需要前置条件时加可选 `gate`（如“先完成 5 局”）。新增成就
+   只需追加一条数据，评估与渲染逻辑不变。
+2. **档案复用现有数据**：档案由每日记录构建（总场次、胜负、胜率、当前/最长连续、按阵营胜场），
+   阵营胜场通过日期配置反查，不新增对局埋点、不改引擎。
+3. **纯函数 + 可注入时钟**：评估是确定性纯函数，解锁时间戳经注入的时钟产生，便于测试；重复同步不会
+   覆盖已有的解锁时间，也不会产生多余写盘。存档不可用时静默降级，不阻断游玩。
+
+核心逻辑位于 `src/achievements/achievements.mjs`（档案构建、成就目录、评估、解锁同步、成就墙组装），
+交互界面位于 `src/ui-v2/achievements/`（控制器 + 纯函数模板），样式见 `src/styles-v2/menu.css` 的
+Achievement wall 段。专项测试 `tests/achievements/achievements.test.mjs`（7 项）与
+`tests/ui-v2/achievements-template.test.mjs`（5 项），
+含前置门控、解锁时间不覆盖、坏存档容错与 HTML 转义验收。
+
 ## 氛围层（阶段 3.4）
 
 - `fx/view-diff.mjs` 纯函数比较前后 `buildView`：入场 uid、理↔狂翻面、理智变化、新封印/腐化、夜切换、终局。
@@ -249,12 +275,13 @@ npm test                                            # 根目录套件：104 通�
 node --test tests/campaign/*.test.mjs               # 战役套件：53 项
 node --test tests/v2/*.test.mjs                     # 引擎套件：130 项
 node --test tests/ai-v2/*.test.mjs                  # AI 套件：7 项
-node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择 + 竞技场/每日模板 + 存档：103 项
+node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择 + 各模式模板 + 存档：109 项
 node --test tests/arena/*.test.mjs                  # 竞技场选牌纯逻辑：11 项
 node --test tests/daily/*.test.mjs                  # 每日挑战纯逻辑 + 统计：15 项
+node --test tests/achievements/*.test.mjs           # 成就引擎纯逻辑：7 项
 node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架：11 项
 node --test tests/tutorial/*.test.mjs               # 交互式教程：14 项
-node --test                                         # 全量递归：451 项 = 449 通过 + 2 跳过，0 失败
+node --test                                         # 全量递归：463 项 = 461 通过 + 2 跳过，0 失败
 ```
 
 `npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。
