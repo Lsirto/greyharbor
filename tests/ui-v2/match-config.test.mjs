@@ -130,7 +130,7 @@ test('固定种子：baseSeed 可复现，restart 沿用同种子与同阵营', 
   assert.deepEqual(deckOf(first.controller), before);
   assert.equal(first.controller.getMatchConfig().humanFaction, 'cult');
   assert.equal(first.controller.getState().generation, 1);
-  assert.deepEqual(first.toasts.at(-1).text, '已用相同固定种子重新开局');
+  assert.deepEqual(first.toasts.at(-1).text, '已重新开始相同牌局');
   drain(first.queue);
   first.controller.destroy();
   second.controller.destroy();
@@ -157,7 +157,7 @@ test('随机种子：只用注入生成器，restart 换新种子且可复现序
   assert.equal(controller.getState().seed, 'random-b');
   assert.equal(controller.getEngine().state.seed, 'random-b');
   assert.equal(controller.getMatchConfig().baseSeed, 'unused-base');
-  assert.deepEqual(toasts.at(-1).text, '已用新随机种子重新开局');
+  assert.deepEqual(toasts.at(-1).text, '已开一局全新牌局');
 
   controller.restart();
   assert.equal(calls, 3);

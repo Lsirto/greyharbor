@@ -5,7 +5,7 @@
 import { escapeHtml } from '../../utils.mjs';
 
 export const SEED_MODES = Object.freeze([
-  Object.freeze({ id: 'fixed', label: '固定种子', hint: '每局可复现，便于复盘' }),
+  Object.freeze({ id: 'fixed', label: '固定牌局', hint: '相同牌局，可反复挑战' }),
   Object.freeze({ id: 'random', label: '随机牌局', hint: '每局都是全新牌局，不复现' }),
 ]);
 

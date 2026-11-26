@@ -19,13 +19,12 @@ const TYPE_LABEL = Object.freeze({
 export function renderCardReward(run) {
   const options = run.pending.cardOptions;
   const cards = options.map((id, index) => {
-    const card = CARDS[id] ?? { id, nameZh: id, name: id };
+    const card = CARDS[id] ?? { id, nameZh: id };
     return `<div class="gh2-creward-card" data-card-choice="${index}" role="button" tabindex="0">
       <img class="gh2-creward-card__art" src="./assets/art/${encodeURIComponent(id)}.jpg"
         alt="" loading="lazy" onerror="this.style.display='none'">
       <div class="gh2-creward-card__plate">
         <b>${escapeHtml(card.nameZh ?? id)}</b>
-        <small>${escapeHtml(card.name ?? id)}</small>
         <span class="gh2-creward-card__type">${escapeHtml(TYPE_LABEL[card.type] ?? card.type ?? '')}</span>
       </div>
     </div>`;

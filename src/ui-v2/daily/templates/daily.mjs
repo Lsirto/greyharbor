@@ -96,7 +96,7 @@ export function renderDailyIntro(input = {}) {
         <span class="gh2-menu-btn__icon" aria-hidden="true">⚔</span>
         <span class="gh2-menu-btn__body">
           <b>${record ? '再次挑战今日对局' : '开始今日挑战'}</b>
-          <small>固定种子 · 同场对局，结果记录到今日</small>
+          <small>当天固定牌局 · 所有人同场对局，结果记录到今日</small>
         </span>
       </button>
     </footer>

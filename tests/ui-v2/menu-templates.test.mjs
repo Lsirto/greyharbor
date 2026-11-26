@@ -89,11 +89,16 @@ test('终局面板：胜负原因、夜分历史、再来一局与返回主菜�
   assert.match(html, /胜负原因 · 两夜取胜/);
   assert.match(html, /第 1 夜/);
   assert.match(html, /7 : 4/);
-  assert.match(html, /<code>abc&amp;123<\/code>/);
-  assert.match(html, /换一颗新种子/);
+  // 随机模式不再展示原始种子字符串，只显示模式与易懂的再来一局文案。
+  assert.ok(!html.includes('abc&amp;123'), '不应向玩家展示原始种子');
+  assert.ok(!html.includes('<code>'), '不应出现代码样式的种子标签');
+  assert.match(html, /随机牌局/);
+  assert.match(html, /开一局全新牌局/);
   assert.match(html, /data-menu-action="rematch"/);
   assert.match(html, /data-menu-action="menu"/);
-  assert.match(renderResultPanel({ matchConfig: { seedMode: 'fixed' } }), /沿用同一固定种子/);
+  const fixed = renderResultPanel({ matchConfig: { seedMode: 'fixed' } });
+  assert.match(fixed, /固定牌局/);
+  assert.match(fixed, /再来一局相同牌局/);
 });
 
 test('终局面板：目标胜利按阵营显示真相大白/旧神降临', () => {

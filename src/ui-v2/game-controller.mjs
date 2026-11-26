@@ -999,8 +999,8 @@ export function createGameController(options = {}) {
           ? `理智 ${safeInt(result.sanity?.[HUMAN], 0)} : ${safeInt(result.sanity?.[AI], 0)}`
           : `终局夜 ${safeInt(result.night, 0)}`;
       const seedHint = matchConfig.seedMode === 'random'
-        ? '点击「再来一局」用新随机种子重新开局'
-        : '点击「再来一局」用同一固定种子重新开局';
+        ? '点击「再来一局」开一局全新牌局'
+        : '点击「再来一局」再来一局相同牌局';
       modal = {
         kind: 'result',
         title: `${reasonText(view)} · ${RESULT_REASON_ZH[result.reason] ?? result.reason ?? '对局结束'}`,
@@ -1376,7 +1376,7 @@ export function createGameController(options = {}) {
     mode = 'mulligan';
     newEngine();
     refresh();
-    say(matchConfig.seedMode === 'random' ? '已用新随机种子重新开局' : '已用相同固定种子重新开局', 'good');
+    say(matchConfig.seedMode === 'random' ? '已开一局全新牌局' : '已重新开始相同牌局', 'good');
     return view;
   }
 

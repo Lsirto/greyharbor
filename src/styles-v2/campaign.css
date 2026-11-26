@@ -155,7 +155,6 @@
 .gh2-creward-card__art { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; }
 .gh2-creward-card__plate { padding: 8px; display: flex; flex-direction: column; gap: 2px; }
 .gh2-creward-card__plate b { color: var(--gh2-parchment); font-size: 13px; }
-.gh2-creward-card__plate small { color: var(--gh2-silver-faint); font-size: 10px; }
 .gh2-creward-card__type { color: var(--gh2-lamp-dim); font-size: 10px; }
 .gh2-creward-relics { display: flex; flex-direction: column; gap: 10px; }
 .gh2-creward-relic {
@@ -226,7 +225,6 @@
 }
 .gh2-crest-item:hover { border-color: var(--gh2-lamp-dim); }
 .gh2-crest-item__name { color: var(--gh2-parchment); font-size: 13px; }
-.gh2-crest-item__en { color: var(--gh2-silver-faint); font-size: 10px; }
 
 /* ── result ──────────────────────────────────────────────── */
 .gh2-cresult {

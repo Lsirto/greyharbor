@@ -63,9 +63,9 @@ export const TUTORIAL_STEPS = Object.freeze([
     wait: WAITS.PHASE_PLAY,
   },
   {
-    id: 'locations',
-    title: '认识三个地点',
-    body: '现场可放 5 张单位，档案 5 张、梦境 3 张。卡牌在不同地点分别结算；梦境只接受疯狂面或带「隐秘」的卡。',
+    id: 'battleline',
+    title: '认识对峙线',
+    body: '双方共用一条「对峙线」，你和对手各有 6 个槽位，单位都打在这里。每夜结束时对峙线的单位会清空、下一夜重新铺场，据点则会保留。带「隐秘」的单位还能选择盖牌，对手暂时看不到它的身份。',
     target: TARGETS.NONE,
     advance: 'continue',
   },

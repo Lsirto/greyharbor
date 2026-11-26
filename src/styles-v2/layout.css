@@ -135,14 +135,14 @@ body:has(.gh2-demo-controls) { overflow: hidden; }
 .gh2-table .gh2-location__name { font-size: 12px; }
 .gh2-table .gh2-location__name small { display: none; }
 .gh2-table .gh2-location__capacity { font-size: 9px; }
-.gh2-table .gh2-location__card-slot { min-height: 0; }
+.gh2-table .gh2-location__card-slot { min-height: 40px; }
 .gh2-table .gh2-location__card-slot .gh2-card {
   width: 44px;
   height: 60px;
   font-size: 6px;
 }
 .gh2-table .gh2-location__slots { gap: 6px; min-height: 0; }
-.gh2-table .gh2-location__slot { min-height: 0; min-width: 0; }
+.gh2-table .gh2-location__slot { min-height: 48px; min-width: 0; }
 .gh2-table .gh2-location__slot .gh2-card {
   max-width: 96px;
   width: 100%;
@@ -151,12 +151,11 @@ body:has(.gh2-demo-controls) { overflow: hidden; }
   font-size: 9px;
 }
 .gh2-table .gh2-location__slot--empty {
-  min-height: 0;
+  min-height: 48px;
   flex: 1 1 auto;
   padding: 2px;
   font-size: 13px;
 }
-.gh2-table .gh2-location--dream .gh2-location__slot--empty { min-height: 0; }
 .gh2-table .gh2-location__foot { padding-top: 3px; font-size: 9px; }
 .gh2-table .gh2-location__foot strong { font-size: 14px; }
 

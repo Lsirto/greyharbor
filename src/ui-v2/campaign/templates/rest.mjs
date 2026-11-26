@@ -30,10 +30,9 @@ export function renderRestScreen(run) {
 
 export function renderRestRemoveList(run) {
   const items = run.deck.map((id, index) => {
-    const card = CARDS[id] ?? { nameZh: id, name: id };
+    const card = CARDS[id] ?? { nameZh: id };
     return `<li class="gh2-crest-item" data-remove-index="${index}" role="button" tabindex="0">
       <span class="gh2-crest-item__name">${escapeHtml(card.nameZh ?? id)}</span>
-      <small class="gh2-crest-item__en">${escapeHtml(card.name ?? id)}</small>
     </li>`;
   }).join('');
 

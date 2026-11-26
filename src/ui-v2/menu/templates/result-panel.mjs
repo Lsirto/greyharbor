@@ -48,7 +48,6 @@ export function renderResultPanel(info = {}) {
   const data = asObject(info);
   const result = asObject(data.result);
   const reason = reasonText(result);
-  const seed = typeof data.seed === 'string' && data.seed ? data.seed : '—';
   const random = asObject(data.matchConfig).seedMode === 'random';
   return `<div class="gh2-result-panel" role="dialog" aria-modal="true" aria-label="对局结算">
     <div class="gh2-result-panel__seal" aria-hidden="true">${escapeHtml(outcomeText(result))}</div>
@@ -59,10 +58,10 @@ export function renderResultPanel(info = {}) {
       <thead><tr><th>夜次</th><th>比分（你 : 对手）</th><th>胜方</th></tr></thead>
       <tbody>${nightRows(data.nightHistory)}</tbody>
     </table>
-    <p class="gh2-result-panel__seed">种子：<code>${escapeHtml(seed)}</code> · ${random ? '随机牌局' : '固定种子'}</p>
+    <p class="gh2-result-panel__seed">${random ? '随机牌局' : '固定牌局'}</p>
     <div class="gh2-result-panel__actions">
       <button type="button" class="gh2-menu-btn gh2-menu-btn--primary" data-menu-action="rematch">
-        <b>再来一局</b><small>${random ? '换一颗新种子' : '沿用同一固定种子'}</small>
+        <b>再来一局</b><small>${random ? '开一局全新牌局' : '再来一局相同牌局'}</small>
       </button>
       <button type="button" class="gh2-menu-btn" data-menu-action="menu"><b>返回主菜单</b><small>重新选择阵营与模式</small></button>
     </div>
