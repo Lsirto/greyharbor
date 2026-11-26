@@ -15,6 +15,9 @@ import { createGameController } from '../game-controller.mjs';
 import { createFxController } from '../fx/fx-controller.mjs';
 import { createCampaignController } from '../campaign/campaign-controller.mjs';
 import { createArenaController } from '../arena/arena-controller.mjs';
+import { createDailyController } from '../daily/daily-controller.mjs';
+import { createStorage } from '../storage.mjs';
+import { writeDailyResult } from '../../daily/daily.mjs';
 import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
 import {
   FACTION_CARDS,
@@ -27,7 +30,7 @@ import {
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'tutorial', 'multiplayer']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'daily', 'tutorial', 'multiplayer']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -49,6 +52,8 @@ export function createAppShell(options = {}) {
   let controller = null;
   let campaign = null;
   let arena = null;
+  let daily = null;
+  let storage = null;
   let tutorial = null;
   let fx = null;
 
@@ -82,6 +87,9 @@ export function createAppShell(options = {}) {
     </section>
     <section class="gh2-screen gh2-screen--arena" data-screen="arena" hidden>
       <div class="gh2-arena-host" data-app="arena"></div>
+    </section>
+    <section class="gh2-screen gh2-screen--daily" data-screen="daily" hidden>
+      <div class="gh2-daily-host" data-app="daily"></div>
     </section>
     <section class="gh2-screen gh2-screen--tutorial" data-screen="tutorial" hidden>
       <header class="gh2-game-top">
@@ -122,6 +130,7 @@ export function createAppShell(options = {}) {
   const resultLayer = el.querySelector('[data-app="result"]');
   const campaignHost = el.querySelector('[data-app="campaign"]');
   const arenaHost = el.querySelector('[data-app="arena"]');
+  const dailyHost = el.querySelector('[data-app="daily"]');
   const tutorialBoard = el.querySelector('[data-app="tutorial-board"]');
   const tutorialControls = el.querySelector('[data-app="tutorial-controls"]');
   const gameScreen = screenNodes['in-game'];
@@ -269,15 +278,20 @@ export function createAppShell(options = {}) {
         destroyArena();
         showScreen('menu');
       },
-      onComplete: (battleOptions) => startArenaBattle(battleOptions),
+      onComplete: (battleOptions) => mountBattleOptions(battleOptions),
     });
     showScreen('arena');
     return arena;
   }
 
-  /** Mount the drafted deck into the existing human-vs-AI controller. */
-  function startArenaBattle(battleOptions) {
+  /**
+   * Generic mount for any injected battleOptions (arena draft, daily challenge).
+   * The driving loop, AI and result panel are unchanged; an optional custom
+   * gameOver callback lets the caller record the outcome before it is shown.
+   */
+  function mountBattleOptions(battleOptions, handleGameOver) {
     destroyArena();
+    destroyDaily();
     destroyController();
     fx = createFxController({ boardRoot, controlsRoot });
     controller = createGameController({
@@ -286,12 +300,58 @@ export function createAppShell(options = {}) {
       battleOptions,
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
       hooks: fx.hooks,
-      onGameOver: (info) => showResult(info),
+      onGameOver: (info) => {
+        if (typeof handleGameOver === 'function') handleGameOver(info);
+        showResult(info);
+      },
     });
     if (typeof window !== 'undefined') window.__greyharborGame = controller;
     hideResult();
     showScreen('in-game');
     return controller;
+  }
+
+  /** Lazily create the shared storage wrapper (safe no-op when unavailable). */
+  function getStorage() {
+    if (!storage) storage = createStorage(opts.storage);
+    return storage;
+  }
+
+  function destroyDaily() {
+    if (!daily) return;
+    const old = daily;
+    daily = null;
+    try { old.destroy(); } catch (_) { /* a half-built daily controller must not block routing */ }
+    if (dailyHost) dailyHost.innerHTML = '';
+  }
+
+  function startDaily() {
+    destroyController();
+    destroyCampaign();
+    destroyArena();
+    destroyDaily();
+    const persistence = getStorage();
+    daily = createDailyController({
+      host: dailyHost,
+      storage: persistence,
+      date: opts.date,
+      aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
+      onExit: () => {
+        destroyDaily();
+        showScreen('menu');
+      },
+      onComplete: (battleOptions, config) => {
+        // Record the real outcome, then let the generic result panel render.
+        mountBattleOptions(battleOptions, (info) => {
+          const winner = info?.result?.winner;
+          if (winner === 0 || winner === 1) {
+            writeDailyResult(persistence, config.dateKey, winner === 0);
+          }
+        });
+      },
+    });
+    showScreen('daily');
+    return daily;
   }
 
   function destroyTutorial() {
@@ -405,6 +465,8 @@ export function createAppShell(options = {}) {
     } else if (action === 'start-arena') {
       entryMode = 'arena';
       showScreen('faction-select');
+    } else if (action === 'start-daily') {
+      startDaily();
     } else if (action === 'start-tutorial') {
       startTutorial();
     } else if (action === 'start-multiplayer') {
@@ -442,10 +504,12 @@ export function createAppShell(options = {}) {
     startMatch,
     startCampaign,
     startArenaDraft,
+    startDaily,
     startTutorial,
     getController: () => controller,
     getCampaign: () => campaign,
     getArena: () => arena,
+    getDaily: () => daily,
     getTutorial: () => tutorial,
     getScreen: () => currentScreen,
     getSelection: () => ({
@@ -457,6 +521,7 @@ export function createAppShell(options = {}) {
       destroyController();
       destroyCampaign();
       destroyArena();
+      destroyDaily();
       destroyTutorial();
       el.removeEventListener('click', handleClick);
       el.remove();

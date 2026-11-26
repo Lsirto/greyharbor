@@ -14,8 +14,9 @@
 - **确定性引擎**：所有随机走注入式 rng（无 `Math.random`），同种子可完全复现，便于复盘、自对弈与锁步防作弊。
 - **启发式 AI 对手**：合法动作生成 + 评估函数打分，注入式随机，支持固定种子与随机牌局。
 - **竞技场选牌（Arena Draft）**：从随机候选池逐轮三选一构筑 19 张牌，再用该牌进入人机对战；选牌过程确定性、可复现，复用现有引擎与控制器，无 per-id 分支。
+- **每日挑战（Daily Challenge）**：把日历日期换算成确定性种子，按日期派生固定阵营与合法领袖，当天所有玩家面对完全相同的一局；结果用本地存档按日期记录，隐私模式下静默降级。
 - **锁步对战框架**：可插拔座位驱动 + 确定性输入校验，已用假传输完成两客户端完整对局（菜单入口暂标注“开发中”）。
-- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **426 项自动化测试**通过。
+- **零依赖、零构建**：原生 ES Modules + 本地美术 + WebAudio 实时合成音效，全量 **443 项自动化测试**通过。
 
 ## 技术栈
 
@@ -39,7 +40,7 @@ npm start                        # node server.mjs → http://127.0.0.1:8788/
 
 | 地址 | 内容 |
 |---|---|
-| `/` 或 `/index.html` | **v2 正式入口**：主菜单 → 阵营选择 → 人机对战（含氛围层）、战役 Roguelike 或竞技场选牌 |
+| `/` 或 `/index.html` | **v2 正式入口**：主菜单 → 阵营选择 → 人机对战（含氛围层）、战役 Roguelike、竞技场选牌或每日挑战 |
 | `/app.html` | 同款 app shell（阶段 3.3 入口，保留兼容） |
 | `/play.html` | 阶段 3.2 人机对战直入（固定种子） |
 | `/game.html` | 阶段 3.1 自动棋盘演示 |
@@ -85,10 +86,15 @@ src/
 ├─ engine/v2/       新版规则引擎：确定性状态机、效果 DSL、buildView、计分、anomalies、chaos-bag、objectives
 ├─ ai/v2/           新版 AI（合法动作 + 启发式评估，注入式随机）
 ├─ campaign/        战役元层：地图、池、操作 DSL、奖励、战斗翻译、run 状态机 + data/（遗物、事件）
+├─ arena/           竞技场选牌纯逻辑（候选池 / 三选一 / 份数 / 校验 / battleOptions）
+├─ daily/           每日挑战纯逻辑（日期→种子 / 阵营 / 领袖 / battleOptions / 记录读写）
 ├─ data/            卡表 / 领袖 / 阵营 / 预设牌组（唯一数值事实源）
 ├─ ui-v2/           新版 UI
 │  ├─ campaign/     战役控制器 + 纯函数屏幕模板（地图 / 事件 / 奖励 / 休整 / 结算）
+│  ├─ arena/        竞技场选牌控制器 + 纯函数模板
+│  ├─ daily/        每日挑战控制器 + 纯函数模板
 │  ├─ menu/         app shell、菜单 / 阵营 / 结果模板
+│  ├─ storage.mjs   通用本地存档封装（注入式后端，默认 localStorage，静默降级）
 │  ├─ templates/    纯字符串模板（data-uid / data-card-id / data-faction）
 │  ├─ fx/           view-diff、DOM 动画、粒子池、fx-controller
 │  ├─ audio/        WebAudio 合成引擎与事件→音色映射
@@ -98,8 +104,10 @@ src/
 └─ app.js / main.js 旧版入口（由 gwent.html 加载）
 tests/
 ├─ campaign/        战役套件（地图 / 数据 / run 状态机 / 战斗配置 / 操作 / 模板，53 项）
+├─ arena/           竞技场选牌纯逻辑套件（11 项）
+├─ daily/           每日挑战纯逻辑套件（8 项）
 ├─ v2/, ai-v2/      新版引擎 / AI 套件
-├─ ui-v2/           新版 UI、控制器、氛围层套件（注入假对象，无外部依赖）
+├─ ui-v2/           新版 UI、控制器、氛围层、存档、竞技场/每日模板套件（103 项，注入假对象）
 └─ *.test.mjs       旧版引擎 / 数据 / AI / E2E 遗留套件
 scripts/            自对弈、实验台、消融、E2E 等工具（零外部依赖）
 docs/               规则、架构、美术方向、平衡实验报告
@@ -198,6 +206,29 @@ research/           来源数据、QA 记录与审计产物
 专项测试 `tests/arena/draft.test.mjs`（11 项）与 `tests/ui-v2/arena-template.test.mjs`（6 项），
 含 headless 整局打完与 HTML 转义验收。
 
+## 每日挑战（Daily Challenge）
+
+主菜单「每日挑战」进入。无需选择阵营与角色：系统把**当天日期**换算成确定性种子，并按日期派生
+固定阵营与该阵营的合法领袖，当天所有玩家面对完全相同的一局预设牌对局。结束后用本地存档按日期
+记录胜负，重进介绍屏会显示「今日已挑战 · 胜利 / 失利」，也可再次挑战同一固定对局。
+
+![每日挑战](screenshots/daily-challenge.png)
+
+1. **日期 → 种子**：本地时区格式化为 `YYYY-MM-DD`，种子为 `greyharbor-daily-YYYY-MM-DD`；对日期
+   字符串做 FNV-1a 哈希，用哈希选阵营、再从该阵营的稳定领袖列表中选领袖，全程无 `Math.random`。
+2. **确定性**：同一日期任意时刻、任意玩家得到的阵营、领袖、牌组与对局完全一致；不同日期自然轮换。
+3. **复用引擎**：把日期配置翻译成 `createGame` 的 `battleOptions`（座位 0 为人类阵营 + 当日领袖，
+   座位 1 为对立阵营预设牌），经控制器既有的 `battleOptions` 注入点开打，驱动循环、AI 与结算面板不变。
+4. **本地存档**：通用存档封装 `src/ui-v2/storage.mjs`（默认 localStorage，可注入后端），每日记录写在
+   `greyharbor.daily.challenge.v1` 下的按日期 map；隐私模式 / 配额受限时 try/catch 静默降级，坏 JSON 容错，
+   不阻断游玩。
+
+纯逻辑位于 `src/daily/daily.mjs`（日期格式化、配置派生、battleOptions 构建、记录读写），交互界面位于
+`src/ui-v2/daily/`（控制器 + 纯函数模板），通用存档见 `src/ui-v2/storage.mjs`，样式见
+`src/styles-v2/menu.css` 的 Daily Challenge 段。专项测试 `tests/daily/daily.test.mjs`（8 项）、
+`tests/ui-v2/storage.test.mjs`（5 项）与 `tests/ui-v2/daily-template.test.mjs`（4 项），
+含 headless 整局打完、坏记录容错与 HTML 转义验收。
+
 ## 氛围层（阶段 3.4）
 
 - `fx/view-diff.mjs` 纯函数比较前后 `buildView`：入场 uid、理↔狂翻面、理智变化、新封印/腐化、夜切换、终局。
@@ -213,11 +244,12 @@ npm test                                            # 根目录套件：104 通�
 node --test tests/campaign/*.test.mjs               # 战役套件：53 项
 node --test tests/v2/*.test.mjs                     # 引擎套件：130 项
 node --test tests/ai-v2/*.test.mjs                  # AI 套件：7 项
-node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择 + 竞技场模板：94 项
+node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择 + 竞技场/每日模板 + 存档：103 项
 node --test tests/arena/*.test.mjs                  # 竞技场选牌纯逻辑：11 项
+node --test tests/daily/*.test.mjs                  # 每日挑战纯逻辑：8 项
 node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架：11 项
 node --test tests/tutorial/*.test.mjs               # 交互式教程：14 项
-node --test                                         # 全量递归：426 项 = 424 通过 + 2 跳过，0 失败
+node --test                                         # 全量递归：443 项 = 441 通过 + 2 跳过，0 失败
 ```
 
 `npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。

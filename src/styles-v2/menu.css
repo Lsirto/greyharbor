@@ -603,3 +603,96 @@
   .gh2-arena__choices { grid-template-columns: 1fr; gap: 14px; }
   .gh2-arena-card__media { height: 220px; }
 }
+
+/* ── Daily Challenge ───────────────────────────────────────── */
+
+.gh2-daily {
+  width: min(880px, 94vw);
+  margin: 0 auto;
+  padding: 28px 28px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.gh2-daily__head { display: flex; align-items: center; gap: 20px; }
+.gh2-daily__heading h2 {
+  margin: 0;
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 28px;
+}
+.gh2-daily__heading p { margin: 4px 0 0; color: var(--gh2-silver-faint); font-size: 13px; }
+
+.gh2-daily-card {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(232, 201, 138, 0.05), rgba(4, 8, 10, 0.9));
+}
+.gh2-daily-card--cult {
+  background: linear-gradient(160deg, rgba(67, 162, 145, 0.1), rgba(4, 16, 14, 0.92));
+}
+.gh2-daily-card__media {
+  position: relative;
+  display: block;
+  height: 100%;
+  min-height: 280px;
+  border-right: 1px solid var(--gh2-line);
+  overflow: hidden;
+}
+.gh2-daily-card__portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  display: block;
+}
+.gh2-daily-card__icon {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  font-size: 26px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
+}
+.gh2-daily-card__body {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gh2-daily-card__faction {
+  color: var(--gh2-lamp);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+.gh2-daily-card--cult .gh2-daily-card__faction { color: var(--gh2-cult); }
+.gh2-daily-card__title { color: var(--gh2-silver-dim); font-size: 13px; }
+.gh2-daily-card__name {
+  color: var(--gh2-parchment);
+  font-family: var(--gh2-font-display);
+  font-size: 26px;
+}
+.gh2-daily-card__archetype { color: var(--gh2-silver-faint); font-size: 12px; }
+
+.gh2-daily-status {
+  margin-top: auto;
+  padding-top: 14px;
+  align-self: flex-start;
+  font-size: 13px;
+}
+.gh2-daily-status--open { color: var(--gh2-silver-dim); }
+.gh2-daily-status--win { color: var(--gh2-lamp); }
+.gh2-daily-status--loss { color: var(--gh2-danger); }
+
+.gh2-daily__foot { display: flex; justify-content: center; }
+.gh2-daily__foot .gh2-menu-btn { min-width: 340px; }
+
+@media (max-width: 1024px) {
+  .gh2-daily { width: 96vw; padding: 22px 16px 28px; gap: 16px; }
+  .gh2-daily-card { grid-template-columns: 1fr; }
+  .gh2-daily-card__media { min-height: 240px; border-right: none; border-bottom: 1px solid var(--gh2-line); }
+  .gh2-daily__foot .gh2-menu-btn { min-width: 280px; }
+}
