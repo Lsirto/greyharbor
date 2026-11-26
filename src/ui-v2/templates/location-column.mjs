@@ -46,7 +46,7 @@ function renderAnomalyBanner(anomaly, location) {
   if (a.location !== null && a.location !== location) return '';
   const effect = describeAnomaly(a);
   const name = a.nameZh || a.id;
-  return `<div class="gh2-anomaly" data-anomaly="${escapeHtml(a.id)}" title="${escapeHtml(a.nameEn || a.id)}">
+  return `<div class="gh2-anomaly" data-anomaly="${escapeHtml(a.id)}" title="${escapeHtml(name)}">
     <span class="gh2-anomaly__mark">${icon('night')}</span>
     <span class="gh2-anomaly__text"><b>${escapeHtml(name)}</b><i>${escapeHtml(effect)}</i></span>
   </div>`;
@@ -54,7 +54,7 @@ function renderAnomalyBanner(anomaly, location) {
 
 export function renderLocationColumn(options = {}) {
   const opts = asObject(options);
-  const location = LOCATION_ORDER.includes(opts.location) ? opts.location : 'scene';
+  const location = LOCATION_ORDER.includes(opts.location) ? opts.location : 'front';
   const playerIndex = opts.playerIndex === 1 ? 1 : 0;
   const board = asArray(opts.board);
   const capacity = Math.max(0, safeInt(opts.capacity, LOCATION_CAPACITY_FALLBACK[location] ?? 0));
@@ -80,13 +80,13 @@ export function renderLocationColumn(options = {}) {
   return `<section class="gh2-location gh2-location--${location}" data-location="${location}" data-player="${playerIndex}" data-subtotal="${escapeHtml(subtotal)}">
     <header class="gh2-location__head">
       <span class="gh2-location__icon">${icon(location)}</span>
-      <h4 class="gh2-location__name">${escapeHtml(label)}<small>${escapeHtml(location.toUpperCase())}</small></h4>
+      <h4 class="gh2-location__name">${escapeHtml(label)}</h4>
       <span class="gh2-location__capacity">${escapeHtml(slots)} 槽</span>
     </header>
     ${anomalyBanner}
     <div class="gh2-location__card-slot">${locationCard}</div>
     <div class="gh2-location__slots">${cards}</div>
-    <footer class="gh2-location__foot"><span>小计 SUBTOTAL</span><strong>${escapeHtml(subtotal)}</strong></footer>
+    <footer class="gh2-location__foot"><span>小计</span><strong>${escapeHtml(subtotal)}</strong></footer>
   </section>`;
 }
 

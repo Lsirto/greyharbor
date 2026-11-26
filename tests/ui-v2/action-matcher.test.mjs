@@ -40,8 +40,42 @@ function first(predicate) {
   return entry;
 }
 
-test('真实 view.actions：单位卡在各地点槽位严格匹配且引用一致', () => {
-  for (const location of ['scene', 'archive', 'dream']) {
+/**
+ * Build a deterministic view that contains a reveal action.  The AI policy never
+ * chooses a face-down deployment in a self-play game, so relying on a real game
+ * to produce a reveal is fragile; place a stealth unit face-down directly and
+ * force the turn back so its reveal is legal.
+ */
+function revealSnapshot() {
+  const engine = createGame({
+    seed: 'action-matcher-reveal',
+    decks: [
+      { leader: 'harold-ashby', cards: ['nora-wells', 'finn-calloway', 'finn-calloway'] },
+      { leader: 'elias-thorne', cards: ['finn-calloway', 'finn-calloway'] },
+    ],
+  });
+  for (const p of [0, 1]) {
+    const r = engine.apply({ type: 'mulligan', player: p, uids: [] });
+    assert.strictEqual(r.ok, true, r.error);
+  }
+  engine.state.current = 0;
+  engine.state.firstPlayer = 0;
+  engine.state.passed = [false, false];
+  engine.state.turnActionTaken = false;
+  const down = engine.getActions().find((a) => a.type === 'playCard' && a.faceDown === true);
+  assert.ok(down, 'stealth unit offers a face-down deployment');
+  const placed = engine.apply(down);
+  assert.strictEqual(placed.ok, true, placed.error);
+  engine.state.current = 0;
+  engine.state.passed = [false, false];
+  engine.state.turnActionTaken = false;
+  const view = engine.viewFor(0);
+  assert.ok(view.actions.some((a) => a.type === 'reveal' && a.uids?.length === 1));
+  return view;
+}
+
+test('真实 view.actions：单位卡在 front 槽位严格匹配且引用一致', () => {
+  for (const location of ['front']) {
     const { view, action } = first((candidate) =>
       candidate.type === 'playCard'
       && candidate.location === location
@@ -194,10 +228,11 @@ test('领袖目标、pass、reveal 与 mulligan 子集匹配', () => {
   const passed = first((action) => action?.type === 'pass');
   assert.strictEqual(matchAction(passed.view.actions, { type: 'pass' }), passed.action);
 
-  const reveal = first((action) => action?.type === 'reveal' && action.uids?.length === 1);
+  const revealView = revealSnapshot();
+  const reveal = revealView.actions.find((a) => a.type === 'reveal' && a.uids?.length === 1);
   assert.strictEqual(
-    matchAction(reveal.view.actions, { type: 'reveal', uids: [reveal.action.uids[0]] }),
-    reveal.action,
+    matchAction(revealView.actions, { type: 'reveal', uids: [reveal.uids[0]] }),
+    reveal,
   );
 
   const opening = SNAPSHOTS.find((view) => view.phase === 'mulligan' && view.actions.some((a) => a.uids?.length >= 2));

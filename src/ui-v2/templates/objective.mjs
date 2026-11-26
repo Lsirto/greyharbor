@@ -7,7 +7,7 @@ import { asObject, clamp, escapeHtml, safeInt } from '../utils.mjs';
 import { icon } from './icons.mjs';
 
 const OBJECTIVE_ICONS = Object.freeze({ clue: 'archive', doom: 'sacrifice' });
-const OBJECTIVE_LABELS = Object.freeze({ clue: '线索 CLUE', doom: '末日 DOOM' });
+const OBJECTIVE_LABELS = Object.freeze({ clue: '线索', doom: '末日' });
 
 export function renderObjectiveTrack(player, options = {}) {
   const opts = asObject(options);

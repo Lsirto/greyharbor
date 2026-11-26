@@ -34,7 +34,7 @@ export function renderLeaderZone(leader, options = {}) {
   }
 
   return `<section class="gh2-leader-zone" data-player="${index}">
-    <h3 class="gh2-leader-zone__title">${escapeHtml(label)} · LEADER</h3>
+    <h3 class="gh2-leader-zone__title">${escapeHtml(label)}</h3>
     ${renderCard(leaderAsCard(data), cardOptions)}
     <div class="gh2-leader-zone__status gh2-leader-zone__status--${tone}">${icon(sealed ? 'seal' : 'crown')}${escapeHtml(status)}</div>
   </section>`;

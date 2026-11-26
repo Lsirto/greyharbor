@@ -44,13 +44,11 @@ export const FACES_ZH = Object.freeze({
 });
 
 export const LOCATIONS_ZH = Object.freeze({
-  scene: '现场',
-  archive: '档案',
-  dream: '梦境',
+  front: '对峙线',
 });
 
-export const LOCATION_ORDER = Object.freeze(['scene', 'archive', 'dream']);
-export const LOCATION_CAPACITY_FALLBACK = Object.freeze({ scene: 5, archive: 5, dream: 3 });
+export const LOCATION_ORDER = Object.freeze(['front']);
+export const LOCATION_CAPACITY_FALLBACK = Object.freeze({ front: 6 });
 
 const UNIT_TYPES = new Set(['unit', 'oldgod']);
 const KNOWN_FACTIONS = new Set(['society', 'cult', 'neutral']);

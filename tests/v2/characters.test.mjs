@@ -99,9 +99,7 @@ function putUnit(engine, p, cardId, location, slot) {
 
 function boardUnits(engine, p) {
   const out = [];
-  for (const location of ['scene', 'archive', 'dream']) {
-    for (const inst of engine.state.players[p].board[location]) if (inst) out.push(inst);
-  }
+  for (const inst of engine.state.players[p].board.front) if (inst) out.push(inst);
   return out;
 }
 
@@ -112,7 +110,7 @@ test('哈罗德主动：封印敌方明牌卡至下一夜，并回复 1 点理�
     leader: 'harold-ashby',
     sanity: 4,
   });
-  const foe = putUnit(engine, 1, 'finn-calloway', 'scene', 0);
+  const foe = putUnit(engine, 1, 'finn-calloway', 'front', 0);
   const sanityBefore = engine.state.players[0].sanity;
   const action = engine.getActions().find(
     (entry) => entry.type === 'useLeader' && entry.targetUid === foe.uid,
@@ -169,9 +167,9 @@ test('伊妮德被动：夜开始抽 1 张牌', () => {
 
 test('奥古斯都主动：封印敌方卡，并使己方最高战力明牌单位本夜 +2', () => {
   const engine = setup({ leader: 'augustus-wayne' });
-  const own = putUnit(engine, 0, 'finn-calloway', 'scene', 0);
-  const foe = putUnit(engine, 1, 'finn-calloway', 'scene', 0);
-  const powerBefore = currentUnitPower(engine.state, 0, own, 'scene', 0);
+  const own = putUnit(engine, 0, 'finn-calloway', 'front', 0);
+  const foe = putUnit(engine, 1, 'finn-calloway', 'front', 0);
+  const powerBefore = currentUnitPower(engine.state, 0, own, 'front', 0);
   const action = engine.getActions().find(
     (entry) => entry.type === 'useLeader' && entry.targetUid === foe.uid,
   );
@@ -180,7 +178,7 @@ test('奥古斯都主动：封印敌方卡，并使己方最高战力明牌单�
   assert.equal(result.ok, true, result.error);
   assert.equal(foe.sealed, true);
   assert.equal(
-    currentUnitPower(engine.state, 0, own, 'scene', 0),
+    currentUnitPower(engine.state, 0, own, 'front', 0),
     powerBefore + 2,
   );
 });
@@ -188,9 +186,9 @@ test('奥古斯都主动：封印敌方卡，并使己方最高战力明牌单�
 test('奥古斯都被动：夜开始己方全体明牌单位本夜 +1', () => {
   const engine = setupWithBoard({
     leader: 'augustus-wayne',
-    own: [{ cardId: 'finn-calloway', location: 'scene', slot: 0 }],
+    own: [{ cardId: 'finn-calloway', location: 'front', slot: 0 }],
   });
-  const own = engine.state.players[0].board.scene[0];
+  const own = engine.state.players[0].board.front[0];
   assert.equal(own.thisNightPower, 1);
 });
 
@@ -202,7 +200,7 @@ test('伊莱亚斯主动：献祭己方卡，从牌堆打出异怪', () => {
     cards: CULT_DECK,
     startingHand: 1,
   });
-  const sacrifice = putUnit(engine, 0, 'finn-calloway', 'scene', 0);
+  const sacrifice = putUnit(engine, 0, 'finn-calloway', 'front', 0);
   const action = engine.getActions().find(
     (entry) => entry.type === 'useLeader' && entry.sacrificeUid === sacrifice.uid,
   );
@@ -266,7 +264,7 @@ test('薇拉被动：夜开始理智不高于 3 时抽 1，否则不抽', () => 
 
 test('格里高尔主动：敌方明牌单位获得 2 点腐化', () => {
   const engine = setup({ leader: 'gregor-pestilence' });
-  const foe = putUnit(engine, 1, 'finn-calloway', 'scene', 0);
+  const foe = putUnit(engine, 1, 'finn-calloway', 'front', 0);
   const action = engine.getActions().find(
     (entry) => entry.type === 'useLeader' && entry.targetUid === foe.uid,
   );
@@ -280,8 +278,8 @@ test('格里高尔主动：敌方明牌单位获得 2 点腐化', () => {
 test('格里高尔被动：夜开始敌方全体明牌单位本夜 -1', () => {
   const engine = setupWithBoard({
     leader: 'gregor-pestilence',
-    enemy: [{ cardId: 'finn-calloway', location: 'scene', slot: 0 }],
+    enemy: [{ cardId: 'finn-calloway', location: 'front', slot: 0 }],
   });
-  const foe = engine.state.players[1].board.scene[0];
+  const foe = engine.state.players[1].board.front[0];
   assert.equal(foe.thisNightPower, -1);
 });

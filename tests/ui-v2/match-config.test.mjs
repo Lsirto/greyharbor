@@ -232,7 +232,7 @@ function driveSoakAction(controller, action) {
         if (!controller.revealAll()) return false;
         return afterClick(controller, action);
       }
-      for (const location of ['scene', 'archive', 'dream']) {
+      for (const location of ['front']) {
         const slot = controller.getView().players[0].board[location]
           .findIndex((card) => card?.uid === action.uids[0]);
         if (slot >= 0) {
@@ -271,7 +271,7 @@ function driveSoakAction(controller, action) {
 }
 
 function onOwnBoard(view, uid) {
-  for (const location of ['scene', 'archive', 'dream']) {
+  for (const location of ['front']) {
     if (view.players[0].board[location].some((card) => card?.uid === uid)) return true;
   }
   return false;

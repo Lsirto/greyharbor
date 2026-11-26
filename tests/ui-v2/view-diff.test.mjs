@@ -41,8 +41,8 @@ function view({
     faction: index === 0 ? 'society' : 'cult',
     sanity: sanity[index],
     hand: hand[index],
-    board: { scene: board[index], archive: [], dream: [] },
-    locations: { scene: null, archive: null, dream: null },
+    board: { front: board[index] },
+    locations: { front: null },
     leader: { sealed: false },
   });
   return {

@@ -13,13 +13,14 @@ import { countCards } from '../../src/engine/v2/index.js';
 import { createGameController } from '../../src/ui-v2/game-controller.mjs';
 import { renderResultPanel } from '../../src/ui-v2/menu/templates/result-panel.mjs';
 
-function makeQueueController(seed) {
+function makeQueueController(seed, decks = null) {
   const queue = [];
   const renders = [];
   const toasts = [];
   const controller = createGameController({
     seed,
     aiDelay: 0,
+    ...(decks ? { decks } : {}),
     renderer: {
       render(view, options) {
         renders.push({
@@ -78,7 +79,7 @@ function driveHumanAction(controller, action) {
       } else {
         const view = controller.getView();
         let position = null;
-        for (const location of ['scene', 'archive', 'dream']) {
+        for (const location of ['front']) {
           const slot = view.players[0].board[location].findIndex((card) => card?.uid === action.uids[0]);
           if (slot >= 0) {
             position = { location, slot };
@@ -266,27 +267,47 @@ test('onGameOver 回传的夜分可被终局面板渲染（不再显示 0:0）',
 });
 
 test('choice 弹层取消可回到选牌态，重新选择才提交动作', () => {
-  const { controller, queue } = makeQueueController('choice-modal-test');
+  const decks = [
+    { leader: 'harold-ashby', cards: ['unexpected-aid', 'finn-calloway', 'walter-morse'] },
+    { leader: 'elias-thorne', cards: ['finn-calloway', 'finn-calloway'] },
+  ];
+  const { controller, queue } = makeQueueController('choice-modal-test', decks);
   controller.confirmMulligan();
   drain(queue);
+
+  // Place two own units so the aid event has two distinct targets.
+  const engine = controller.getEngine();
+  const player = engine.state.players[0];
+  const placeDirect = (cardId, slot) => {
+    const idx = player.hand.findIndex((entry) => entry.cardId === cardId);
+    const inst = player.hand.splice(idx, 1)[0];
+    inst.face = 'reason';
+    inst.faceDown = false;
+    inst.location = 'front';
+    inst.slot = slot;
+    inst.zone = 'board';
+    inst.corruptionTokens = [];
+    inst.corruptionLoss = 0;
+    player.board.front[slot] = inst;
+  };
+  placeDirect('finn-calloway', 0);
+  placeDirect('walter-morse', 1);
+  controller.refresh();
+
   const view = controller.getView();
-  const action = view.actions.find((entry) =>
-    entry.type === 'playCard' && entry.location === null && !!entry.choice,
-  );
-  assert.ok(action, '固定种子开局应提供带 choice 的事件卡');
-  assert.equal(controller.selectHandCard(action.uid), true);
+  const aid = player.hand.find((entry) => entry.cardId === 'unexpected-aid');
+  assert.equal(controller.selectHandCard(aid.uid), true);
   assert.equal(controller.confirmPlay(), true);
   assert.equal(controller.getUiState().modal?.kind, 'choice');
-  assert.equal(controller.getUiState().selectedUid, action.uid);
+  assert.equal(controller.getUiState().modal?.options.length, 2);
+  assert.equal(controller.getUiState().selectedUid, aid.uid);
 
   assert.equal(controller.cancel(), true);
   assert.equal(controller.getUiState().modal, null);
-  assert.equal(controller.getUiState().selectedUid, action.uid, '取消后保留选牌态');
+  assert.equal(controller.getUiState().selectedUid, aid.uid, '取消后保留选牌态');
 
   assert.equal(controller.confirmPlay(), true);
-  const optionIndex = controller.getUiState().modal.options
-    .findIndex((option) => option.actionIndex === view.actions.indexOf(action));
-  assert.ok(optionIndex >= 0);
+  const optionIndex = 0;
   assert.equal(controller.chooseModalOption(optionIndex), true);
   drain(queue);
   assert.notStrictEqual(controller.getView(), view, '成功提交后应刷新整盘视角');

@@ -121,16 +121,16 @@ test('night 1 start draws and stores a public anomaly', () => {
 test('power anomaly adds a location-wide modifier this night', () => {
   const engine = syntheticGame('anomaly-power');
   forceTurn(engine, 0);
-  setAnomaly(engine, 'echoes-of-old-harbor'); // scene +1
+  setAnomaly(engine, 'echoes-of-old-harbor'); // front +1
   const handCard = engine.state.players[0].hand[0];
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'scene' && !a.faceDown);
+    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'front' && !a.faceDown);
   assert.ok(action);
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
-  const inst = engine.state.players[0].board.scene[0];
+  const inst = engine.state.players[0].board.front[0];
   const expected = Math.max(0, 3 + 1 + (inst.chaosToken?.modifier ?? 0));
-  assert.equal(currentUnitPower(engine.state, 0, inst, 'scene', 0), expected);
+  assert.equal(currentUnitPower(engine.state, 0, inst, 'front', 0), expected);
 });
 
 // ── anomaly: entry corruption ──────────────────────────────────────────
@@ -138,13 +138,13 @@ test('power anomaly adds a location-wide modifier this night', () => {
 test('entry-corruption anomaly corrupts a unit on face-up entry', () => {
   const engine = syntheticGame('anomaly-corrupt');
   forceTurn(engine, 0);
-  setAnomaly(engine, 'corrupt-mire'); // scene entry corruption
+  setAnomaly(engine, 'corrupt-mire'); // front entry corruption
   const handCard = engine.state.players[0].hand[0];
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'scene' && !a.faceDown);
+    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'front' && !a.faceDown);
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
-  assert.ok(engine.state.players[0].board.scene[0].corruptionTokens.length >= 1);
+  assert.ok(engine.state.players[0].board.front[0].corruptionTokens.length >= 1);
 });
 
 // ── anomaly: entry sanity ──────────────────────────────────────────────
@@ -152,10 +152,10 @@ test('entry-corruption anomaly corrupts a unit on face-up entry', () => {
 test('entry-sanity anomaly refunds sanity on archive entry', () => {
   const engine = syntheticGame('anomaly-sanity', { startingSanity: 4 });
   forceTurn(engine, 0);
-  setAnomaly(engine, 'sanctum-of-reason'); // archive +1
+  setAnomaly(engine, 'sanctum-of-reason'); // front +1
   const handCard = engine.state.players[0].hand[0];
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'archive' && !a.faceDown);
+    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'front' && !a.faceDown);
   assert.ok(action);
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
@@ -171,11 +171,11 @@ test('seal-immunity anomaly blocks new seals at the location', () => {
       { leader: 'harold-ashby', cards: ['finn-calloway', 'zealot', 'deep-one'] },
     ],
   });
-  setAnomaly(engine, 'shelter-of-lamps'); // archive seal immune
+  setAnomaly(engine, 'shelter-of-lamps'); // front seal immune
   forceTurn(engine, 1);
   const target = engine.state.players[0].hand[0];
-  placeDirect(engine, 0, target, 'archive', 0);
-  assert.equal(isSealImmune(engine.state, 0, target, 'archive'), true);
+  placeDirect(engine, 0, target, 'front', 0);
+  assert.equal(isSealImmune(engine.state, 0, target, 'front'), true);
   assert.equal(engine.getActions(1).filter((a) => a.type === 'useLeader').length, 0);
 });
 
@@ -188,10 +188,10 @@ test('leader-blocked anomaly removes leader actions at the scene', () => {
       { leader: 'harold-ashby', cards: ['finn-calloway', 'zealot', 'deep-one'] },
     ],
   });
-  setAnomaly(engine, 'muted-ground'); // scene leader blocked
+  setAnomaly(engine, 'muted-ground'); // front leader blocked
   forceTurn(engine, 1);
   const target = engine.state.players[0].hand[0];
-  placeDirect(engine, 0, target, 'scene', 0);
+  placeDirect(engine, 0, target, 'front', 0);
   assert.equal(engine.getActions(1).filter((a) => a.type === 'useLeader').length, 0);
 });
 
@@ -239,13 +239,13 @@ test('a face-up hand-played unit draws a token that modifies its power', () => {
   engine.state.anomaly = null;
   const handCard = engine.state.players[0].hand[0];
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'scene' && !a.faceDown);
+    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'front' && !a.faceDown);
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
-  const inst = engine.state.players[0].board.scene[0];
+  const inst = engine.state.players[0].board.front[0];
   assert.ok(inst.chaosToken);
   assert.equal(
-    currentUnitPower(engine.state, 0, inst, 'scene', 0),
+    currentUnitPower(engine.state, 0, inst, 'front', 0),
     Math.max(0, 3 + inst.chaosToken.modifier),
   );
 });
@@ -306,10 +306,10 @@ test('mechanics.chaosBag=false leaves instances without a token', () => {
   forceTurn(engine, 0);
   const handCard = engine.state.players[0].hand[0];
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'scene' && !a.faceDown);
+    a.type === 'playCard' && a.uid === handCard.uid && a.location === 'front' && !a.faceDown);
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
-  assert.equal(engine.state.players[0].board.scene[0].chaosToken, null);
+  assert.equal(engine.state.players[0].board.front[0].chaosToken, null);
 });
 
 // ── discover: Finn on play ────────────────────────────────────────────
@@ -360,7 +360,7 @@ test('Lucia discovers on reveal in the dream', () => {
   forceTurn(engine, 0);
   const lucia = forceIntoHand(engine, 0, 'lucia-vaughn');
   const dreamPlay = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === lucia.uid && a.location === 'dream' && a.faceDown);
+    a.type === 'playCard' && a.uid === lucia.uid && a.location === 'front' && a.faceDown);
   assert.ok(dreamPlay);
   const pr = engine.apply(dreamPlay);
   assert.equal(pr.ok, true, pr.error);

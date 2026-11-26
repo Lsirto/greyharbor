@@ -102,9 +102,9 @@ test('players start at 0 and the view exposes objective fields', () => {
   assert.equal(buildView(engine, 0).players[1].objectiveType, 'doom');
 });
 
-// ── society: archive entry clue ───────────────────────────────────────
+// ── society: face-up front entry clue ──────────────────────────────────
 
-test('a Society unit entering the archive face-up gathers 1 clue', () => {
+test('a Society unit deployed face-up to the front gathers 1 clue', () => {
   const engine = setup(
     { leader: 'harold-ashby', cards: ['walter-morse'] },
     { leader: 'elias-thorne', cards: ['zealot'] },
@@ -112,7 +112,7 @@ test('a Society unit entering the archive face-up gathers 1 clue', () => {
   forceTurn(engine, 0);
   const walter = engine.state.players[0].hand.find((i) => i.cardId === 'walter-morse');
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === walter.uid && a.location === 'archive' && !a.faceDown);
+    a.type === 'playCard' && a.uid === walter.uid && a.location === 'front' && !a.faceDown);
   assert.ok(action);
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
@@ -120,12 +120,12 @@ test('a Society unit entering the archive face-up gathers 1 clue', () => {
   const gain = r.events.find((e) => e.type === 'objectiveGain');
   assert.ok(gain);
   assert.equal(gain.objectiveType, 'clue');
-  assert.equal(gain.source, 'archiveEntry');
+  assert.equal(gain.source, 'frontEntry');
   assert.equal(gain.total, 1);
   assert.equal(countCards(engine.state, 0), 1);
 });
 
-test('a Society unit entering the scene gathers no clue', () => {
+test('a Society stealth unit deployed face-down to the front gathers no clue', () => {
   const engine = setup(
     { leader: 'harold-ashby', cards: ['nora-wells'] },
     { leader: 'elias-thorne', cards: ['zealot'] },
@@ -133,7 +133,8 @@ test('a Society unit entering the scene gathers no clue', () => {
   forceTurn(engine, 0);
   const nora = engine.state.players[0].hand.find((i) => i.cardId === 'nora-wells');
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === nora.uid && a.location === 'scene');
+    a.type === 'playCard' && a.uid === nora.uid && a.location === 'front' && a.faceDown === true);
+  assert.ok(action);
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
   assert.equal(engine.state.players[0].objective, 0);
@@ -148,10 +149,10 @@ test('a Cult devour (sacrifice) adds 1 doom', () => {
     { leader: 'harold-ashby', cards: ['nora-wells'] },
   );
   forceTurn(engine, 0);
-  const victim = putUnit(engine, 0, 'zealot', 'scene', 0);
+  const victim = putUnit(engine, 0, 'zealot', 'front', 0);
   const bell = engine.state.players[0].hand.find((i) => i.cardId === 'bell-claw');
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === bell.uid && a.location === 'scene'
+    a.type === 'playCard' && a.uid === bell.uid && a.location === 'front'
     && a.choice?.mode === 'devour' && a.choice.targetUid === victim.uid);
   assert.ok(action);
   const r = engine.apply(action);
@@ -182,29 +183,45 @@ test('casting a Cult ritual adds 1 doom', () => {
   assert.equal(gain.source, 'ritual');
 });
 
-// ── society: archive control at night end ─────────────────────────────
+// ── society: clue accumulation and faction gating ─────────────────────
 
-test('winning the archive at night end gathers 1 clue', () => {
+test('a second face-up front entry stacks a second clue', () => {
   const engine = setup(
     { leader: 'harold-ashby', cards: ['walter-morse', 'nora-wells'] },
     { leader: 'elias-thorne', cards: ['zealot'] },
   );
-  putUnit(engine, 0, 'walter-morse', 'archive', 0);
-  passBoth(engine);
-  assert.equal(engine.state.players[0].objective, 1);
+  forceTurn(engine, 0);
+  const walter = engine.state.players[0].hand.find((i) => i.cardId === 'walter-morse');
+  const first = engine.apply({
+    type: 'playCard', player: 0, uid: walter.uid, location: 'front', slot: 0, faceDown: false,
+  });
+  assert.equal(first.ok, true, first.error);
+  forceTurn(engine, 0);
+  const nora = engine.state.players[0].hand.find((i) => i.cardId === 'nora-wells');
+  const second = engine.apply({
+    type: 'playCard', player: 0, uid: nora.uid, location: 'front', slot: 1, faceDown: false,
+  });
+  assert.equal(second.ok, true, second.error);
+  assert.equal(engine.state.players[0].objective, 2);
   assert.equal(
-    engine.state.events.some((e) => e.type === 'objectiveGain' && e.source === 'archiveControl'),
-    true,
+    engine.state.events.filter((e) => e.type === 'objectiveGain' && e.source === 'frontEntry').length,
+    2,
   );
 });
 
-test('a tied archive at night end gathers no clue', () => {
+test('a cult face-up front entry gathers no clue', () => {
   const engine = setup(
-    { leader: 'harold-ashby', cards: ['walter-morse'] },
     { leader: 'elias-thorne', cards: ['zealot'] },
+    { leader: 'harold-ashby', cards: ['walter-morse'] },
   );
-  passBoth(engine);
+  forceTurn(engine, 0);
+  const zealot = engine.state.players[0].hand.find((i) => i.cardId === 'zealot');
+  const r = engine.apply({
+    type: 'playCard', player: 0, uid: zealot.uid, location: 'front', slot: 0, faceDown: false,
+  });
+  assert.equal(r.ok, true, r.error);
   assert.equal(engine.state.players[0].objective, 0);
+  assert.equal(r.events.some((e) => e.type === 'objectiveGain'), false);
 });
 
 // ── threshold win + sanity precedence ─────────────────────────────────
@@ -221,7 +238,7 @@ test('reaching the threshold ends the game immediately with objective reason', (
   forceTurn(engine, 0);
   const walter = engine.state.players[0].hand.find((i) => i.cardId === 'walter-morse');
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === walter.uid && a.location === 'archive');
+    a.type === 'playCard' && a.uid === walter.uid && a.location === 'front');
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
   assert.equal(engine.state.phase, 'gameOver');
@@ -258,7 +275,7 @@ test('mechanics.objectives=false records no objective progress or events', () =>
   forceTurn(engine, 0);
   const walter = engine.state.players[0].hand.find((i) => i.cardId === 'walter-morse');
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === walter.uid && a.location === 'archive');
+    a.type === 'playCard' && a.uid === walter.uid && a.location === 'front');
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
   assert.equal(engine.state.players[0].objective, 0);
@@ -274,7 +291,7 @@ test('objective gains do not change card counts', () => {
   forceTurn(engine, 0);
   const walter = engine.state.players[0].hand.find((i) => i.cardId === 'walter-morse');
   const action = engine.getActions(0).find((a) =>
-    a.type === 'playCard' && a.uid === walter.uid && a.location === 'archive');
+    a.type === 'playCard' && a.uid === walter.uid && a.location === 'front');
   const r = engine.apply(action);
   assert.equal(r.ok, true, r.error);
   assert.equal(countCards(engine.state, 0), before);

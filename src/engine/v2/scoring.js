@@ -17,18 +17,14 @@ import {
   madnessPowerBonusFor,
 } from './effects/registry.js';
 
-export const LOCATIONS = Object.freeze(['scene', 'archive', 'dream']);
+export const LOCATIONS = Object.freeze(['front']);
 
 export const LOCATION_CAPACITY = Object.freeze({
-  scene: 5,
-  archive: 5,
-  dream: 3,
+  front: 6,
 });
 
 export const LOCATION_LABELS = Object.freeze({
-  scene: '现场',
-  archive: '档案',
-  dream: '梦境',
+  front: '对峙线',
 });
 
 export const SANITY_MIN = 0;
@@ -109,7 +105,7 @@ export function findUnit(state, p, uid) {
 
 /** The Drowned Bell Altar cross-reference used by §6.4 / §7.2. */
 export function hasUnsealedAltar(state, p) {
-  const card = state.players[p].locations?.scene;
+  const card = state.players[p].locations?.front;
   return !!card && card.cardId === 'drowned-altar' && !card.sealed;
 }
 
@@ -122,10 +118,8 @@ export function hasUnsealedAltar(state, p) {
  */
 export function isCorruptionImmune(state, p, inst, location) {
   if (inst?.corruptionImmune) return true;
-  if (location === 'archive') {
-    const library = state.players[p].locations?.archive;
-    if (library && library.cardId === 'old-library' && !library.sealed) return true;
-  }
+  const library = state.players[p].locations?.front;
+  if (library && library.cardId === 'old-library' && !library.sealed) return true;
   const card = state.cardIndex?.[inst?.cardId];
   for (const aura of state.effects ?? []) {
     if (!aura.modifiers?.corruptionImmune) continue;
@@ -250,8 +244,8 @@ function chainCount(state, p, inst, location, slot) {
 
   let count = 0;
   if (spec.scope === 'archiveOthers') {
-    if (location !== 'archive') return 0;
-    for (const entry of state.players[p].board.archive) {
+    // Single line: every other friendly unit on the front counts.
+    for (const entry of state.players[p].board.front) {
       if (entry && entry.uid !== inst.uid) count += 1;
     }
   } else if (spec.scope === 'adjacent') {
@@ -323,7 +317,7 @@ export function unitPower(inst, card) {
 /** Per-location and total board score for one player. */
 export function scorePlayer(state, p) {
   const player = state.players[p];
-  const locations = { scene: 0, archive: 0, dream: 0 };
+  const locations = Object.fromEntries(LOCATIONS.map((location) => [location, 0]));
   let total = 0;
   for (const location of LOCATIONS) {
     const row = player.board[location];

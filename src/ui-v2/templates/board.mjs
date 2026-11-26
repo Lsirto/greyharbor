@@ -78,7 +78,7 @@ function renderStatusNotes(view, pov) {
 function renderDemoBanner(demo) {
   if (!demo || demo.enabled !== true) return '';
   return `<div class="gh2-demo-banner" data-demo-banner="true">
-    <span class="gh2-demo-banner__mark">${icon('night')} 演示模式 · DEMO</span>
+    <span class="gh2-demo-banner__mark">${icon('night')} 演示模式</span>
     <span class="gh2-demo-banner__meta">固定种子 <b>${escapeHtml(demo.seed ?? 'greyharbor')}</b></span>
     <span class="gh2-demo-banner__meta">第 ${escapeHtml(safeInt(demo.step, 0))} 步</span>
     <span class="gh2-demo-banner__meta">${escapeHtml(demo.running === true ? '自动播放中' : demo.running === false ? '已暂停' : '待开始')}</span>
@@ -107,7 +107,7 @@ export function renderBoardMarkup(view, options = {}) {
     <header class="gh2-masthead gh2-masthead--compact">
       <div class="gh2-masthead__brand">
         <span class="gh2-masthead__seal">${icon('night')}</span>
-        <div><h1>灰港三夜</h1><p>THREE NIGHTS IN GREYHARBOR</p></div>
+        <div><h1>灰港三夜</h1><p>一场关于理智与真相的三夜对决</p></div>
       </div>
       <div class="gh2-masthead__round">
         <span class="gh2-masthead__night">第 ${escapeHtml(night)} 夜 <small>/ ${escapeHtml(maxNights)}</small></span>
@@ -139,9 +139,9 @@ export function renderBoardMarkup(view, options = {}) {
 
       <div class="gh2-midline gh2-midline--compact">
         <div class="gh2-midline__dial">
-          <span>${icon('moon')} NIGHT ${escapeHtml(night)}</span>
+          <span>${icon('moon')} 第 ${escapeHtml(night)} 夜</span>
           <strong>${escapeHtml(scoreMe)} <em>:</em> ${escapeHtml(scoreFoe)}</strong>
-          <span>当前夜分 · LIVE SCORE</span>
+          <span>当前夜分</span>
         </div>
         ${renderEnvironmentRow(data.environments)}
         <div class="gh2-history">

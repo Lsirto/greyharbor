@@ -11,7 +11,7 @@ export function renderEnvironmentRow(environments) {
   const items = cards.map((entry) => renderCard(entry, { size: 'env' })).join('');
 
   return `<section class="gh2-env" data-env-count="${cards.length}">
-    <h3 class="gh2-env__title">${icon('night')}<span>环境 · ENVIRONMENT</span><span class="gh2-env__count">${escapeHtml(cards.length)}</span></h3>
+    <h3 class="gh2-env__title">${icon('night')}<span>环境</span><span class="gh2-env__count">${escapeHtml(cards.length)}</span></h3>
     <div class="gh2-env__cards">${items || '<span class="gh2-env__empty">本夜无环境卡</span>'}</div>
   </section>`;
 }

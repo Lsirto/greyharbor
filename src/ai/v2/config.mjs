@@ -106,17 +106,17 @@ export const CONFIG = deepFreeze({
     },
   },
 
-  /** 三地点（scene/archive/dream）协同与关键词联动（规则 §4 / §6）。 */
+  /** 单一对峙线（front）协同与关键词联动（规则 §4 / §6）。 */
   locations: {
     chainWeight: 1.0,           // 连锁关键词折算
     adjacencyBonus: 0.6,        // 相邻槽位价值（连锁计数/献祭目标）
     equipmentBonus: 2,          // 银灯 +2（规则 §5.6）
     conditionalStealthBonus: 1, // 千瞳每正面隐秘 +1（规则 §11.3）
-    dreamHiddenBonus: 0.8,      // 梦境隐秘盖牌的翻面爆发价值
-    scenePressureBonus: 0.5,    // 现场单位面临献祭/环境压力的补偿
-    archiveSynergyBonus: 0.5,   // 档案卡密度（伊迪丝/旧图书馆）
+    dreamHiddenBonus: 0.8,      // 隐秘盖牌的翻面爆发价值（保留权重）
+    scenePressureBonus: 0.5,    // 对峙线单位面临献祭/环境压力的补偿
+    archiveSynergyBonus: 0.5,   // 据点协同（旧图书馆）
     centerSlotBonus: 0.35,      // 槽位靠中间，给后续连锁单位留出相邻位置
-    capacity: { scene: 5, archive: 5, dream: 3 }, // 规则 §4.1
+    capacity: { front: 6 }, // 规则 §4.1
   },
 
   /** 盖牌与隐秘的信息价值（规则 §6.1 / §9.10）。 */

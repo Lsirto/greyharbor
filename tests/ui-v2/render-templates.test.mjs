@@ -28,7 +28,7 @@ function unit(overrides = {}) {
     nameZh: '诺拉·威尔斯',
     faction: 'society',
     type: 'unit',
-    cardLocation: 'scene',
+    cardLocation: 'front',
     face: 'reason',
     faceDown: false,
     reasonPower: 2,
@@ -36,7 +36,7 @@ function unit(overrides = {}) {
     sanityCost: 0,
     keywords: ['stealth'],
     power: 2,
-    boardLocation: 'scene',
+    boardLocation: 'front',
     slot: 0,
     sealed: false,
     corruption: 0,
@@ -60,9 +60,9 @@ function player(overrides = {}) {
     deckCount: 11,
     discard: [],
     abyss: [],
-    board: { scene: [unit()], archive: [], dream: [] },
-    locations: { scene: null, archive: null, dream: null },
-    score: { total: 2, locations: { scene: 2, archive: 0, dream: 0 } },
+    board: { front: [unit()] },
+    locations: { front: null },
+    score: { total: 2, locations: { front: 2 } },
     nightWins: 0,
     ...overrides,
   };
@@ -82,7 +82,7 @@ function viewFixture(overrides = {}) {
     result: null,
     environments: [],
     scores: [2, 0],
-    players: [player(), player({ id: 1, name: '对手', faction: 'cult', hand: [], handCount: 4, board: { scene: [], archive: [], dream: [] }, score: { total: 0, locations: { scene: 0, archive: 0, dream: 0 } } })],
+    players: [player(), player({ id: 1, name: '对手', faction: 'cult', hand: [], handCount: 4, board: { front: [] }, score: { total: 0, locations: { front: 0 } } })],
     events: [],
     actions: [],
     ...overrides,
@@ -164,9 +164,7 @@ test('装备卡背：renderCardBack 按 id 输出修饰类与数据属性，非�
 test('卡背 id 经 location grid 透传到盖牌，对手手牌保持默认', () => {
   const player = {
     board: {
-      scene: [{ hidden: true, uid: 'a' }],
-      archive: [],
-      dream: [],
+      front: [{ hidden: true, uid: 'a' }],
     },
   };
   const grid = renderLocationGrid(player, { cardBackId: 'abyss' });
@@ -231,7 +229,7 @@ test('目标进度轨按阵营渲染线索/末日，pips 与阈值一致且坏�
   const clue = renderObjectiveTrack({ objectiveType: 'clue', objective: 3, objectiveThreshold: 7 });
   assert.match(clue, /gh2-objective--clue/);
   assert.match(clue, /data-type="clue"/);
-  assert.match(clue, /线索 CLUE/);
+  assert.match(clue, /<span>线索<\/span>/);
   assert.equal(countMatches(clue, /gh2-objective__pip(?: is-lit)?"/g), 7);
   assert.equal(countMatches(clue, /gh2-objective__pip is-lit"/g), 3);
   assert.match(clue, /3\/7/);
@@ -239,7 +237,7 @@ test('目标进度轨按阵营渲染线索/末日，pips 与阈值一致且坏�
   const doom = renderObjectiveTrack({ objectiveType: 'doom', objective: 6, objectiveThreshold: 7 }, { compact: true });
   assert.match(doom, /gh2-objective--doom/);
   assert.match(doom, /gh2-objective--compact/);
-  assert.match(doom, /末日 DOOM/);
+  assert.match(doom, /<span>末日<\/span>/);
   assert.equal(countMatches(doom, /gh2-objective__pip is-lit"/g), 6);
 
   // Missing type defaults to clue; over-threshold and bad values clamp.
@@ -250,7 +248,7 @@ test('目标进度轨按阵营渲染线索/末日，pips 与阈值一致且坏�
 
 test('地点列小计由视图卡牌战力求和，空槽与盖牌计 0', () => {
   const html = renderLocationColumn({
-    location: 'scene',
+    location: 'front',
     playerIndex: 0,
     board: [
       unit({ uid: 'a', power: 2 }),
@@ -262,38 +260,38 @@ test('地点列小计由视图卡牌战力求和，空槽与盖牌计 0', () => 
     locationCard: unit({ type: 'location', nameZh: '溺钟祭坛', sealed: true }),
   });
 
-  assert.match(html, /data-location="scene"/);
+  assert.match(html, /data-location="front"/);
   assert.match(html, /data-subtotal="5"/);
-  assert.match(html, /现场/);
-  assert.match(html, /小计 SUBTOTAL/);
-  assert.equal(countMatches(html, /gh2-location__slot(?:--empty)?"/g), 5);
+  assert.match(html, /对峙线/);
+  assert.match(html, /<span>小计<\/span>/);
+  assert.equal(countMatches(html, /gh2-location__slot(?:--empty)?"/g), 6, 'front capacity is 6');
   assert.match(html, /is-sealed/);
   assert.ok(!html.includes('secret'));
 
   const grid = renderLocationGrid(player());
-  assert.equal(countMatches(grid, /data-location="/g), 3);
+  assert.equal(countMatches(grid, /data-location="/g), 1);
 });
 
-test('异变徽标只在对应地点列显示，全局异变每列都显示', () => {
-  const sceneAnomaly = {
+test('异变徽标只在对峙线按归属显示，全局异变也显示', () => {
+  const frontAnomaly = {
     id: 'echoes-of-old-harbor', nameZh: '旧港回声', nameEn: 'Echoes of the Old Harbor',
-    location: 'scene', power: 1,
+    location: 'front', power: 1,
   };
-  const scene = renderLocationColumn({ location: 'scene', board: [], anomaly: sceneAnomaly });
-  const archive = renderLocationColumn({ location: 'archive', board: [], anomaly: sceneAnomaly });
-  assert.match(scene, /data-anomaly="echoes-of-old-harbor"/);
-  assert.match(scene, /旧港回声/);
-  assert.ok(!archive.includes('gh2-anomaly'), '非目标地点不显示徽标');
+  const front = renderLocationColumn({ location: 'front', board: [], anomaly: frontAnomaly });
+  assert.match(front, /data-anomaly="echoes-of-old-harbor"/);
+  assert.match(front, /旧港回声/);
+
+  // A stale anomaly bound to a removed location must not render on the front column.
+  const stale = renderLocationColumn({ location: 'front', board: [], anomaly: { ...frontAnomaly, location: 'scene' } });
+  assert.ok(!stale.includes('gh2-anomaly'), '非对峙线归属的异变不显示徽标');
 
   const globalAnomaly = {
     id: 'windless-night', nameZh: '无风之夜', nameEn: 'Windless Night',
     location: null, environmentBlocked: true,
   };
-  for (const location of ['scene', 'archive', 'dream']) {
-    const html = renderLocationColumn({ location, board: [], anomaly: globalAnomaly });
-    assert.match(html, /data-anomaly="windless-night"/);
-    assert.match(html, /环境禁用/);
-  }
+  const html = renderLocationColumn({ location: 'front', board: [], anomaly: globalAnomaly });
+  assert.match(html, /data-anomaly="windless-night"/);
+  assert.match(html, /环境禁用/);
 });
 
 test('混沌代币在卡面显示带正负号的徽标', () => {
@@ -325,7 +323,7 @@ test('对手手牌只输出数量，己方手牌输出卡牌', () => {
 test('环境行、领袖区与玩家信息条渲染状态', () => {
   const env = renderEnvironmentRow([unit({ type: 'environment', name: 'Lunar Eclipse', nameZh: '月食', power: 0, sealed: true })]);
   assert.match(env, /data-env-count="1"/);
-  assert.match(env, /环境 · ENVIRONMENT/);
+  assert.match(env, /<span>环境<\/span>/);
   assert.match(env, /月食/);
   assert.match(env, /is-sealed/);
   assert.match(renderEnvironmentRow(null), /本夜无环境卡/);
@@ -337,7 +335,7 @@ test('环境行、领袖区与玩家信息条渲染状态', () => {
   assert.match(renderLeaderZone(null), /无领袖/);
 
   const bar = renderPlayerBar(player(), { role: '你', current: true, handCount: 1 });
-  assert.match(bar, /夜分 SCORE/);
+  assert.match(bar, /<span class="gh2-player-bar__score-label">夜分<\/span>/);
   assert.match(bar, /0 胜/);
   assert.match(bar, /data-sanity="6"/);
   assert.match(bar, /哈罗德·阿什比/);
@@ -379,14 +377,16 @@ test('真实 buildView 数据可直接驱动整盘模板', () => {
   });
 
   assert.match(html, /灰港三夜/);
-  assert.match(html, /THREE NIGHTS IN GREYHARBOR/);
+  assert.ok(!html.includes('THREE NIGHTS IN GREYHARBOR'), '界面不再出现英文标题');
   assert.match(html, /data-phase="mulligan"/);
   assert.match(html, /演示模式/);
   assert.match(html, /data-hand-visible="true"/);
   assert.match(html, /data-hand-visible="false"/);
-  assert.match(html, /data-location="scene"/);
-  assert.match(html, /data-location="archive"/);
-  assert.match(html, /data-location="dream"/);
+  assert.match(html, /data-location="front"/);
+  assert.ok(!html.includes('data-location="scene"'));
+  assert.ok(!html.includes('data-location="archive"'));
+  assert.ok(!html.includes('data-location="dream"'));
+  assert.equal(countMatches(html, /data-location="front"/g), 2, '双方各一条对峙线');
   assert.equal(countMatches(html, /gh2-sanity__cell(?: is-lit)?"/g), 12, '双方各一条 6 格理智条');
   assert.ok(!html.includes('<script'));
 });
@@ -430,11 +430,11 @@ test('对手动作标签不泄露手牌身份', () => {
     player: 1,
     cardId: 'lucia-vaughn',
     uid: 'p1-3',
-    location: 'dream',
+    location: 'front',
     slot: 0,
-    label: 'Play Lucia Vaughn @ dream#0 (face-down)',
+    label: 'Play Lucia Vaughn @ front#0 (face-down)',
   });
-  assert.equal(label, '对手出牌 → 梦境#1');
+  assert.equal(label, '对手出牌 → 对峙线#1');
   assert.ok(!label.includes('Lucia'));
   assert.ok(!label.includes('lucia-vaughn'));
   assert.ok(!label.includes('p1-3'));

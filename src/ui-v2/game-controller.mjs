@@ -128,7 +128,7 @@ const RESULT_REASON_ZH = Object.freeze({
   tiebreak: '终局判定',
 });
 
-const LOCATION_ZH = Object.freeze({ scene: '现场', archive: '档案', dream: '梦境' });
+const LOCATION_ZH = Object.freeze({ front: '对峙线' });
 
 function cssValue(value) {
   return String(value).replace(/["\\]/g, '\\$&');
@@ -301,7 +301,7 @@ export function createGameController(options = {}) {
     const lookup = (uid) => {
       if (!uid || !view) return null;
       for (let player = 0; player < 2; player += 1) {
-        const sections = [asArray(view.players[player]?.hand), ...['scene', 'archive', 'dream']
+        const sections = [asArray(view.players[player]?.hand), ...['front']
           .map((location) => asArray(asObject(view.players[player]?.board)[location]))];
         for (const list of sections) {
           const card = list.find((entry) => entry?.uid === uid);
@@ -545,7 +545,7 @@ export function createGameController(options = {}) {
     if (!view) return null;
     for (let player = 0; player < 2; player += 1) {
       const board = asObject(view.players[player]?.board);
-      for (const location of ['scene', 'archive', 'dream']) {
+      for (const location of ['front']) {
         const row = asArray(board[location]);
         const slot = row.findIndex((entry) => entry && entry.uid === uid);
         if (slot >= 0) return { player, location, slot };

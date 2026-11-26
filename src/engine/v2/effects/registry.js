@@ -270,7 +270,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'removeCorruption',
-          label: 'Remove 1 corruption token',
+          label: '移除 1 个腐化标记',
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ANY,
@@ -285,7 +285,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         },
         {
           id: 'seal',
-          label: 'Seal an enemy unit with current power <= 4',
+          label: '封印一个当前战力不超过 4 的敌方单位',
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ENEMY,
@@ -361,7 +361,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'removeCorruption',
-          label: 'Remove 1 corruption token (either side)',
+          label: '移除 1 个腐化标记（任意一方）',
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ANY,
@@ -376,7 +376,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         },
         {
           id: 'removeEnvironment',
-          label: 'Remove 1 environment card to the discard pile',
+          label: '移除 1 张环境卡，送入弃牌堆',
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ANY,
@@ -398,12 +398,12 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'ward',
-          label: 'Ward one friendly location this night',
+          label: '守护己方对峙线一夜',
           targetKey: 'locationUid',
           target: selector({
             side: SIDE.OWN,
             zones: [ZONE.LOCATION_ROW],
-            location: 'any',
+            location: 'front',
             count: 1,
             required: true,
           }),
@@ -444,7 +444,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       id: 'old-library-passive',
       trigger: TRIGGER.PASSIVE,
       kind: 'location',
-      location: { corruptionImmune: 'archive', archiveDiscount: 1 },
+      location: { corruptionImmune: 'front', firstUnitDiscount: 1 },
     }),
   ]),
 
@@ -478,7 +478,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'corruptHighest',
-          label: 'Corrupt the highest-power legal enemy unit',
+          label: '腐化战力最高的合法敌方单位',
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ENEMY,
@@ -506,7 +506,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'grave',
-          label: 'Sacrifice an own unit, then retrieve 1 unit from the abyss',
+          label: '献祭一个己方单位，再从深渊取回 1 个单位',
           targetKey: 'sacrificeUid',
           target: ownSacrificeSelector({ excludeSelf: true }),
           secondary: {
@@ -550,7 +550,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'devour',
-          label: 'Devour an adjacent friendly unit',
+          label: '吞噬相邻的一个己方单位',
           targetKey: 'targetUid',
           target: ownSacrificeSelector({
             adjacentToSource: true,
@@ -564,7 +564,7 @@ export const EFFECT_REGISTRY = Object.freeze({
           // unit exists.  When none exists the whole modal collapses to
           // [null] and the card enters normally without a choice.
           id: 'decline',
-          label: 'Enter without devouring',
+          label: '不吞噬，直接入场',
           skip: true,
           operations: [],
         },
@@ -581,7 +581,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'seance',
-          label: 'Sacrifice an own unit, then return up to 2 units from the abyss',
+          label: '献祭一个己方单位，再从深渊取回至多 2 个单位',
           targetKey: 'sacrificeUid',
           target: ownSacrificeSelector(),
           secondary: {
@@ -605,10 +605,9 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           op: 'addAura',
           duration: DURATION.THIS_NIGHT,
-          // Tide Ritual buffs one location row (own dream); the selector names
-          // the concrete row the interpreter must resolve.
-          selector: selector({ side: SIDE.OWN, zones: [ZONE.LOCATION_ROW], location: 'dream', count: 1, required: true }),
-          scope: { side: 'own', location: 'dream', types: SLOT_TYPES, faceUpOnly: true },
+          // Tide Ritual buffs the own front line (the single stronghold row).
+          selector: selector({ side: SIDE.OWN, zones: [ZONE.LOCATION_ROW], location: 'front', count: 1, required: true }),
+          scope: { side: 'own', location: 'front', types: SLOT_TYPES, faceUpOnly: true },
           modifiers: { power: 3 },
         },
       ], { id: 'tide-ritual' }),
@@ -640,7 +639,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       id: 'drowned-altar-passive',
       trigger: TRIGGER.PASSIVE,
       kind: 'location',
-      location: { sceneSacrificeBacklashImmune: true, cultEchoBonus: 3 },
+      location: { sacrificeBacklashImmune: true, cultEchoBonus: 3 },
     }),
   ]),
 
@@ -771,18 +770,13 @@ export const EFFECT_REGISTRY = Object.freeze({
    * start.  Entry -2 and madness backlash are engine/keyword primitives.
    */
   /**
-   * The Sleeper: cannot be sealed (spec) and loses 1 sanity at every night
-   * start.  The entry -2 is the printed sanity cost already carried by the card
-   * data (sanityCost 2), so only the nightly drain lives here; registering a
-   * second entry loss would double-charge the player.
+   * The Sleeper: cannot be sealed (spec).  Units are cleared at every night
+   * end, so a cross-night "per night" drain could never fire; the sanity cost is
+   * fully front-loaded into the printed sanityCost (3).  Seal immunity lives in
+   * KEYWORD_SPECS.sealImmune, so the whole card is covered by engine primitives
+   * and is registered null (whitelisted in coverage.test.mjs).
    */
-  'the-sleeper': Object.freeze([
-    Object.freeze(
-      effect(TRIGGER.NIGHT_START, [
-        { op: 'sanity', who: 'self', delta: -1, reason: 'theSleeperNight' },
-      ], { id: 'the-sleeper-night' }),
-    ),
-  ]),
+  'the-sleeper': null,
   'thousand-eyes': Object.freeze([
     Object.freeze(
       effect(TRIGGER.ON_PLAY, [
@@ -812,9 +806,9 @@ export const EFFECT_REGISTRY = Object.freeze({
           op: 'addAura',
           duration: DURATION.THIS_NIGHT,
           requiresSourceActive: true,
-          // Stormy Night is player-wide across both boards for one location.
-          selector: selector({ side: SIDE.ANY, zones: [ZONE.BOARD], location: 'scene', types: SLOT_TYPES, face: 'up', count: 1, required: true }),
-          scope: { side: 'both', location: 'scene', types: SLOT_TYPES, faceUpOnly: true },
+          // Stormy Night weakens every face-up unit on the front line.
+          selector: selector({ side: SIDE.ANY, zones: [ZONE.BOARD], location: 'front', types: SLOT_TYPES, face: 'up', count: 1, required: true }),
+          scope: { side: 'both', location: 'front', types: SLOT_TYPES, faceUpOnly: true },
           modifiers: { power: -2 },
         },
       ], { id: 'stormy-night' }),
@@ -827,7 +821,7 @@ export const EFFECT_REGISTRY = Object.freeze({
       choices: [
         {
           id: 'aid',
-          label: 'Target a friendly face-up unit: +3, remove all seals and corruption',
+          label: '指定一个己方正面单位：+3，移除其全部封印与腐化',
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.OWN,
@@ -852,6 +846,7 @@ export const EFFECT_REGISTRY = Object.freeze({
 /** Cards whose entire text is a keyword rule already implemented below. */
 export const KEYWORD_ONLY_CARDS = Object.freeze({
   'frank-holt': 'chain: adjacent own cards, cap +3 (scoring.chainCount via KEYWORD_SPECS)',
+  'the-sleeper': 'seal immunity (KEYWORD_SPECS.sealImmune) + front-loaded sanityCost; cross-night drain removed with nightly cleanup',
 });
 
 /**

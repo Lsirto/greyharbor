@@ -28,32 +28,28 @@ function playView(seed) {
   return buildView(engine, pov);
 }
 
-/** Index of the unique best action for a play view, or -1 when tied/invalid. */
-function uniqueBestPlayIndex(view) {
-  const scores = view.actions.map((action) => scoreAction(view, action));
-  let best = -Infinity;
-  let bestIndex = -1;
-  let ties = 0;
-  scores.forEach((value, index) => {
-    if (!Number.isFinite(value)) return;
-    if (value > best) {
-      best = value;
-      bestIndex = index;
-      ties = 1;
-    } else if (value === best) {
-      ties += 1;
-    }
-  });
-  return ties === 1 ? bestIndex : -1;
+/** Highest finite action score for a play view. */
+function bestScoreOf(view) {
+  return view.actions.reduce(
+    (best, action) => Math.max(best, scoreAction(view, action)),
+    -Infinity,
+  );
 }
 
-/** A play view whose best action is unique, trying several engine seeds. */
-function viewWithUniqueBest() {
+/**
+ * A play view whose action scores vary (so mistake/noise behavior is observable),
+ * trying several engine seeds. Mirror slots may share the top score, so the
+ * difficulty tests compare against the best score rather than a unique index.
+ */
+function viewWithVaryingScores() {
   for (const seed of ['diff-a', 'diff-b', 'diff-c', 'diff-d', 'diff-e']) {
     const view = playView(seed);
-    if (view.actions.length > 2 && uniqueBestPlayIndex(view) >= 0) return view;
+    const scores = view.actions.map((action) => scoreAction(view, action));
+    const finite = scores.filter(Number.isFinite);
+    const distinct = new Set(finite);
+    if (view.actions.length > 2 && distinct.size > 1) return view;
   }
-  throw new Error('could not build a play view with a unique best action');
+  throw new Error('could not build a play view with varying action scores');
 }
 
 function makeMemoryStorage() {
@@ -97,42 +93,42 @@ test('isDifficulty / resolveDifficulty 行为', () => {
   assert.deepEqual(STRICT_PROFILE, { mistakeChance: 0, noiseRatio: 0 });
 });
 
-test('困难难度始终选择唯一最优动作（不同 RNG 种子也不偏离）', () => {
-  const view = viewWithUniqueBest();
-  const bestIndex = uniqueBestPlayIndex(view);
+test('困难难度始终选择最优动作（不同 RNG 种子也不偏离）', () => {
+  const view = viewWithVaryingScores();
+  const best = bestScoreOf(view);
   for (let s = 0; s < 30; s += 1) {
     const action = chooseAction(view, { seed: `hard-${s}`, difficulty: 'hard' });
-    assert.equal(view.actions.indexOf(action), bestIndex);
+    assert.equal(scoreAction(view, action), best);
   }
 });
 
 test('未指定难度（旧调用）与困难一致，保持严格最优', () => {
-  const view = viewWithUniqueBest();
-  const bestIndex = uniqueBestPlayIndex(view);
+  const view = viewWithVaryingScores();
+  const best = bestScoreOf(view);
   for (let s = 0; s < 10; s += 1) {
     const action = chooseAction(view, { seed: `legacy-${s}` });
-    assert.equal(view.actions.indexOf(action), bestIndex);
+    assert.equal(scoreAction(view, action), best);
   }
 });
 
 test('简单难度在多颗种子下会偏离最优，且始终返回合法动作', () => {
-  const view = viewWithUniqueBest();
-  const bestIndex = uniqueBestPlayIndex(view);
+  const view = viewWithVaryingScores();
+  const best = bestScoreOf(view);
   const chosen = new Set();
+  let nonBest = 0;
   for (let s = 0; s < 60; s += 1) {
     const action = chooseAction(view, { seed: `easy-${s}`, difficulty: 'easy' });
     const index = view.actions.indexOf(action);
     assert.ok(index >= 0, 'choice must be a legal action');
     chosen.add(index);
+    if (scoreAction(view, action) !== best) nonBest += 1;
   }
   assert.ok(chosen.size > 1, 'easy AI should vary its decisions');
-  assert.ok(chosen.has(bestIndex) === false || chosen.size > 1);
-  assert.ok([...chosen].some((index) => index !== bestIndex),
-    'easy AI should sometimes pick a non-best action');
+  assert.ok(nonBest > 0, 'easy AI should sometimes pick a non-best action');
 });
 
 test('同一 view + 同一难度 + 同一种子完全可复现', () => {
-  const view = viewWithUniqueBest();
+  const view = viewWithVaryingScores();
   for (const difficulty of ['easy', 'normal', 'hard']) {
     const options = { seed: 'repeatable', difficulty };
     const first = chooseAction(view, options);

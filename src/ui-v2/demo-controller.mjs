@@ -42,7 +42,7 @@ const EVENT_LABELS = Object.freeze({
 });
 
 const SPECIAL_TYPES = new Set(['equipment', 'location', 'environment', 'event', 'ritual', 'oldgod']);
-const LOCATION_LABELS_ZH = Object.freeze({ scene: '现场', archive: '档案', dream: '梦境' });
+const LOCATION_LABELS_ZH = Object.freeze({ front: '对峙线' });
 
 /**
  * An action chosen from the opponent's own view carries their card name in

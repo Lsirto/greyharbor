@@ -300,7 +300,6 @@ function createInitialState(config) {
       flags: {
         libraryDiscountUsed: false,
         cultSacrificeTriggered: false,
-        dreamEntries: 0,
       },
       privateNotes: [],
       lastSacrificedUid: null,
@@ -592,8 +591,6 @@ export class EngineV2 {
       inst.slot = slot;
       inst.zone = 'board';
       player.board[location][slot] = inst;
-      if (!faceDown) player.flags.dreamEntries += location === 'dream' ? 1 : 0;
-      else if (location === 'dream') player.flags.dreamEntries += 1;
 
       this._emit({
         type: 'play',
@@ -610,9 +607,9 @@ export class EngineV2 {
       });
 
       if (!faceDown) {
-        // v1.4: a Society unit entering the archive gathers 1 clue.
-        if (location === 'archive' && player.faction === 'society') {
-          this._gainObjective(p, 1, 'archiveEntry');
+        // A Society investigator deploying face-up on the front gathers 1 clue.
+        if (player.faction === 'society') {
+          this._gainObjective(p, 1, 'frontEntry');
         }
         this._drawChaosFor(p, inst);
         this._runOnPlay(p, inst, card, action.choice ?? null);
@@ -657,6 +654,12 @@ export class EngineV2 {
       });
       this._runOnPlay(p, inst, card, action.choice ?? null);
     } else if (plan.kind === 'location') {
+      const previous = player.locations[plan.location];
+      if (previous) {
+        // A stronghold occupies a single slot; the old one is replaced.
+        previous.attachedTo = null;
+        this._discardInstance(p, previous, 'strongholdReplaced');
+      }
       inst.zone = 'locationSlot';
       inst.location = plan.location;
       inst.slot = null;
@@ -668,6 +671,7 @@ export class EngineV2 {
         cardId: inst.cardId,
         name: card.name,
         location: plan.location,
+        replacedUid: previous?.uid ?? null,
         sanityCost,
       });
       this._runOnPlay(p, inst, card, action.choice ?? null);
@@ -696,11 +700,11 @@ export class EngineV2 {
     if (baseCost < 1) return 0;
     const player = this.state.players[p];
     if (player.flags.libraryDiscountUsed) return 0;
-    const library = player.locations?.archive;
+    const library = player.locations?.front;
     if (!library || library.cardId !== 'old-library' || library.sealed) return 0;
-    const archivePlay = (plan.kind === 'unit' && plan.location === 'archive')
-      || (plan.kind === 'location' && plan.location === 'archive');
-    if (!archivePlay) return 0;
+    // The first unit played each night costs 1 less while the Old Library is
+    // the front stronghold.
+    if (plan.kind !== 'unit') return 0;
     return 1;
   }
 
@@ -714,12 +718,6 @@ export class EngineV2 {
 
     const faceDown = action.faceDown === true;
     if (faceDown && !isStealth(card)) return fail(`${card.name} has no stealth keyword`);
-    if (location === 'dream' && isStealth(card) && !faceDown) {
-      return fail(`${card.name} must enter the dream face-down`);
-    }
-    if (location === 'dream' && player.flags.dreamEntries >= 2) {
-      return fail('at most two units may enter the dream from hand each night');
-    }
 
     const row = player.board[location];
     let slot;
@@ -785,11 +783,11 @@ export class EngineV2 {
 
   _validateLocationPlay(p, card, action) {
     const player = this.state.players[p];
-    const location = action.location ?? card.location;
-    if (!LOCATIONS.includes(location) || location !== card.location) {
-      return fail(`${card.name} must be played to ${card.location}`);
-    }
-    if (player.locations[location]) return fail(`${location} already has a location card`);
+    // There is one stronghold slot on the front. A new stronghold replaces the
+    // old one (the replaced card goes to discard); see _applyPlayCard.
+    void action;
+    void card;
+    const location = 'front';
     return { ok: true, kind: 'location', location };
   }
 
@@ -1224,14 +1222,11 @@ export class EngineV2 {
   // ── placement helpers ───────────────────────────────────────────────
 
   _unitLocationsForHand(card, face) {
-    const stealth = isStealth(card);
-    if (card.location === 'scene' || card.location === 'archive') return [card.location];
-    if (card.location === 'dream') return ['dream'];
-    if (card.location !== 'any') return [];
-    const out = ['scene', 'archive'];
-    if (stealth) out.push('dream');
+    // Every unit deploys on the single front line. Stealth units may choose
+    // to enter face-down; that variant is built in _legalPlays.
+    void card;
     void face;
-    return out;
+    return ['front'];
   }
 
   _legalEffectPlacements(p, cardId, { requireFaceUp = true } = {}) {
@@ -1239,25 +1234,12 @@ export class EngineV2 {
     const card = this.cardIndex[cardId];
     if (!isUnitCard(card)) return [];
     const face = faceForSanity(player.sanity);
-    const stealth = isStealth(card);
-    const locations = [];
-    if (card.location === 'scene' || card.location === 'archive' || card.location === 'dream') {
-      if (card.location === 'dream') {
-        if (!(requireFaceUp && stealth)) locations.push('dream');
-      } else {
-        locations.push(card.location);
-      }
-    } else if (card.location === 'any') {
-      locations.push('scene', 'archive');
-      if (!requireFaceUp && stealth) locations.push('dream');
-    }
+    void requireFaceUp;
     const out = [];
-    for (const location of locations) {
-      const row = player.board[location];
-      for (let slot = 0; slot < row.length; slot++) {
-        if (row[slot]) continue;
-        out.push({ location, slot, face });
-      }
+    const row = player.board.front;
+    for (let slot = 0; slot < row.length; slot++) {
+      if (row[slot]) continue;
+      out.push({ location: 'front', slot, face });
     }
     return out;
   }
@@ -1429,7 +1411,7 @@ export class EngineV2 {
     if (!hasBacklash(card)) return;
     if (sealed ?? inst.sealed) return;
     if (inst.face !== 'madness') return;
-    if (context === 'sacrifice' && fromLocation === 'scene' && hasUnsealedAltar(this.state, p)) {
+    if (context === 'sacrifice' && fromLocation === 'front' && hasUnsealedAltar(this.state, p)) {
       return;
     }
     this._emit({
@@ -1580,11 +1562,9 @@ export class EngineV2 {
   }
 
   _recomputeCorruption(inst) {
-    const night = this.state.night;
-    inst.corruptionLoss = (inst.corruptionTokens ?? []).reduce(
-      (sum, token) => sum + Math.max(0, night - token.appliedNight),
-      0,
-    );
+    // Each night is a self-contained clash, so every corruption token is an
+    // immediate -1 power while it stays on the unit (cap 3 → at most -3).
+    inst.corruptionLoss = (inst.corruptionTokens ?? []).length;
   }
 
   // ── other primitives used by the interpreter ────────────────────────
@@ -1943,7 +1923,6 @@ export class EngineV2 {
     for (const player of state.players) {
       player.leaderUsedThisNight = false;
       player.flags.libraryDiscountUsed = false;
-      player.flags.dreamEntries = 0;
       player.flags.cultSacrificeTriggered = false;
       for (const location of LOCATIONS) {
         for (const inst of player.board[location]) {
@@ -2214,15 +2193,6 @@ export class EngineV2 {
     // 3. Sanity zero takes precedence over a second night win.
     if (this._checkSanityZero()) return;
 
-    // 3b. v1.4: a Society player with strictly higher archive power gathers a
-    // clue from controlling the archive tonight (independent of the night win).
-    for (const p of [0, 1]) {
-      const player = state.players[p];
-      if (player.faction !== 'society') continue;
-      if (scores[p].locations.archive > scores[1 - p].locations.archive) {
-        this._gainObjective(p, 1, 'archiveControl');
-      }
-    }
     if (state.phase === 'gameOver') return;
 
     // 4. Match win.
@@ -2253,13 +2223,26 @@ export class EngineV2 {
     state.environments = [];
     for (const player of state.players) {
       player.flags.cultSacrificeTriggered = false;
+      // Each night is a self-contained clash: every unit on the front line is
+      // cleared to discard (with its equipment). The stronghold persists.
       for (const location of LOCATIONS) {
-        for (const inst of player.board[location]) {
-          if (inst) inst.thisNightPower = 0;
+        const row = player.board[location];
+        for (let slot = 0; slot < row.length; slot++) {
+          const inst = row[slot];
+          if (!inst) continue;
+          if (inst.equipment) {
+            const equipment = inst.equipment;
+            inst.equipment = null;
+            equipment.attachedTo = null;
+            this._discardInstance(player.id, equipment, 'nightReset');
+          }
+          this._discardInstance(player.id, inst, 'nightReset');
+          row[slot] = null;
         }
       }
     }
-    state.effects = state.effects.filter((entry) => entry.duration !== 'thisNight');  }
+    state.effects = state.effects.filter((entry) => entry.duration !== 'thisNight');
+  }
 
   _finalTiebreak() {
     const state = this.state;
@@ -2514,13 +2497,10 @@ export class EngineV2 {
         const locations = this._unitLocationsForHand(card, face);
         const stealth = isStealth(card);
         for (const location of locations) {
-          if (location === 'dream' && player.flags.dreamEntries >= 2) continue;
           const row = player.board[location];
           for (let slot = 0; slot < row.length; slot++) {
             if (row[slot]) continue;
-            const variants = stealth
-              ? (location === 'dream' ? [true] : [false, true])
-              : [false];
+            const variants = stealth ? [false, true] : [false];
             for (const faceDown of variants) {
               const source = {
                 kind: 'card', cardId: card.id, player: p, location, slot, inst: null,
@@ -2631,18 +2611,17 @@ export class EngineV2 {
       }
 
       if (card.type === 'location') {
-        if (LOCATIONS.includes(card.location) && !player.locations[card.location]) {
-          actions.push({
-            type: 'playCard',
-            player: p,
-            uid: inst.uid,
-            cardId: card.id,
-            location: card.location,
-            slot: null,
-            face,
-            label: `打出「${card.nameZh}」到${LOCATION_LABELS[card.location]}据点槽`,
-          });
-        }
+        // The single front stronghold slot; a new stronghold replaces the old.
+        actions.push({
+          type: 'playCard',
+          player: p,
+          uid: inst.uid,
+          cardId: card.id,
+          location: 'front',
+          slot: null,
+          face,
+          label: `打出「${card.nameZh}」到对峙线据点槽`,
+        });
         continue;
       }
 

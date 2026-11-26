@@ -13,6 +13,7 @@ import {
   normalizeCardView,
   statusBadges,
   typeLabel,
+  LOCATIONS_ZH,
 } from '../card-view.mjs';
 import { asObject, escapeHtml } from '../utils.mjs';
 import { DEFAULT_CARD_BACK } from '../../economy/card-backs.mjs';
@@ -96,8 +97,9 @@ export function renderCard(card, options = {}) {
   const artImg = artSrc
     ? `<img class="gh2-card__art-img" src="${escapeHtml(artSrc)}"${artFilterAttr} alt="" loading="lazy" onerror="this.style.display='none'">`
     : '';
+  const locationLabel = LOCATIONS_ZH[view.boardLocation] ?? view.boardLocation;
   const locationTag = view.boardLocation && view.slot !== null
-    ? `<span class="gh2-card__location">${escapeHtml(view.boardLocation)} #${escapeHtml(view.slot + 1)}</span>`
+    ? `<span class="gh2-card__location">${escapeHtml(locationLabel)} ${escapeHtml(view.slot + 1)} 号位</span>`
     : '';
 
   return `<div class="${classes}"

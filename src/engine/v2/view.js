@@ -155,7 +155,6 @@ export function buildView(engine, pov) {
       locations,
       flags: {
         cultSacrificeTriggered: !!player.flags?.cultSacrificeTriggered,
-        dreamEntries: player.flags?.dreamEntries ?? 0,
       },
       privateNotes: own ? structuredClone(player.privateNotes ?? []) : [],
       score: scorePlayer(state, p),

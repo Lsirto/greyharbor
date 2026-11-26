@@ -21,12 +21,15 @@ const cardIds = cardTable.map((entry) => entry.id);
  *
  * - frank-holt: 引擎原语已完整覆盖——「每有 1 张相邻己方卡 +1，上限 +3」完全
  *   由共享的 KEYWORD_SPECS.chain + scoring.chainCount 原语实现（§6.5、§11.1）。
+ * - the-sleeper: 单位夜末清空后跨夜扣费永不触发，理智代价已前置为卡牌
+ *   sanityCost（3），封印免疫由 KEYWORD_SPECS.sealImmune 原语实现，整卡无 DSL 效果。
  *
  * v1.3 note: lucia-vaughn and finn-calloway now register a Discover effect;
  * their chain/stealth engine rules remain active.
  */
 const NULL_WHITELIST = Object.freeze({
   'frank-holt': '引擎原语已完整覆盖：相邻己方卡连锁 +1 上限 +3 由 KEYWORD_SPECS.chain + scoring.chainCount 共享原语实现（§6.5/§11.1）',
+  'the-sleeper': '引擎原语已完整覆盖：封印免疫由 KEYWORD_SPECS.sealImmune 实现，理智代价前置为 sanityCost 3，跨夜扣费随每夜清空移除',
 });
 
 test('card table declares exactly 34 unique card ids', () => {
@@ -62,7 +65,7 @@ test('all 34 cards are covered by a non-empty effect array or the explicit null 
 test('the null whitelist is exactly the documented engine-primitive cards', () => {
   assert.deepEqual(
     Object.keys(NULL_WHITELIST).sort(),
-    ['frank-holt'],
+    ['frank-holt', 'the-sleeper'].sort(),
     'only these cards may be registered as null',
   );
   assert.deepEqual(

@@ -29,6 +29,7 @@ function setup({
   sanity = 6,
   startingHand = null,
   cardPool = CARDS,
+  mechanics = undefined,
 } = {}) {
   const engine = createGame({
     seed,
@@ -40,6 +41,7 @@ function setup({
       (p1.cards ?? []).length,
       1,
     ),
+    mechanics,
   });
   for (const p of [0, 1]) {
     const result = engine.apply({ type: 'mulligan', player: p, uids: [] });
@@ -145,29 +147,28 @@ function conservation(engine, sizes) {
 
 // ── lucia-vaughn: dream-native stealth (§4.4 / §6.1) ──────────────────────
 
-test('lucia-vaughn: dream-native stealth enters the dream face-down, and discovers on reveal', () => {
+test('lucia-vaughn: stealth enters the front face-down, and discovers on reveal', () => {
   const engine = setup({
     seed: 201,
     p0: { leader: 'harold-ashby', cards: ['lucia-vaughn', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
+    mechanics: { anomaly: false },
   });
 
   const lucia = handInstance(engine, 0, 'lucia-vaughn');
-  const dreamPlays = engine.getActions().filter(
-    (action) => action.type === 'playCard' && action.uid === lucia.uid && action.location === 'dream',
+  const faceDownPlays = engine.getActions().filter(
+    (action) => action.type === 'playCard' && action.uid === lucia.uid
+      && action.location === 'front' && action.faceDown === true,
   );
-  // The engine enumerates one play action per legal dream slot; all of them are
-  // the dream-native face-down entry mode.
-  assert.ok(dreamPlays.length >= 1, 'dream-native stealth has a face-down dream entry mode');
-  for (const action of dreamPlays) assert.equal(action.faceDown, true, 'dream entry is face-down');
-  const result = engine.apply(dreamPlays[0]);
+  // The stealth unit offers a face-down entry on the front line.
+  assert.ok(faceDownPlays.length >= 1, 'stealth has a face-down front entry mode');
+  const result = engine.apply(faceDownPlays[0]);
   assert.equal(result.ok, true, result.error);
-  assert.equal(engine.state.players[0].board.dream[0].uid, lucia.uid);
-  assert.equal(engine.state.players[0].board.dream[0].faceDown, true);
-  assert.equal(engine.state.players[0].flags.dreamEntries, 1);
+  const slot = faceDownPlays[0].slot;
+  assert.equal(engine.state.players[0].board.front[slot].uid, lucia.uid);
+  assert.equal(engine.state.players[0].board.front[slot].faceDown, true);
 
-  // v1.3: Lucia registers a Discover effect that fires on reveal, while the
-  // dream stealth face-down admission stays an engine primitive.
+  // Lucia registers a Discover effect that fires on reveal.
   assert.ok(Array.isArray(effectsFor('lucia-vaughn')), 'Lucia registers a discover effect');
   conservation(engine, [3, 2]);
 });
@@ -180,30 +181,32 @@ test('frank-holt: adjacent chain counts own neighbours with cap +3', () => {
     p0: { leader: 'harold-ashby', cards: ['frank-holt', 'zealot', 'finn-calloway'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
-  const frank = putUnit(engine, 0, 'frank-holt', 'scene', 1);
-  putUnit(engine, 0, 'zealot', 'scene', 0);
-  putUnit(engine, 0, 'finn-calloway', 'scene', 2);
-  assert.equal(currentUnitPower(engine.state, 0, frank, 'scene', 1), 7, 'two adjacent own cards -> +2');
+  const frank = putUnit(engine, 0, 'frank-holt', 'front', 1);
+  putUnit(engine, 0, 'zealot', 'front', 0);
+  putUnit(engine, 0, 'finn-calloway', 'front', 2);
+  assert.equal(currentUnitPower(engine.state, 0, frank, 'front', 1), 7, 'two adjacent own cards -> +2');
   assert.deepEqual(chainSpecFor('frank-holt'), { scope: 'adjacent', cap: 3 });
 });
 
-test('finn-calloway: adjacent chain caps at +2 and the non-stealth card cannot enter the dream', () => {
+test('finn-calloway: adjacent chain caps at +2', () => {
   const engine = setup({
     seed: 203,
     p0: { leader: 'harold-ashby', cards: ['finn-calloway', 'finn-calloway', 'zealot'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
+    mechanics: { anomaly: false },
   });
+  // Every play now targets the single front line.
   const finn = handInstance(engine, 0, 'finn-calloway');
-  const finnPlays = engine.getActions().filter(
-    (action) => action.type === 'playCard' && action.uid === finn.uid,
-  );
-  assert.equal(finnPlays.some((action) => action.location === 'dream'), false, 'no stealth -> no dream entry');
+  assert.ok(engine.getActions().every(
+    (action) => action.type !== 'playCard' || action.location === 'front',
+  ));
+  void finn;
 
-  putUnit(engine, 0, 'finn-calloway', 'scene', 0);
-  putUnit(engine, 0, 'zealot', 'scene', 2);
-  putUnit(engine, 0, 'finn-calloway', 'scene', 1);
-  const second = engine.state.players[0].board.scene[1];
-  assert.equal(currentUnitPower(engine.state, 0, second, 'scene', 1), 5, 'three adjacent own cards -> +3 clamped to the hard cap +2');
+  putUnit(engine, 0, 'finn-calloway', 'front', 0);
+  putUnit(engine, 0, 'zealot', 'front', 2);
+  putUnit(engine, 0, 'finn-calloway', 'front', 1);
+  const second = engine.state.players[0].board.front[1];
+  assert.equal(currentUnitPower(engine.state, 0, second, 'front', 1), 5, 'three adjacent own cards -> +3 clamped to the hard cap +2');
   assert.deepEqual(chainSpecFor('finn-calloway'), { scope: 'adjacent', cap: 2 });
 });
 
@@ -215,7 +218,7 @@ test('arthur-pendleton: reveal peeks the opponent hand publicly', () => {
     p0: { leader: 'harold-ashby', cards: ['arthur-pendleton', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
-  const arthur = putUnit(engine, 0, 'arthur-pendleton', 'archive', 0, { faceDown: true });
+  const arthur = putUnit(engine, 0, 'arthur-pendleton', 'front', 0, { faceDown: true });
   const reveal = engine.getActions().find(
     (action) => action.type === 'reveal' && action.uids.includes(arthur.uid),
   );
@@ -247,8 +250,8 @@ test('abjuration: two choices — remove corruption or remove an environment', (
     .map((inst) => inst.uid);
   assert.equal(abjurationUids.length, 2, 'two separate event copies are in hand');
 
-  const finn = putUnit(engine, 1, 'finn-calloway', 'scene', 0);
-  engine._applyCorruption(0, { kind: 'unit', inst: finn, player: 1, location: 'scene', slot: 0 }, 1);
+  const finn = putUnit(engine, 1, 'finn-calloway', 'front', 0);
+  engine._applyCorruption(0, { kind: 'unit', inst: finn, player: 1, location: 'front', slot: 0 }, 1);
   assert.equal(finn.corruptionTokens.length, 1);
 
   const played = play(engine, 0, 'abjuration', (action) => action.choice?.mode === 'removeCorruption');
@@ -278,8 +281,8 @@ test('warding-rite: wards one friendly location this night (+1, seal + corruptio
     p0: { leader: 'harold-ashby', cards: ['warding-rite', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
-  const finn = putUnit(engine, 0, 'finn-calloway', 'scene', 0);
-  assert.equal(currentUnitPower(engine.state, 0, finn, 'scene', 0), 3);
+  const finn = putUnit(engine, 0, 'finn-calloway', 'front', 0);
+  assert.equal(currentUnitPower(engine.state, 0, finn, 'front', 0), 3);
 
   const played = play(engine, 0, 'warding-rite', (action) => action.choice?.mode === 'ward');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
@@ -287,11 +290,11 @@ test('warding-rite: wards one friendly location this night (+1, seal + corruptio
   assert.equal(engine.state.effects[0].modifiers.power, 1);
   assert.equal(engine.state.effects[0].modifiers.sealImmune, true);
   assert.equal(engine.state.effects[0].modifiers.corruptionImmune, true);
-  assert.equal(currentUnitPower(engine.state, 0, finn, 'scene', 0), 4, 'warded location grants +1 power');
+  assert.equal(currentUnitPower(engine.state, 0, finn, 'front', 0), 4, 'ward grants +1 power');
 
-  const wardedTarget = { kind: 'unit', uid: finn.uid, inst: finn, player: 0, location: 'scene', slot: 0 };
-  assert.equal(engine._sealTarget(wardedTarget, 'untilNextNight', { controller: 0 }), false, 'warded location is seal immune');
-  const finnForCorruption = { kind: 'unit', uid: finn.uid, inst: finn, player: 0, location: 'scene', slot: 0 };
+  const wardedTarget = { kind: 'unit', uid: finn.uid, inst: finn, player: 0, location: 'front', slot: 0 };
+  assert.equal(engine._sealTarget(wardedTarget, 'untilNextNight', { controller: 0 }), false, 'ward is seal immune');
+  const finnForCorruption = { kind: 'unit', uid: finn.uid, inst: finn, player: 0, location: 'front', slot: 0 };
   engine._applyCorruption(0, finnForCorruption, 1);
   assert.equal(finn.corruptionTokens.length, 0, 'warded location is corruption immune');
 });
@@ -305,23 +308,24 @@ test('silver-lantern: replaces seal and destroy but not sacrifice', () => {
   const lanternEngine = (seed) => {
     const fresh = setup({
       seed,
+      mechanics: { anomaly: false },
       p0: { leader: 'harold-ashby', cards: ['silver-lantern', 'finn-calloway', 'finn-calloway'] },
       p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
     });
-    const host = putUnit(fresh, 0, 'finn-calloway', 'scene', 0);
+    const host = putUnit(fresh, 0, 'finn-calloway', 'front', 0);
     const lantern = putEquipment(fresh, 0, 'silver-lantern', host);
-    assert.equal(currentUnitPower(fresh.state, 0, host, 'scene', 0), 5, 'silver lantern gives +2');
+    assert.equal(currentUnitPower(fresh.state, 0, host, 'front', 0), 5, 'silver lantern gives +2');
     return { fresh, host, lantern };
   };
 
   // §11.1: seal replacement cancels the seal, host stays, lantern is discarded.
   {
     const { fresh, host, lantern } = lanternEngine(207);
-    const sealTarget = { kind: 'unit', uid: host.uid, inst: host, player: 0, location: 'scene', slot: 0 };
+    const sealTarget = { kind: 'unit', uid: host.uid, inst: host, player: 0, location: 'front', slot: 0 };
     assert.equal(fresh._sealTarget(sealTarget, 'untilNextNight', { controller: 0 }), false, 'unsealed lantern replaces the seal');
     assert.equal(host.sealed, false);
     assert.equal(host.equipment, null);
-    assert.equal(fresh.state.players[0].board.scene[0].uid, host.uid, 'the host stays on the board');
+    assert.equal(fresh.state.players[0].board.front[0].uid, host.uid, 'the host stays on the board');
     assert.ok(fresh.state.players[0].discard.some((inst) => inst.uid === lantern.uid));
     assert.ok(fresh.state.events.some((event) => event.type === 'silverLanternReplace' && event.event === 'seal'));
     assert.ok(fresh.state.events.some((event) => event.type === 'discard' && event.uid === lantern.uid && event.reason === 'silverLantern'));
@@ -331,10 +335,10 @@ test('silver-lantern: replaces seal and destroy but not sacrifice', () => {
   // §11.1: destroy replacement behaves the same way for the destroy event.
   {
     const { fresh, host, lantern } = lanternEngine(227);
-    const destroyTarget = { kind: 'unit', uid: host.uid, inst: host, player: 0, location: 'scene', slot: 0 };
+    const destroyTarget = { kind: 'unit', uid: host.uid, inst: host, player: 0, location: 'front', slot: 0 };
     assert.equal(fresh._destroyTarget(destroyTarget, 'destroy'), false, 'unsealed lantern replaces the destroy');
     assert.equal(host.equipment, null);
-    assert.equal(fresh.state.players[0].board.scene[0].uid, host.uid, 'the host survives the replaced destroy');
+    assert.equal(fresh.state.players[0].board.front[0].uid, host.uid, 'the host survives the replaced destroy');
     assert.ok(fresh.state.players[0].discard.some((inst) => inst.uid === lantern.uid));
     assert.ok(fresh.state.events.some((event) => event.type === 'silverLanternReplace' && event.event === 'destroy'));
     assert.equal(fresh.state.events.some((event) => event.type === 'destroy'), false, 'the destroy event itself was cancelled');
@@ -347,7 +351,7 @@ test('silver-lantern: replaces seal and destroy but not sacrifice', () => {
     const sacrificed = fresh._sacrificeUnit(0, host.uid);
     assert.equal(sacrificed.uid, host.uid, 'the host itself is sacrificed');
     assert.equal(fresh.state.players[0].abyss.length, 1, 'sacrifice goes to the abyss, not the discard');
-    assert.equal(fresh.state.players[0].board.scene[0], null);
+    assert.equal(fresh.state.players[0].board.front[0], null);
     assert.equal(fresh.state.players[0].discard.some((inst) => inst.uid === host.uid), false);
     assert.ok(fresh.state.players[0].discard.some((inst) => inst.uid === lantern.uid), 'equipment drops into the discard');
     assert.ok(fresh.state.events.some((event) => event.type === 'discard' && event.uid === lantern.uid && event.reason === 'hostSacrificed'));
@@ -364,16 +368,16 @@ test('old-library: archive cards are corruption immune and the first archive pla
     p0: { leader: 'harold-ashby', cards: ['old-library', 'thousand-eyes', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
-  putLocation(engine, 0, 'old-library', 'archive');
-  const finn = putUnit(engine, 0, 'finn-calloway', 'archive', 0);
-  engine._applyCorruption(0, { kind: 'unit', inst: finn, player: 0, location: 'archive', slot: 0 }, 2);
-  assert.equal(finn.corruptionTokens.length, 0, 'old library blocks new corruption on archive cards');
+  putLocation(engine, 0, 'old-library', 'front');
+  const finn = putUnit(engine, 0, 'finn-calloway', 'front', 0);
+  engine._applyCorruption(0, { kind: 'unit', inst: finn, player: 0, location: 'front', slot: 0 }, 2);
+  assert.equal(finn.corruptionTokens.length, 0, 'old library blocks new corruption on own front units');
 
   engine.state.players[0].sanity = 6;
-  putUnit(engine, 1, 'finn-calloway', 'scene', 0);
-  const played = play(engine, 0, 'thousand-eyes', (action) => action.location === 'archive');
-  assert.equal(played.events.some((event) => event.type === 'sanityChange'), true, 'archive play pays the discounted sanity cost');
-  assert.equal(engine.state.players[0].sanity, 5, 'first archive play cost 2 - 1 discount = 1');
+  putUnit(engine, 1, 'finn-calloway', 'front', 0);
+  const played = play(engine, 0, 'thousand-eyes', (action) => action.location === 'front');
+  assert.equal(played.events.some((event) => event.type === 'sanityChange'), true, 'front play pays the discounted sanity cost');
+  assert.equal(engine.state.players[0].sanity, 5, 'first front play cost 2 - 1 discount = 1');
   assert.equal(engine.state.players[0].flags.libraryDiscountUsed, true);
 });
 
@@ -385,9 +389,9 @@ test('zealot: madness face is printed +3 with backlash, reason face is plain', (
     p0: { leader: 'harold-ashby', cards: ['zealot', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
-  const zealot = putUnit(engine, 0, 'zealot', 'scene', 0, { face: 'madness' });
+  const zealot = putUnit(engine, 0, 'zealot', 'front', 0, { face: 'madness' });
   // v1.2: JSON madnessPower 6 -> 4; the printed +3 registry bonus is unchanged.
-  assert.equal(currentUnitPower(engine.state, 0, zealot, 'scene', 0), 7, 'madness face: base 4 + 3');
+  assert.equal(currentUnitPower(engine.state, 0, zealot, 'front', 0), 7, 'madness face: base 4 + 3');
   engine.state.current = 0;
   engine._maybeBacklash(0, zealot, engine.cardIndex['zealot'], { context: 'entry' });
   assert.equal(engine.state.players[0].sanity, 5, 'madness entry backlash loses 1 sanity');
@@ -397,31 +401,33 @@ test('zealot: madness face is printed +3 with backlash, reason face is plain', (
     p0: { leader: 'harold-ashby', cards: ['zealot', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
-  const reasonUnit = putUnit(reasonEngine, 0, 'zealot', 'scene', 0, { face: 'reason' });
+  const reasonUnit = putUnit(reasonEngine, 0, 'zealot', 'front', 0, { face: 'reason' });
   // v1.2: JSON reasonPower 3 -> 2.
-  assert.equal(currentUnitPower(reasonEngine.state, 0, reasonUnit, 'scene', 0), 2, 'reason face stays at base 2');
+  assert.equal(currentUnitPower(reasonEngine.state, 0, reasonUnit, 'front', 0), 2, 'reason face stays at base 2');
 });
 
 test('deep-one: madness face is printed +3 with backlash and pays 1 sanity', () => {
   const madnessEngine = setup({
     seed: 210,
+    mechanics: { anomaly: false },
     p0: { leader: 'elias-thorne', cards: ['deep-one', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
-  const deep = putUnit(madnessEngine, 0, 'deep-one', 'dream', 0, { face: 'madness' });
+  const deep = putUnit(madnessEngine, 0, 'deep-one', 'front', 0, { face: 'madness' });
   // v1.2: JSON madnessPower 8 -> 6; printed +3 bonus unchanged.
-  assert.equal(currentUnitPower(madnessEngine.state, 0, deep, 'dream', 0), 9, 'madness face: base 6 + 3');
+  assert.equal(currentUnitPower(madnessEngine.state, 0, deep, 'front', 0), 9, 'madness face: base 6 + 3');
   madnessEngine.state.current = 0;
   madnessEngine._maybeBacklash(0, deep, madnessEngine.cardIndex['deep-one'], { context: 'entry' });
   assert.equal(madnessEngine.state.players[0].sanity, 5);
 
   const costEngine = setup({
     seed: 211,
+    mechanics: { anomaly: false },
     p0: { leader: 'elias-thorne', cards: ['deep-one', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
     sanity: 6,
   });
-  const playedDeep = play(costEngine, 0, 'deep-one', (action) => action.location === 'dream');
+  const playedDeep = play(costEngine, 0, 'deep-one', (action) => action.location === 'front');
   assert.equal(costEngine.state.players[0].sanity, 5, 'deep one pays its printed sanity cost of 1');
 });
 
@@ -433,7 +439,7 @@ test('gravedigger: must sacrifice when possible, then retrieves one unit from th
     p0: { leader: 'elias-thorne', cards: ['gravedigger', 'zealot', 'deep-one', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
-  const zealot = putUnit(engine, 0, 'zealot', 'scene', 0);
+  const zealot = putUnit(engine, 0, 'zealot', 'front', 0);
   const deep = takeFromHandOrDeck(engine, 0, 'deep-one');
   deep.zone = 'abyss';
   engine.state.players[0].abyss.push(deep);
@@ -454,7 +460,7 @@ test('whisperer: flipping the dream stealth card drains the opponent 1 sanity', 
     p0: { leader: 'elias-thorne', cards: ['whisperer', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
-  const whisperer = putUnit(engine, 0, 'whisperer', 'dream', 0, { faceDown: true });
+  const whisperer = putUnit(engine, 0, 'whisperer', 'front', 0, { faceDown: true });
   const reveal = engine.getActions().find(
     (action) => action.type === 'reveal' && action.uids.includes(whisperer.uid),
   );
@@ -470,14 +476,15 @@ test('whisperer: flipping the dream stealth card drains the opponent 1 sanity', 
 test('bell-claw: devouring an adjacent unit permanently gains its current power', () => {
   const engine = setup({
     seed: 214,
+    mechanics: { anomaly: false },
     p0: { leader: 'elias-thorne', cards: ['bell-claw', 'zealot', 'deep-one'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
     sanity: 3,
   });
-  putUnit(engine, 0, 'zealot', 'scene', 1);
+  putUnit(engine, 0, 'zealot', 'front', 1);
   const bell = play(engine, 0, 'bell-claw', (action) => action.choice?.mode === 'devour');
   assert.ok(bell.events.some((event) => event.type === 'devour'));
-  assert.equal(engine.state.players[0].board.scene[1], null, 'devoured neighbour left the board');
+  assert.equal(engine.state.players[0].board.front[1], null, 'devoured neighbour left the board');
   assert.equal(engine.state.players[0].abyss.length, 1);
   // v1.2: devoured zealot's reasonPower 3 -> 2; devour rule (full current power) unchanged.
   assert.equal(bell.inst.permanentPower, 2, 'bell-claw permanently gained the devoured current power');
@@ -502,7 +509,7 @@ test('seance: cannot be played without a sacrifice target and cannot retrieve th
     p0: { leader: 'elias-thorne', cards: ['seance', 'zealot', 'deep-one', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
-  putUnit(engine, 0, 'zealot', 'scene', 0);
+  putUnit(engine, 0, 'zealot', 'front', 0);
   const deep = takeFromHandOrDeck(engine, 0, 'deep-one');
   deep.zone = 'abyss';
   engine.state.players[0].abyss.push(deep);
@@ -523,9 +530,9 @@ test('tide-ritual: gives the own dream row +3 this night and expires afterwards'
   });
   const played = play(engine, 0, 'tide-ritual');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
-  putUnit(engine, 0, 'deep-one', 'dream', 0);
+  putUnit(engine, 0, 'deep-one', 'front', 0);
   // v1.2: deep-one reasonPower 5 -> 4, Tide Ritual +3 unchanged.
-  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.dream[0], 'dream', 0), 7, 'own dream unit +3');
+  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.front[0], 'front', 0), 7, 'own front unit +3');
   passUntilNight(engine, 2);
   assert.equal(engine.state.effects.length, 0, 'this-night aura cleared at night end cleanup');
 });
@@ -538,13 +545,13 @@ test('lunar-eclipse: this night reason face -1 and madness face +1 for both play
     p0: { leader: 'elias-thorne', cards: ['lunar-eclipse', 'zealot', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
-  putUnit(engine, 0, 'zealot', 'scene', 0);
-  putUnit(engine, 1, 'finn-calloway', 'scene', 0);
+  putUnit(engine, 0, 'zealot', 'front', 0);
+  putUnit(engine, 1, 'finn-calloway', 'front', 0);
   const played = play(engine, 0, 'lunar-eclipse');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
   // v1.2: zealot reasonPower 3 -> 2, Lunar Eclipse reason -1 unchanged; finn unaffected.
-  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.scene[0], 'scene', 0), 1);
-  assert.equal(currentUnitPower(engine.state, 1, engine.state.players[1].board.scene[0], 'scene', 0), 2);
+  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.front[0], 'front', 0), 1);
+  assert.equal(currentUnitPower(engine.state, 1, engine.state.players[1].board.front[0], 'front', 0), 2);
 });
 
 test('stormy-night: this night scene -2 for both players', () => {
@@ -553,16 +560,16 @@ test('stormy-night: this night scene -2 for both players', () => {
     p0: { leader: 'elias-thorne', cards: ['stormy-night', 'zealot', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
-  const zealotInst = putUnit(engine, 0, 'zealot', 'scene', 0);
-  const finnInst = putUnit(engine, 1, 'finn-calloway', 'scene', 0);
+  const zealotInst = putUnit(engine, 0, 'zealot', 'front', 0);
+  const finnInst = putUnit(engine, 1, 'finn-calloway', 'front', 0);
   // Capture power before the environment (includes chaos token + anomaly).
-  const before0 = currentUnitPower(engine.state, 0, zealotInst, 'scene', 0);
-  const before1 = currentUnitPower(engine.state, 1, finnInst, 'scene', 0);
+  const before0 = currentUnitPower(engine.state, 0, zealotInst, 'front', 0);
+  const before1 = currentUnitPower(engine.state, 1, finnInst, 'front', 0);
   const played = play(engine, 0, 'stormy-night');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
-  // Stormy Night applies a this-night scene -2 on top of every other modifier.
-  assert.equal(currentUnitPower(engine.state, 0, zealotInst, 'scene', 0), Math.max(0, before0 - 2));
-  assert.equal(currentUnitPower(engine.state, 1, finnInst, 'scene', 0), Math.max(0, before1 - 2));
+  // Stormy Night applies a this-night front -2 on top of every other modifier.
+  assert.equal(currentUnitPower(engine.state, 0, zealotInst, 'front', 0), Math.max(0, before0 - 2));
+  assert.equal(currentUnitPower(engine.state, 1, finnInst, 'front', 0), Math.max(0, before1 - 2));
 });
 
 // ── drowned-altar: scene sacrifice immunity + cult echo +3 ─────────────────
@@ -574,20 +581,20 @@ test('drowned-altar: scene sacrifices skip backlash and the cult echo is +1', ()
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
     sanity: 3,
   });
-  putUnit(engine, 0, 'zealot', 'scene', 0);
+  putUnit(engine, 0, 'zealot', 'front', 0);
   const deep = takeFromHandOrDeck(engine, 0, 'deep-one');
   deep.zone = 'deck';
   engine.state.players[0].deck.push(deep);
-  putLocation(engine, 0, 'drowned-altar', 'scene');
+  putLocation(engine, 0, 'drowned-altar', 'front');
 
   const action = engine.getActions().find(
     (entry) => entry.type === 'useLeader'
-      && entry.sacrificeUid === engine.state.players[0].board.scene[0].uid
+      && entry.sacrificeUid === engine.state.players[0].board.front[0].uid
       && entry.cardUid === deep.uid
-      && entry.location === 'dream'
-      && entry.slot === 0,
+      && entry.location === 'front'
+      && entry.slot === 1,
   );
-  assert.ok(action, 'Elias may sacrifice the madness zealot against the drowned altar');
+  assert.ok(action, 'Elias may sacrifice the madness zealot and summon onto the first empty front slot');
   const result = engine.apply(action);
   assert.equal(result.ok, true, result.error);
   assert.deepEqual(
@@ -608,7 +615,7 @@ test('silas-gold: discard one hand card and retrieve one of the top three', () =
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
     startingHand: 3,
   });
-  const silas = putUnit(engine, 0, 'silas-gold', 'archive', 0, { faceDown: true });
+  const silas = putUnit(engine, 0, 'silas-gold', 'front', 0, { faceDown: true });
 
   // §11.3: after Silas leaves hand, 2 hand cards and 3 deck cards remain.  The
   // player chooses both the discarded card and the deck pick, so the engine
@@ -659,9 +666,9 @@ test('thousand-eyes: seals the enemy leader and counts face-up unsealed stealth'
     p0: { leader: 'elias-thorne', cards: ['thousand-eyes', 'deep-one', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['nora-wells', 'finn-calloway', 'deep-one'] },
   });
-  putUnit(engine, 1, 'nora-wells', 'scene', 0);
-  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.scene[1], 'scene', 1), 0, 'sanity placeholder');
-  const played = play(engine, 0, 'thousand-eyes', (action) => action.location === 'archive');
+  putUnit(engine, 1, 'nora-wells', 'front', 0);
+  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.front[1], 'front', 1), 0, 'sanity placeholder');
+  const played = play(engine, 0, 'thousand-eyes', (action) => action.location === 'front');
   assert.ok(played.events.some((event) => event.type === 'sealLeader'));
   assert.equal(engine.state.players[1].leaderSealed, true);
 });
@@ -674,7 +681,7 @@ test('unexpected-aid: permanent +3 plus remove all seals and corruption', () => 
     p0: { leader: 'harold-ashby', cards: ['unexpected-aid', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
   });
-  const finn = putUnit(engine, 0, 'finn-calloway', 'scene', 0);
+  const finn = putUnit(engine, 0, 'finn-calloway', 'front', 0);
   finn.sealed = true;
   finn.corruptionTokens = [{ appliedNight: engine.state.night, source: 'sea-priestess' }];
   finn.corruptionLoss = engine.state.night;
@@ -684,35 +691,37 @@ test('unexpected-aid: permanent +3 plus remove all seals and corruption', () => 
   assert.equal(finn.sealed, false);
   assert.equal(finn.corruptionTokens.length, 0);
   assert.equal(finn.corruptionLoss, 0);
-  // Printed 3 + permanent 3 + chaos token + any scene anomaly power.
-  const anomalyBonus = engine.state.anomaly?.location === 'scene'
+  // Printed 3 + permanent 3 + chaos token + any front anomaly power.
+  const anomalyBonus = engine.state.anomaly?.location === 'front'
     ? (engine.state.anomaly.power ?? 0)
     : 0;
   const expectedAid = 3 + 3 + (finn.chaosToken?.modifier ?? 0) + anomalyBonus;
   assert.equal(
-    currentUnitPower(engine.state, 0, finn, 'scene', 0),
+    currentUnitPower(engine.state, 0, finn, 'front', 0),
     Math.max(0, expectedAid),
     'permanent +3 applied on top of printed power',
   );
 });
 
-// ── the-sleeper: seal immunity, entry cost, nightly drain ───────────────────
+// ── the-sleeper: seal immunity + front-loaded entry cost (no cross-night drain) ─
 
-test('the-sleeper: cannot be sealed, pays 2 sanity on entry and 1 sanity per night', () => {
+test('the-sleeper: cannot be sealed and pays 3 sanity on entry, with no cross-night drain', () => {
   const engine = setup({
     seed: 224,
+    mechanics: { anomaly: false },
     p0: { leader: 'elias-thorne', cards: ['the-sleeper', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
     sanity: 5,
   });
-  const played = play(engine, 0, 'the-sleeper', (action) => action.location === 'dream');
-  const sleeper = engine.state.players[0].board.dream[0];
+  assert.equal(isRegistered('the-sleeper'), false, 'the sleeper is an engine-primitive null card');
+  const played = play(engine, 0, 'the-sleeper', (action) => action.location === 'front');
+  const sleeper = engine.state.players[0].board.front[0];
   assert.equal(sleeper.cardId, 'the-sleeper');
-  assert.equal(engine.state.players[0].sanity, 3, 'sleeper entry costs 2 via the printed cost, without double charging');
+  assert.equal(engine.state.players[0].sanity, 2, 'sleeper pays the full front-printed cost of 3');
   assert.equal(sleeper.face, 'reason');
   assert.equal(played.events.some((event) => event.type === 'backlash'), false, 'reason-face sleeper does not trigger backlash');
   assert.equal(isSealImmuneCard('the-sleeper'), true, 'the sleeper cannot be sealed (spec)');
 
   passUntilNight(engine, 2);
-  assert.equal(engine.state.players[0].sanity, 2, 'each following night drains 1 more sanity');
+  assert.equal(engine.state.players[0].sanity, 2, 'the unit is cleared at night end, so no further drain exists');
 });

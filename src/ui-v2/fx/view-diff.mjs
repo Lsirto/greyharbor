@@ -19,7 +19,7 @@
 
 import { asArray, asObject } from '../utils.mjs';
 
-export const BOARD_LOCATIONS = Object.freeze(['scene', 'archive', 'dream']);
+export const BOARD_LOCATIONS = Object.freeze(['front']);
 export const CARD_FACES = Object.freeze(['reason', 'madness']);
 
 function numberOrNull(value) {

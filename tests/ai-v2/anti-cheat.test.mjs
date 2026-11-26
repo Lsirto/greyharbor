@@ -82,23 +82,23 @@ function faceDownPair(engine, opp, swapped) {
   const state = engine.clone().state;
   const player = state.players[opp];
   const [a, b] = player.hand.splice(0, 2);
-  player.board.dream[0] = {
+  player.board.front[0] = {
     ...a,
     uid: 'hidden-a',
     cardId: swapped ? 'lucia-vaughn' : 'nora-wells',
     face: swapped ? 'madness' : 'reason',
     faceDown: true,
-    location: 'dream',
+    location: 'front',
     slot: 0,
     zone: 'board',
   };
-  player.board.dream[1] = {
+  player.board.front[1] = {
     ...b,
     uid: 'hidden-b',
     cardId: swapped ? 'nora-wells' : 'lucia-vaughn',
     face: swapped ? 'reason' : 'madness',
     faceDown: true,
-    location: 'dream',
+    location: 'front',
     slot: 1,
     zone: 'board',
   };

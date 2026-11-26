@@ -37,7 +37,7 @@ export function renderPlayerBar(player, options = {}) {
       <span class="gh2-player-bar__name">${escapeHtml(name)}</span>
       <span class="gh2-player-bar__faction gh2-faction--${escapeHtml(faction)}">${escapeHtml(factionText)}</span>
       ${leaderName ? `<span class="gh2-player-bar__leader">${icon('crown')}${escapeHtml(leaderName)}</span>` : ''}
-      ${passed ? '<span class="gh2-player-bar__pass">已过牌 · PASSED</span>' : ''}
+      ${passed ? '<span class="gh2-player-bar__pass">已过牌</span>' : ''}
     </div>
     <div class="gh2-player-bar__resources">
       ${pile('手牌', 'hand', opts.handCount ?? data.handCount)}
@@ -47,7 +47,7 @@ export function renderPlayerBar(player, options = {}) {
       ${renderObjectiveTrack(data, { compact: true })}
     </div>
     <div class="gh2-player-bar__score" aria-label="当前夜分">
-      <span class="gh2-player-bar__score-label">夜分 SCORE</span>
+      <span class="gh2-player-bar__score-label">夜分</span>
       <span class="gh2-player-bar__score-value">${escapeHtml(score)}</span>
     </div>
   </div>`;

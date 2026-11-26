@@ -7,7 +7,7 @@
 
 import { CONFIG } from './config.mjs';
 
-const LOCATIONS = ['scene', 'archive', 'dream'];
+const LOCATIONS = ['front'];
 
 const hasKeyword = (card, keyword) =>
   Array.isArray(card?.keywords) && card.keywords.includes(keyword);
@@ -95,7 +95,7 @@ function findViewUnit(view, player, uid) {
 function chainBonus(unit, board) {
   if (!hasKeyword(unit, 'chain') || unit.sealed) return 0;
   if (unit.cardId === 'edith-barrow') {
-    return (board.archive.filter(Boolean).length - 1) * CONFIG.locations.chainWeight;
+    return (board.front.filter(Boolean).length - 1) * CONFIG.locations.chainWeight;
   }
   const cap = CONFIG.power.chainCap[unit.cardId] ?? 0;
   let neighbours = 0;
@@ -172,7 +172,6 @@ export function handCardValue(view, card) {
   }
   if (hasKeyword(card, 'chain')) value += CONFIG.locations.adjacencyBonus;
   if (hasKeyword(card, 'stealth')) value += CONFIG.hidden.stealthFaceDownValue;
-  if (card?.location === 'dream') value += CONFIG.locations.dreamHiddenBonus;
   if (card?.type === 'location') value += CONFIG.locations.archiveSynergyBonus;
   return value;
 }
@@ -309,7 +308,7 @@ function sacrificeUnit(pos, side, uid) {
 function applyCultEcho(pos, view, me) {
   if (view.players[me]?.faction !== 'cult') return;
   if (view.players[me]?.flags?.cultSacrificeTriggered) return;
-  const altar = view.players[me]?.locations?.scene;
+  const altar = view.players[me]?.locations?.front;
   const bonus = altar && altar.cardId === 'drowned-altar' && !altar.sealed
     ? CONFIG.effects.cultEchoWithAltar
     : CONFIG.effects.cultEcho;
@@ -378,7 +377,7 @@ function applyPlayEffect(pos, view, card, action, face) {
       break;
     }
     case 'tide-ritual': {
-      for (const unit of pos.myBoard.dream) {
+      for (const unit of pos.myBoard.front) {
         if (unit && !unit.faceDown) bump(pos, 'my', unit, CONFIG.effects.tide);
       }
       break;
@@ -400,7 +399,7 @@ function applyPlayEffect(pos, view, card, action, face) {
     case 'stormy-night': {
       for (const side of ['my', 'opp']) {
         const board = side === 'my' ? pos.myBoard : pos.oppBoard;
-        for (const unit of board.scene) {
+        for (const unit of board.front) {
           if (unit && !unit.faceDown) bump(pos, side, unit, CONFIG.effects.stormy);
         }
       }
@@ -515,9 +514,8 @@ function simulatePlayCard(view, base, action) {
       next.myFaceDownCount += 1;
       if (hasKeyword(card, 'stealth')) next.myFutureBonus += CONFIG.hidden.stealthFaceDownValue;
     }
-    if (action.location === 'scene') next.myFutureBonus += CONFIG.locations.scenePressureBonus;
-    if (action.location === 'archive') next.myFutureBonus += CONFIG.locations.archiveSynergyBonus;
-    if (action.location === 'dream') next.myFutureBonus += CONFIG.locations.dreamHiddenBonus;
+    // Every unit deploys on the front line.
+    next.myFutureBonus += CONFIG.locations.scenePressureBonus;
     const capacity = CONFIG.locations.capacity[action.location] ?? 0;
     if (capacity > 1) {
       const center = (capacity - 1) / 2;
@@ -525,13 +523,11 @@ function simulatePlayCard(view, base, action) {
         * (1 - Math.abs(action.slot - center) / center);
     }
     if (!action.faceDown) applyBacklash(next, unit, face);
-    // v1.4: a Society unit entering the archive face-up gains a clue.
-    if (!action.faceDown && action.location === 'archive'
+    // A Society unit entering the front face-up gathers a clue.
+    if (!action.faceDown && action.location === 'front'
       && view.players[me]?.faction === 'society') {
       bumpObjective(next, 'my', 1);
     }
-  } else {
-    if (card.location === 'dream') next.myFutureBonus += CONFIG.locations.dreamHiddenBonus;
   }
 
   // v1.4: casting a Cult ritual adds 1 doom.

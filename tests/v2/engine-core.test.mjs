@@ -91,7 +91,7 @@ test('setup: 20-card presets, 8-card opening hands, mulligan up to 2', () => {
     assert.equal(countCards(engine.state, p), 19);
     assert.ok(player.hand.every((inst) => inst.face === 'reason'));
     for (const location of LOCATIONS) {
-      assert.equal(player.board[location].length, location === 'dream' ? 3 : 5);
+      assert.equal(player.board[location].length, 6);
       assert.ok(player.board[location].every((entry) => entry === null));
     }
   }
@@ -201,21 +201,24 @@ test('viewFor hides opponent hand, deck order, and face-down identities', () => 
     cardPool: cards,
     decks: [deckOf('hidden-a'), deckOf('hidden-b')],
     startingSanity: 3,
+    // Isolate the redaction test from the random anomaly/chaos modifiers so the
+    // revealed card scores exactly its printed madness power (5).
+    mechanics: { anomaly: false, chaosBag: false },
   });
   keepHands(engine);
 
   if (engine.state.current === 1) passCurrent(engine);
-  playCard(engine, 0, 'hidden-a', 'scene', 0, true);
+  playCard(engine, 0, 'hidden-a', 'front', 0, true);
 
   const own = engine.viewFor(0);
   const opponent = engine.viewFor(1);
 
   // Controller sees the identity; opponent sees only a hidden card.
-  assert.equal(own.players[0].board.scene[0].cardId, 'hidden-a');
-  assert.equal(opponent.players[0].board.scene[0].hidden, true);
-  assert.equal(opponent.players[0].board.scene[0].power, 0);
-  assert.equal('cardId' in opponent.players[0].board.scene[0], false);
-  assert.equal('face' in opponent.players[0].board.scene[0], false);
+  assert.equal(own.players[0].board.front[0].cardId, 'hidden-a');
+  assert.equal(opponent.players[0].board.front[0].hidden, true);
+  assert.equal(opponent.players[0].board.front[0].power, 0);
+  assert.equal('cardId' in opponent.players[0].board.front[0], false);
+  assert.equal('face' in opponent.players[0].board.front[0], false);
 
   // Hands and deck order are redacted for the opponent.
   assert.equal(opponent.players[0].hand.length, 0);
@@ -239,11 +242,14 @@ test('viewFor hides opponent hand, deck order, and face-down identities', () => 
   // Spectators receive no action list at all.
   assert.deepEqual(engine.viewFor(null).actions, []);
 
-  // Night end reveals the card before scoring.
+  // Night end reveals the face-down card before scoring, then clears the board.
   endNight(engine, 1);
+  // At sanity 3 (madness), the hidden card scores its madness power (5),
+  // proving it was revealed before scoring rather than counting as 0.
+  assert.equal(engine.state.history[0].scores[0].total, 5);
   const revealed = engine.viewFor(1);
-  assert.equal(revealed.players[0].board.scene[0].cardId, 'hidden-a');
-  assert.equal(revealed.players[0].board.scene[0].faceDown, false);
+  assert.ok(revealed.players[0].board.front.every((slot) => slot === null));
+  assert.ok(engine.state.players[0].discard.some((inst) => inst.cardId === 'hidden-a'));
 });
 
 // ── card conservation ───────────────────────────────────────────────────
@@ -290,7 +296,7 @@ test('scoring, night winner, and loser-goes-first rotation', () => {
   let played = false;
   while (engine.phase === 'play' && engine.state.night === 1) {
     if (engine.state.current === 0 && !played) {
-      playCard(engine, 0, 'five', 'scene', 0);
+      playCard(engine, 0, 'five', 'front', 0);
       played = true;
     } else {
       passCurrent(engine);
@@ -314,7 +320,7 @@ test('scoring, night winner, and loser-goes-first rotation', () => {
     if (engine.state.current === 1) {
       passCurrent(engine);
     } else if (engine.state.current === 0 && !played2) {
-      playCard(engine, 0, 'five', 'scene', 1);
+      playCard(engine, 0, 'five', 'front', 1);
       played2 = true;
     } else {
       passCurrent(engine);
@@ -385,14 +391,14 @@ test('sanity zero is an immediate loss; simultaneous zero is a draw', () => {
   assert.deepEqual(bothZero.result().sanity, [0, 0]);
 });
 
-test('three nights: loser starts next night, tie keeps priority, final tiebreak resolves', () => {
+test('three nights: loser starts next night, final tiebreak resolves', () => {
   const cards = [
     card('p5', { reasonPower: 5, madnessPower: 5 }),
-    card('p1', { reasonPower: 1, madnessPower: 1 }),
     card('p3', { reasonPower: 3, madnessPower: 3 }),
   ];
-  const p0Deck = { leader: null, cards: [...Array(10).fill('p5'), ...Array(9).fill('p1')] };
-  const p1Deck = { leader: null, cards: Array(19).fill('p3') };
+  // P0 needs two p5 (nights 1 and 3); P1 needs two p3 (night 2) and one p5 (night 3).
+  const p0Deck = { leader: null, cards: [...Array(2).fill('p5'), ...Array(17).fill('p3')] };
+  const p1Deck = { leader: null, cards: [...Array(18).fill('p3'), 'p5'] };
 
   // Draw the whole deck so this scenario is fully scripted.
   const engine = createGame({
@@ -409,73 +415,76 @@ test('three nights: loser starts next night, tie keeps priority, final tiebreak 
   let p0Played = false;
   while (engine.phase === 'play' && engine.state.night === 1) {
     if (engine.state.current === 0 && !p0Played) {
-      playCard(engine, 0, 'p5', 'scene', 0);
+      playCard(engine, 0, 'p5', 'front', 0);
       p0Played = true;
     } else {
       passCurrent(engine);
     }
   }
+  assert.deepEqual(engine.state.history[0].scores.map((score) => score.total), [5, 0]);
   assert.equal(engine.state.history[0].winner, 0);
   assert.equal(engine.state.night, 2);
   assert.equal(engine.state.firstPlayer, 1, 'night-1 loser starts night 2');
 
-  // Night 2: P1 plays two 3-power units; P0 passes. P1 wins 6 vs 5.
+  // Night 2: P1 plays two 3-power units; P0 passes. Each night is independent.
   let p1Plays = 0;
   while (engine.phase === 'play' && engine.state.night === 2) {
     if (engine.state.current === 1 && p1Plays < 2) {
-      playCard(engine, 1, 'p3', 'scene', p1Plays);
+      playCard(engine, 1, 'p3', 'front', p1Plays);
       p1Plays += 1;
     } else {
       passCurrent(engine);
     }
   }
   assert.equal(engine.state.history[1].winner, 1);
-  assert.deepEqual(engine.state.history[1].scores.map((score) => score.total), [5, 6]);
+  assert.deepEqual(engine.state.history[1].scores.map((score) => score.total), [0, 6]);
   assert.equal(engine.state.night, 3);
   assert.equal(engine.state.firstPlayer, 0, 'night-2 loser starts night 3');
 
-  // Night 3: P0 plays a 1-power unit to tie 6 vs 6. Sanity is also tied.
+  // Night 3: both play one 5-power unit to tie 5 vs 5. Sanity is also tied.
   let p0Played3 = false;
+  let p1Played3 = false;
   while (engine.phase === 'play' && engine.state.night === 3) {
     if (engine.state.current === 0 && !p0Played3) {
-      playCard(engine, 0, 'p1', 'scene', 1);
+      playCard(engine, 0, 'p5', 'front', 0);
       p0Played3 = true;
+    } else if (engine.state.current === 1 && !p1Played3) {
+      playCard(engine, 1, 'p5', 'front', 0);
+      p1Played3 = true;
     } else {
       passCurrent(engine);
     }
   }
   assert.equal(engine.state.history[2].tie, true);
-  assert.deepEqual(engine.state.history[2].scores.map((score) => score.total), [6, 6]);
+  assert.deepEqual(engine.state.history[2].scores.map((score) => score.total), [5, 5]);
   assert.deepEqual(engine.state.history[2].sanityAfter, [4, 4]);
 
   assert.equal(engine.phase, 'gameOver');
   assert.equal(engine.result().reason, 'tiebreak');
   assert.equal(engine.result().tiebreak, 'totalScore');
-  assert.equal(engine.result().winner, 0);
-  assert.deepEqual(engine.result().totalScores, [16, 12]);
+  assert.equal(engine.result().winner, 1);
+  assert.deepEqual(engine.result().totalScores, [10, 11]);
 });
 
-// ── dream admission (rules §4.4) ────────────────────────────────────────
+// ── single front placement ──────────────────────────────────────────────
 //
-// v2.2 replaces the v2.1 placeholder "dream = madness face only" with the
-// frozen §4.4 admission rules.  The old assertion that reason-face cards can
-// never enter the dream is not part of v1: a dream-native unit may enter
-// face-up on either face, while `any` + stealth must enter face-down and
-// `any` without stealth cannot enter at all.
+// The board refactor removes the three scene/archive/dream rows. Every unit
+// deploys to the single front line regardless of its flavor `location` field.
+// Stealth units still offer a face-down variant on the front; non-stealth
+// units only enter face-up.
 
-test('dream admission: affinity, stealth face-down entry, and the per-night limit', () => {
+test('single front: all units deploy to front, stealth offers face-down', () => {
   const cards = [
-    card('native', { location: 'dream', reasonPower: 2, madnessPower: 9 }),
+    card('flavor-dream', { location: 'dream', reasonPower: 2, madnessPower: 9 }),
     card('lurker', { location: 'any', reasonPower: 3, madnessPower: 5, keywords: ['stealth'] }),
     card('walker', { location: 'any', reasonPower: 4, madnessPower: 4 }),
   ];
   const p0Deck = {
     leader: null,
     cards: [
-      ...Array(4).fill('native'),
+      ...Array(4).fill('flavor-dream'),
       ...Array(4).fill('lurker'),
-      ...Array(4).fill('walker'),
-      ...Array(7).fill('native'),
+      ...Array(11).fill('walker'),
     ],
   };
   const engine = createGame({
@@ -489,36 +498,28 @@ test('dream admission: affinity, stealth face-down entry, and the per-night limi
   if (engine.state.current === 1) passCurrent(engine);
   assert.equal(engine.state.players[0].hand[0].face, 'reason');
 
-  // Dream-native, no stealth: may enter face-up on the reason face.
-  playCard(engine, 0, 'native', 'dream', 0, false);
-  assert.equal(engine.state.players[0].board.dream[0].face, 'reason');
+  // A card whose flavor field is dream still enters the front face-up.
+  playCard(engine, 0, 'flavor-dream', 'front', 0, false);
+  assert.equal(engine.state.players[0].board.front[0].location, 'front');
+  assert.equal(engine.state.players[0].board.front[0].face, 'reason');
 
-  // any + stealth: the dream requires a face-down entry, never face-up.
+  // Stealth unit: both face-up and face-down variants are legal on the front.
   const lurker = engine.state.players[0].hand.find((inst) => inst.cardId === 'lurker');
   assert.ok(lurker);
   const lurkerActions = engine.getActions().filter(
-    (action) => action.type === 'playCard' && action.uid === lurker.uid && action.location === 'dream',
+    (action) => action.type === 'playCard' && action.uid === lurker.uid && action.location === 'front',
   );
-  assert.equal(lurkerActions.some((action) => action.faceDown === false), false);
+  assert.equal(lurkerActions.some((action) => action.faceDown === false), true);
   assert.equal(lurkerActions.some((action) => action.faceDown === true), true);
 
-  // any without stealth: no dream entry at all.
+  // Non-stealth unit: only face-up placement on the front.
   const walker = engine.state.players[0].hand.find((inst) => inst.cardId === 'walker');
   assert.ok(walker);
-  assert.equal(
-    engine.getActions().some(
-      (action) => action.type === 'playCard' && action.uid === walker.uid && action.location === 'dream',
-    ),
-    false,
+  const walkerActions = engine.getActions().filter(
+    (action) => action.type === 'playCard' && action.uid === walker.uid && action.location === 'front',
   );
-
-  // Second hand entry fills the per-night limit; a third is illegal.
-  playCard(engine, 0, 'lurker', 'dream', 1, true);
-  assert.equal(engine.state.players[0].flags.dreamEntries, 2);
-  assert.equal(
-    engine.getActions().some((action) => action.type === 'playCard' && action.location === 'dream'),
-    false,
-  );
+  assert.ok(walkerActions.length > 0);
+  assert.equal(walkerActions.every((action) => action.faceDown === false), true);
 });
 
 // ── self-play smoke (the 1000-game run lives in scripts/selfplay.mjs) ───

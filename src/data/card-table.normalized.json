@@ -493,9 +493,9 @@
     "keywords": [
       "理智反噬"
     ],
-    "sanityCost": 2,
+    "sanityCost": 3,
     "copies": 1,
-    "effect": "无法被封印入场扣2理智此后每夜再扣1",
+    "effect": "无法被封印，入场扣3理智",
     "flavor": "它只是翻了个身城市就忘了自己的名字"
   },
   {

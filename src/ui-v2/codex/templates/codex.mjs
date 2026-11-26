@@ -13,9 +13,11 @@ import { isDefaultFilters } from '../../../codex/codex.mjs';
 import {
   FACTIONS_ZH,
   KEYWORDS_ZH,
-  LOCATIONS_ZH,
   TYPES_ZH,
 } from '../../card-view.mjs';
+
+// Codex-only thematic tags (the board itself has a single front line).
+const CODEX_FLAVOR = Object.freeze({ scene: '现场', archive: '档案', dream: '梦境' });
 
 const FACTION_LABELS = { all: '全部', ...FACTIONS_ZH };
 const TYPE_LABELS = {
@@ -28,7 +30,7 @@ const TYPE_LABELS = {
   environment: TYPES_ZH.environment,
   leader: TYPES_ZH.leader,
 };
-const LOCATION_LABELS = { all: '全部', ...LOCATIONS_ZH };
+const LOCATION_LABELS = { all: '全部', ...CODEX_FLAVOR };
 
 function filterButton(dim, value, label, active) {
   return `<button type="button" class="gh2-codex-chip${active ? ' is-selected' : ''}"
@@ -71,7 +73,7 @@ function renderCodexCard(card) {
   const flavor = card.flavor
     ? `<p class="gh2-codex-card__flavor">${escapeHtml(card.flavor)}</p>`
     : '';
-  const locationLabel = card.location ? (LOCATIONS_ZH[card.location] ?? card.location) : '';
+  const locationLabel = card.location ? (CODEX_FLAVOR[card.location] ?? card.location) : '';
 
   return `<article class="gh2-codex-card gh2-card--faction-${escapeHtml(card.faction)}" data-card-id="${escapeHtml(card.id)}">
     <div class="gh2-codex-card__top">
