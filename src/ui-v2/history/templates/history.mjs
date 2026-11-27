@@ -1,7 +1,7 @@
 /**
- * src/ui-v2/history/templates/history.mjs — pure HTML for the match history page.
- * The controller supplies the aggregated summary; ids are resolved to Chinese
- * labels here. All dynamic text is escaped.
+ * src/ui-v2/history/templates/history.mjs — pure HTML for the career page.
+ * The controller supplies the aggregated career view model; ids are resolved
+ * to Chinese labels here. All dynamic text is escaped.
  */
 
 import { escapeHtml } from '../../../ui-v2/utils.mjs';
@@ -32,9 +32,18 @@ function factionName(faction) {
   return FACTION_CARDS[faction]?.nameZh ?? '未知阵营';
 }
 
+function factionCrest(faction) {
+  return FACTION_CARDS[faction]?.crest ?? '✦';
+}
+
+function leaderCard(leader) {
+  if (!leader) return null;
+  return getCharacterCard(leader);
+}
+
 function leaderName(leader) {
-  if (!leader) return '未选择';
-  return getCharacterCard(leader)?.nameZh ?? '未知领袖';
+  const card = leaderCard(leader);
+  return card ? card.nameZh : '未选择';
 }
 
 function modeName(mode) {
@@ -55,31 +64,94 @@ function outcome(entry) {
   return { cls: 'is-draw', label: '平' };
 }
 
-function renderOverview(summary) {
+function statCell(label, value) {
+  return `<div class="gh2-career__stat"><b>${escapeHtml(String(value))}</b><small>${escapeHtml(label)}</small></div>`;
+}
+
+function renderOverview(m) {
   const cells = [
-    { label: '总场次', value: summary.total },
-    { label: '胜', value: summary.wins },
-    { label: '负', value: summary.losses },
-    { label: '平', value: summary.draws },
-    { label: '胜率', value: formatWinRate(summary.winRate) },
-    { label: '当前连胜', value: summary.currentStreak },
+    { label: '总场次', value: m.total ?? 0 },
+    { label: '胜', value: m.wins ?? 0 },
+    { label: '负', value: m.losses ?? 0 },
+    { label: '平', value: m.draws ?? 0 },
+    { label: '胜率', value: formatWinRate(m.winRate) },
+    { label: '当前连胜', value: m.currentStreak ?? 0 },
+    { label: '最佳连胜', value: m.bestStreak ?? 0 },
+    { label: '游玩天数', value: m.playDays ?? 0 },
+    { label: '最早开局', value: formatTime(m.firstMatchAt) },
   ];
-  return `<div class="gh2-history__overview">
-    ${cells.map((cell) => `<div class="gh2-history__stat"><b>${escapeHtml(String(cell.value))}</b><small>${escapeHtml(cell.label)}</small></div>`).join('')}
+  return `<div class="gh2-career__overview">
+    ${cells.map((cell) => statCell(cell.label, cell.value)).join('')}
   </div>`;
 }
 
-function renderGroup(title, groups, nameOf) {
+function renderFactionRow(group) {
+  return `
+    <li class="gh2-career__row">
+      <span class="gh2-career__row-crest" aria-hidden="true">${escapeHtml(factionCrest(group.key))}</span>
+      <span class="gh2-career__row-name">${escapeHtml(factionName(group.key))}</span>
+      <span class="gh2-career__row-meta">${group.wins} 胜 / ${group.total} 局</span>
+      <span class="gh2-career__row-rate">${escapeHtml(formatWinRate(group.winRate))}</span>
+    </li>`;
+}
+
+function renderLeaderRow(group) {
+  const card = leaderCard(group.key);
+  const portrait = card
+    ? `<img class="gh2-career__portrait" src="./assets/art/${encodeURIComponent(card.id)}.jpg" alt="" onerror="this.style.display='none'">`
+    : '';
+  const icon = card?.icon ?? '✦';
+  return `
+    <li class="gh2-career__row">
+      <span class="gh2-career__row-portrait">${portrait}<span class="gh2-career__row-icon" aria-hidden="true">${escapeHtml(icon)}</span></span>
+      <span class="gh2-career__row-name">${escapeHtml(leaderName(group.key))}</span>
+      <span class="gh2-career__row-meta">${group.wins} 胜 / ${group.total} 局</span>
+      <span class="gh2-career__row-rate">${escapeHtml(formatWinRate(group.winRate))}</span>
+    </li>`;
+}
+
+function renderGroup(title, groups, rowOf) {
   if (!Array.isArray(groups) || groups.length === 0) return '';
-  const rows = groups.map((group) => `
-    <li class="gh2-history__row">
-      <span class="gh2-history__row-name">${escapeHtml(nameOf(group.key))}</span>
-      <span class="gh2-history__row-meta">${group.wins} 胜 / ${group.total} 局</span>
-      <span class="gh2-history__row-rate">${escapeHtml(formatWinRate(group.winRate))}</span>
-    </li>`).join('');
-  return `<section class="gh2-history__group">
+  const rows = groups.map(rowOf).join('');
+  return `<section class="gh2-career__group">
     <h3>${escapeHtml(title)}</h3>
-    <ul class="gh2-history__rows">${rows}</ul>
+    <ul class="gh2-career__rows">${rows}</ul>
+  </section>`;
+}
+
+function renderCollection(col) {
+  const cells = [
+    { label: '理智币', value: col.coins ?? 0 },
+    { label: '卡背收藏', value: `${col.backOwned ?? 0}/${col.backTotal ?? 0}` },
+    { label: '皮肤收藏', value: `${col.skinOwned ?? 0}/${col.skinTotal ?? 0}` },
+    { label: '卡背抽卡', value: col.backPulls ?? 0 },
+    { label: '皮肤抽卡', value: col.skinPulls ?? 0 },
+  ];
+  return `<section class="gh2-career__group">
+    <h3>收藏与资产</h3>
+    <div class="gh2-career__mini-grid">
+      ${cells.map((cell) => statCell(cell.label, cell.value)).join('')}
+    </div>
+  </section>`;
+}
+
+function renderAchievementSummary(ach, daily) {
+  const cells = [
+    { label: '成就解锁', value: `${ach.unlockedCount ?? 0}/${ach.total ?? 0}` },
+    { label: '打卡天数', value: daily.total ?? 0 },
+    { label: '当前连续', value: daily.currentStreak ?? 0 },
+    { label: '最佳连续', value: daily.bestStreak ?? 0 },
+  ];
+  return `<section class="gh2-career__group">
+    <h3>成就与打卡</h3>
+    <div class="gh2-career__mini-grid">
+      ${cells.map((cell) => statCell(cell.label, cell.value)).join('')}
+    </div>
+    <div class="gh2-career__links">
+      <button type="button" class="gh2-career__link" data-career-nav="achievements">成就墙</button>
+      <button type="button" class="gh2-career__link" data-career-nav="shop">神秘商店</button>
+      <button type="button" class="gh2-career__link" data-career-nav="daily">每日挑战</button>
+    </div>
   </section>`;
 }
 
@@ -96,29 +168,44 @@ function renderRecent(entry) {
 }
 
 /**
- * @param {{summary?: object}} input
+ * @param {{career?: object}} input
  */
 export function renderHistory(input = {}) {
-  const summary = input.summary ?? {};
-  const recent = Array.isArray(summary.recent) ? summary.recent : [];
-  const empty = summary.total === 0;
+  const career = input.career ?? {};
+  const m = career.matches ?? {};
+  const col = career.collection ?? {};
+  const ach = career.achievements ?? {};
+  const daily = career.daily ?? {};
+  const recent = Array.isArray(m.recent) ? m.recent : [];
+  const empty = (m.total ?? 0) === 0;
 
   const recentBlock = empty
-    ? `<div class="gh2-history__empty">还没有对局记录。打完一局人机、竞技场或每日挑战后，这里会自动统计胜败与胜率。</div>`
+    ? `<div class="gh2-history__empty">还没有对局记录。打完一局人机、竞技场或每日挑战后，这里会自动统计胜败、胜率与擅长阵营领袖。</div>`
     : `<ul class="gh2-history__recent">${recent.map(renderRecent).join('')}</ul>`;
 
-  return `<section class="gh2-history" aria-label="战绩记录">
+  return `<section class="gh2-history" aria-label="调查员生涯">
     <header class="gh2-history__head">
       <button type="button" class="gh2-back-btn" data-history-exit>← 返回主菜单</button>
       <div class="gh2-history__heading">
-        <h2>战绩记录</h2>
-        <p>跨模式的对局胜败、胜率与最近战况</p>
+        <h2>调查员生涯</h2>
+        <p>汇总对局胜负、擅长阵营领袖、收藏资产与长期成就</p>
       </div>
     </header>
-    ${empty ? '' : renderOverview(summary)}
-    ${renderGroup('按模式', summary.byMode, modeName)}
-    ${renderGroup('按阵营', summary.byFaction, factionName)}
-    ${renderGroup('按领袖', summary.byLeader, leaderName)}
+    ${renderOverview(m)}
+    <div class="gh2-career__duo">
+      ${renderGroup('擅长阵营', m.byFaction, renderFactionRow)}
+      ${renderGroup('擅长领袖', m.byLeader, renderLeaderRow)}
+    </div>
+    <div class="gh2-career__duo">
+      ${renderCollection(col)}
+      ${renderAchievementSummary(ach, daily)}
+    </div>
+    ${renderGroup('按模式', m.byMode, (group) => `
+      <li class="gh2-career__row">
+        <span class="gh2-career__row-name">${escapeHtml(modeName(group.key))}</span>
+        <span class="gh2-career__row-meta">${group.wins} 胜 / ${group.total} 局</span>
+        <span class="gh2-career__row-rate">${escapeHtml(formatWinRate(group.winRate))}</span>
+      </li>`)}
     ${recentBlock}
   </section>`;
 }

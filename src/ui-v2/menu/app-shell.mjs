@@ -567,6 +567,14 @@ export function createAppShell(options = {}) {
     return achievements;
   }
 
+  function navigateFromHistory(action) {
+    destroyHistory();
+    if (action === 'achievements') startAchievements();
+    else if (action === 'shop') startShop();
+    else if (action === 'daily') startDaily();
+    else showScreen('menu');
+  }
+
   function startHistory() {
     destroyController();
     destroyCampaign();
@@ -580,10 +588,13 @@ export function createAppShell(options = {}) {
     history = createHistoryController({
       host: historyHost,
       storage: getStorage(),
+      date: opts.date,
+      now: opts.now,
       onExit: () => {
         destroyHistory();
         showScreen('menu');
       },
+      onNavigate: navigateFromHistory,
     });
     showScreen('history');
     return history;

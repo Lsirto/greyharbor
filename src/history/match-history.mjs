@@ -35,6 +35,17 @@ function cleanString(value) {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+/** Local-date key (yyyy-mm-dd) used to count distinct play days. */
+function dayKey(at) {
+  const date = new Date(at);
+  if (Number.isNaN(date.getTime())) return null;
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
 const VALID_MODES = new Set(Object.keys(MODES));
 
 function normalizeMode(mode) {
@@ -158,6 +169,27 @@ export function summarizeHistory(entries, options = {}) {
     else break;
   }
 
+  // Best win streak: longest consecutive win run across the whole history.
+  let bestStreak = 0;
+  let run = 0;
+  for (const entry of list) {
+    if (entry.winner === 0) {
+      run += 1;
+      if (run > bestStreak) bestStreak = run;
+    } else {
+      run = 0;
+    }
+  }
+
+  // Earliest match timestamp and the number of distinct calendar days played.
+  const firstMatchAt = list.length > 0 ? list[0].at : null;
+  const daySet = new Set();
+  for (const entry of list) {
+    const key = Number.isFinite(entry.at) && entry.at > 0 ? dayKey(entry.at) : null;
+    if (key) daySet.add(key);
+  }
+  const playDays = daySet.size;
+
   const recentLimit = Number.isInteger(options.recentLimit) && options.recentLimit > 0
     ? options.recentLimit
     : 10;
@@ -166,6 +198,9 @@ export function summarizeHistory(entries, options = {}) {
   return Object.freeze({
     ...summary,
     currentStreak,
+    bestStreak,
+    firstMatchAt,
+    playDays,
     byMode: groupBy(list, (e) => e.mode),
     byFaction: groupBy(list, (e) => e.faction),
     byLeader: groupBy(list, (e) => e.leader),
