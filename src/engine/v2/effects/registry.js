@@ -921,6 +921,165 @@ export const EFFECT_REGISTRY = Object.freeze({
       operations: [],
     }),
   ]),
+
+  // ── v1.3 expansion: new society leader + neutral cards ──────────────
+  'madeline-hale': Object.freeze([
+    Object.freeze({
+      id: 'madeline-rally',
+      trigger: TRIGGER.LEADER_ACTIVE,
+      // No target: cleanse every own unit, then buff the whole face-up line.
+      operations: [
+        {
+          op: 'removeCorruption',
+          selector: selector({
+            side: SIDE.OWN,
+            zones: [ZONE.BOARD],
+            types: SLOT_TYPES,
+            face: 'any',
+            count: 'all',
+            required: false,
+          }),
+          amount: 'all',
+        },
+        { op: 'buffThisNight', selector: ownBoardUnitsSelector(), amount: 1 },
+      ],
+    }),
+    Object.freeze({
+      id: 'madeline-night',
+      trigger: TRIGGER.NIGHT_START,
+      // Auto-resolved (NIGHT_START carries no choice): the first corrupted
+      // face-up unit is buffed first, then cleansed, so both ops keep one
+      // target and the buff is not undone by the cleanse.
+      condition: {
+        kind: 'exists',
+        selector: selector({
+          side: SIDE.OWN,
+          zones: [ZONE.BOARD],
+          types: SLOT_TYPES,
+          face: 'up',
+          hasCorruption: true,
+          count: 'all',
+          required: false,
+        }),
+      },
+      operations: [
+        {
+          op: 'buffThisNight',
+          selector: selector({
+            side: SIDE.OWN,
+            zones: [ZONE.BOARD],
+            types: SLOT_TYPES,
+            face: 'up',
+            hasCorruption: true,
+            count: 1,
+            required: false,
+          }),
+          amount: 2,
+        },
+        {
+          op: 'removeCorruption',
+          selector: selector({
+            side: SIDE.OWN,
+            zones: [ZONE.BOARD],
+            types: SLOT_TYPES,
+            face: 'up',
+            hasCorruption: true,
+            count: 1,
+            required: false,
+          }),
+          amount: 'all',
+        },
+      ],
+    }),
+  ]),
+  'cleansing-candle': Object.freeze([
+    Object.freeze({
+      id: 'cleansing-candle',
+      trigger: TRIGGER.ON_PLAY,
+      operations: [
+        {
+          op: 'removeCorruption',
+          selector: selector({
+            side: SIDE.ANY,
+            zones: [ZONE.BOARD],
+            types: SLOT_TYPES,
+            face: 'any',
+            count: 'all',
+            required: false,
+          }),
+          amount: 'all',
+        },
+      ],
+    }),
+  ]),
+  'beacon-missive': Object.freeze([
+    Object.freeze({
+      id: 'beacon-missive',
+      trigger: TRIGGER.ON_PLAY,
+      operations: [{ op: 'draw', count: 2 }],
+    }),
+  ]),
+  'night-watchman': Object.freeze([
+    Object.freeze({
+      id: 'night-watchman',
+      trigger: TRIGGER.ON_PLAY,
+      choices: [
+        {
+          id: 'detain',
+          label: '封印一个战力不超过 3 的敌方明牌单位',
+          labelWithTarget: true,
+          targetKey: 'targetUid',
+          target: selector({
+            side: SIDE.ENEMY,
+            zones: [ZONE.BOARD],
+            types: SLOT_TYPES,
+            face: 'up',
+            sealable: true,
+            maxCurrentPower: 3,
+            count: 1,
+            required: true,
+          }),
+          operations: [
+            { op: 'seal', targetKey: 'targetUid', duration: DURATION.UNTIL_NEXT_NIGHT },
+          ],
+        },
+      ],
+      operations: [],
+    }),
+  ]),
+  'abyss-guide': Object.freeze([
+    Object.freeze({
+      id: 'abyss-guide',
+      trigger: TRIGGER.ON_PLAY,
+      choices: [
+        {
+          id: 'retrieve',
+          label: '从己方深渊取回一个单位',
+          labelWithTarget: true,
+          targetKey: 'targetUid',
+          target: selector({
+            side: SIDE.OWN,
+            zones: [ZONE.ABYSS],
+            types: SLOT_TYPES,
+            count: 1,
+            required: false,
+          }),
+          operations: [
+            { op: 'moveAbyssToHand', secondaryKey: 'targetUid' },
+          ],
+        },
+      ],
+      operations: [],
+    }),
+  ]),
+  'reliquary-ward': Object.freeze([
+    Object.freeze({
+      id: 'reliquary-ward-passive',
+      trigger: TRIGGER.PASSIVE,
+      kind: 'equipment',
+      equipment: Object.freeze({ power: 1, corruptionImmune: true }),
+    }),
+  ]),
 });
 
 /** Cards whose entire text is a keyword rule already implemented below. */
@@ -963,6 +1122,10 @@ export const KEYWORD_SPECS = Object.freeze({
     'bone-ward': Object.freeze({
       power: 1,
       replaceOnDestroy: true,
+    }),
+    'reliquary-ward': Object.freeze({
+      power: 1,
+      corruptionImmune: true,
     }),
   }),
   /**

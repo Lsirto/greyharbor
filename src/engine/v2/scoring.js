@@ -118,6 +118,9 @@ export function hasUnsealedAltar(state, p) {
  */
 export function isCorruptionImmune(state, p, inst, location) {
   if (inst?.corruptionImmune) return true;
+  // Reliquary Ward grants corruption immunity while attached (returns to hand
+  // at night end, so the immunity is naturally limited to this night).
+  if (inst?.equipment && equipmentSpecFor(inst.equipment.cardId)?.corruptionImmune) return true;
   const library = state.players[p].locations?.front;
   if (library && library.cardId === 'old-library' && !library.sealed) return true;
   const card = state.cardIndex?.[inst?.cardId];

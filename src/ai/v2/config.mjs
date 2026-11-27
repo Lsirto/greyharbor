@@ -191,6 +191,7 @@ export const CONFIG = deepFreeze({
       'silver-lantern': 2,
       'brass-badge': 3,
       'bone-ward': 1,
+      'reliquary-ward': 1,
     },
     /** 带理智反噬关键词的卡（规则/卡面公开信息）。 */
     backlash: ['walter-morse', 'zealot', 'deep-one', 'the-sleeper'],

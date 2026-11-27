@@ -72,8 +72,9 @@ test('createEditor：默认学会阵营与首个领袖，空选择', () => {
   assert.equal(createEditor({ faction: 'neutral' }).faction, 'society');
 });
 
-test('poolFor / leadersFor：非领袖池按阵营区分、3 名领袖，无敌人卡', () => {
-  const poolSize = { society: 18, cult: 20 };
+test('poolFor / leadersFor：非领袖池按阵营区分、领袖按阵营计数，无敌人卡', () => {
+  const poolSize = { society: 23, cult: 25 };
+  const leaderSize = { society: 4, cult: 3 };
   for (const faction of ['society', 'cult']) {
     const pool = poolFor(faction);
     const enemy = faction === 'society' ? 'cult' : 'society';
@@ -84,7 +85,7 @@ test('poolFor / leadersFor：非领袖池按阵营区分、3 名领袖，无敌�
       assert.ok(card.faction === faction || card.faction === 'neutral');
     }
     const leaders = leadersFor(faction);
-    assert.equal(leaders.length, 3);
+    assert.equal(leaders.length, leaderSize[faction]);
     for (const leader of leaders) {
       assert.equal(leader.type, 'leader');
       assert.equal(leader.faction, faction);

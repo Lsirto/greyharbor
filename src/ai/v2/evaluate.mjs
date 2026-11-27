@@ -484,6 +484,38 @@ function applyPlayEffect(pos, view, card, action, face) {
       }
       break;
     }
+    case 'cleansing-candle': {
+      // Both sides lose every corruption penalty.
+      for (const side of ['my', 'opp']) {
+        const board = side === 'my' ? pos.myBoard : pos.oppBoard;
+        for (const location of LOCATIONS) {
+          for (const unit of board[location]) {
+            if (unit && unit.corruptionLoss) {
+              const restored = unit.corruptionLoss;
+              unit.corruptionLoss = 0;
+              bump(pos, side, unit, restored);
+            }
+          }
+        }
+      }
+      break;
+    }
+    case 'beacon-missive': {
+      pos.myHandCount += 2;
+      break;
+    }
+    case 'night-watchman': {
+      const found = findBoardUnit(pos.oppBoard, action.choice?.targetUid);
+      if (found) {
+        bump(pos, 'opp', found.unit, -chainBonus(found.unit, pos.oppBoard, pos.myBoard));
+        found.unit.sealed = true;
+      }
+      break;
+    }
+    case 'abyss-guide': {
+      pos.myHandCount += 1;
+      break;
+    }
     default:
       break;
   }
@@ -623,6 +655,18 @@ function simulateUseLeader(view, base, action) {
     next.myBoard[action.location][action.slot] = unit;
     if (madnessFace && CONFIG.power.backlash.includes(summonedId)) {
       next.mySanity -= CONFIG.sanity.backlashLoss;
+    }
+  } else if (leaderId === 'madeline-hale') {
+    // Cleanse every own unit, then buff the whole face-up line by 1.
+    for (const location of LOCATIONS) {
+      for (const unit of next.myBoard[location]) {
+        if (unit && unit.corruptionLoss) {
+          const restored = unit.corruptionLoss;
+          unit.corruptionLoss = 0;
+          bump(next, 'my', unit, restored);
+        }
+        if (unit && !unit.faceDown) bump(next, 'my', unit, 1);
+      }
     }
   }
   refreshPower(next);

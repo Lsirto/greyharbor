@@ -228,7 +228,7 @@ test('event condition gating: supplies requirement', () => {
 });
 
 test('full autopilot reaches a won boss for a fixed winning seed', () => {
-  const run = createRun({ seed: 'soak-society-2', faction: 'society' });
+  const run = createRun({ seed: 'soak-society-1', faction: 'society' });
   drive(run);
   assert.equal(run.status, 'won');
   assert.equal(run.currentNodeId, 'n6-0');

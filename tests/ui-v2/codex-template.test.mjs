@@ -11,15 +11,15 @@ import { selectCodex } from '../../src/codex/codex.mjs';
 import { renderCodex } from '../../src/ui-v2/codex/templates/codex.mjs';
 import { renderMainMenu } from '../../src/ui-v2/menu/templates/main-menu.mjs';
 
-test('默认渲染：标题、搜索框、三组筛选与全部 37 张卡', () => {
+test('默认渲染：标题、搜索框、三组筛选与全部 43 张卡', () => {
   const html = renderCodex(selectCodex());
   assert.match(html, /卡牌图鉴/);
   assert.match(html, /data-codex="search"/);
   assert.equal((html.match(/data-dim="faction"/g) ?? []).length, 4);
   assert.equal((html.match(/data-dim="type"/g) ?? []).length, 8);
   assert.equal((html.match(/data-dim="location"/g) ?? []).length, 4);
-  assert.equal((html.match(/class="gh2-codex-card /g) ?? []).length, 37);
-  assert.match(html, /显示 37 \/ 共 37 张/);
+  assert.equal((html.match(/class="gh2-codex-card /g) ?? []).length, 43);
+  assert.match(html, /显示 43 \/ 共 43 张/);
 });
 
 test('当前筛选维度的按钮带 is-selected 与 aria-pressed', () => {
@@ -43,7 +43,7 @@ test('每张卡：卡面图路径、中文名与标签均输出', () => {
 test('筛选后：只渲染命中卡片并更新计数', () => {
   const html = renderCodex(selectCodex({ faction: 'cult' }));
   assert.equal((html.match(/class="gh2-codex-card /g) ?? []).length, 16);
-  assert.match(html, /显示 16 \/ 共 37 张/);
+  assert.match(html, /显示 16 \/ 共 43 张/);
 });
 
 test('无命中：渲染空状态与清除筛选按钮', () => {

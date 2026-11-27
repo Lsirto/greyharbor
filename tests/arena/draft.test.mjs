@@ -54,7 +54,7 @@ test('createDraft：拒绝非法阵营，缺省种子回退默认值', () => {
 });
 
 test('draftPoolFor：本阵营非领袖 + 中立卡，全部非领袖且不含敌阵营', () => {
-  const poolSize = { society: 18, cult: 20 };
+  const poolSize = { society: 23, cult: 25 };
   for (const faction of ['society', 'cult']) {
     const pool = draftPoolFor(faction);
     const enemy = faction === 'society' ? 'cult' : 'society';

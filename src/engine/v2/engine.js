@@ -1013,8 +1013,20 @@ export class EngineV2 {
       slot: null,
       inst: null,
     }, { trigger: TRIGGER.LEADER_ACTIVE });
+
+    // Target-less leader skill (e.g. Madeline's group cleanse): one action.
+    if (!effectDef.target) {
+      return [{
+        type: 'useLeader',
+        player: p,
+        leaderId,
+        targetUid: null,
+        label: `${this.cardIndex[leaderId]?.nameZh ?? leaderId} 主动技`,
+      }];
+    }
+
     const blockedLocation = this._leaderBlockedLocation();
-    const targets = (effectDef.target ? enumerateCandidates(this, ctx, effectDef.target) : [])
+    const targets = enumerateCandidates(this, ctx, effectDef.target)
       .filter((target) => !blockedLocation || target.location !== blockedLocation);
     return targets.map((target) => ({
       type: 'useLeader',
@@ -1121,7 +1133,31 @@ export class EngineV2 {
     if (effectDef.leader) {
       return this._applySummonComposer(p, effectDef, action);
     }
+    if (!effectDef.target) return this._applyNoTargetLeader(p, effectDef);
     return this._applySimpleLeader(p, effectDef, action);
+  }
+
+  /** Target-less leader skill: run the registry effect without a chosen target. */
+  _applyNoTargetLeader(p, effectDef) {
+    const leaderId = this.state.players[p].leaderId;
+    const ctx = makeContext(this, p, {
+      kind: 'leader', cardId: leaderId, player: p, location: null, slot: null, inst: null,
+    }, { trigger: TRIGGER.LEADER_ACTIVE });
+
+    this._emit({
+      type: 'leaderSkill',
+      player: p,
+      leaderId,
+      targetUid: null,
+      mode: effectDef.id,
+    });
+    runEffect(this, ctx, effectDef);
+    this.state.players[p].leaderUsedThisNight = true;
+
+    if (this._checkSanityZero()) return { ok: true };
+    this._advanceAfterAction(p);
+    this._autoPassStuck();
+    return { ok: true };
   }
 
   /** Generic single-target leader skill (Harold seal, Gregor corruption, ...). */

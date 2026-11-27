@@ -25,11 +25,11 @@ function fillEditor(editor) {
   return editor;
 }
 
-test('空编辑器：2 阵营、3 领袖、18 个加卡按钮，出战禁用且提示未完成', () => {
+test('空编辑器：2 阵营、4 领袖、23 个加卡按钮，出战禁用且提示未完成', () => {
   const html = renderDeckEditor(createEditor());
   assert.equal((html.match(/data-deck="faction"/g) ?? []).length, 2);
-  assert.equal((html.match(/data-deck="leader"/g) ?? []).length, 3);
-  assert.equal((html.match(/data-deck="add"/g) ?? []).length, 18);
+  assert.equal((html.match(/data-deck="leader"/g) ?? []).length, 4);
+  assert.equal((html.match(/data-deck="add"/g) ?? []).length, 23);
   assert.match(html, /data-deck="exit"/);
   assert.match(html, /data-deck="save"/);
   assert.match(html, /牌组尚未完成/);
@@ -54,7 +54,7 @@ test('满 19 张：显示合法状态，出战按钮可用', () => {
   const start = html.match(/data-deck="start"[^>]*/)[0];
   assert.ok(!start.includes('disabled'));
   // 所有加卡按钮在满牌时禁用。
-  assert.equal((html.match(/data-deck="add"[^>]*disabled/g) ?? []).length, 18);
+  assert.equal((html.match(/data-deck="add"[^>]*disabled/g) ?? []).length, 23);
 });
 
 test('切换阵营：领袖与卡池随之更换，选择被清空', () => {

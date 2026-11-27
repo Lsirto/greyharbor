@@ -129,6 +129,7 @@ export const MAD_ART_IDS = Object.freeze(new Set([
   'frank-holt', 'arthur-pendleton', 'hooded-acolyte', 'zealot', 'sea-priestess',
   'gravedigger', 'whisperer', 'deep-one', 'bell-claw', 'finn-calloway',
   'silas-gold', 'the-sleeper', 'thousand-eyes',
+  'night-watchman', 'abyss-guide',
 ]));
 
 /** Resolve the illustration path, switching to the madness art when available. */

@@ -14,25 +14,25 @@ import {
   selectCodex,
 } from '../../src/codex/codex.mjs';
 
-test('默认筛选：返回全部 37 张卡，顺序与 CARD_LIST 一致', () => {
+test('默认筛选：返回全部 43 张卡，顺序与 CARD_LIST 一致', () => {
   const result = filterCards(CARD_LIST, DEFAULT_FILTERS);
-  assert.equal(result.length, 37);
+  assert.equal(result.length, 43);
   assert.deepEqual(result.map((c) => c.id), CARD_LIST.map((c) => c.id));
 });
 
-test('阵营筛选：学会 14、教团 16、中立 7', () => {
-  assert.equal(filterCards(CARD_LIST, { faction: 'society' }).length, 14);
+test('阵营筛选：学会 15、教团 16、中立 12', () => {
+  assert.equal(filterCards(CARD_LIST, { faction: 'society' }).length, 15);
   assert.equal(filterCards(CARD_LIST, { faction: 'cult' }).length, 16);
-  assert.equal(filterCards(CARD_LIST, { faction: 'neutral' }).length, 7);
+  assert.equal(filterCards(CARD_LIST, { faction: 'neutral' }).length, 12);
   assert.ok(filterCards(CARD_LIST, { faction: 'cult' }).every((c) => c.faction === 'cult'));
 });
 
-test('类型筛选：unit 桶含单位与旧神共 18，领袖 6、事件 4', () => {
+test('类型筛选：unit 桶含单位与旧神共 20，领袖 7、事件 6', () => {
   const units = filterCards(CARD_LIST, { type: 'unit' });
-  assert.equal(units.length, 18);
+  assert.equal(units.length, 20);
   assert.ok(units.every((c) => c.type === 'unit' || c.type === 'oldgod'));
-  assert.equal(filterCards(CARD_LIST, { type: 'leader' }).length, 6);
-  assert.equal(filterCards(CARD_LIST, { type: 'event' }).length, 4);
+  assert.equal(filterCards(CARD_LIST, { type: 'leader' }).length, 7);
+  assert.equal(filterCards(CARD_LIST, { type: 'event' }).length, 6);
 });
 
 test('地点筛选：现场 7、档案 8、梦境 5', () => {
@@ -64,7 +64,7 @@ test('未知筛选值：返回空数组且不抛错', () => {
 
 test('selectCodex：返回 total/shown 与过滤后的卡片', () => {
   const view = selectCodex({ faction: 'cult' });
-  assert.equal(view.total, 37);
+  assert.equal(view.total, 43);
   assert.equal(view.shown, 16);
   assert.equal(view.cards.length, 16);
   assert.equal(view.filters.faction, 'cult');
