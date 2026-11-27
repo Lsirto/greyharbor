@@ -31,21 +31,18 @@ test('target selectors cover every target role', () => {
 test('snapshot normalises malformed inputs without throwing', () => {
   const snap = buildTutorialSnapshot(null, null);
   assert.equal(snap.phase, null);
-  assert.equal(snap.selectedUid, null);
+  assert.equal(snap.modalKind, null);
   const snap2 = buildTutorialSnapshot(
     { phase: 'play', night: 1, current: 0 },
-    { selectedUid: 'p0-3', modal: { kind: 'facedown' } },
+    { modal: { kind: 'facedown' } },
   );
   assert.equal(snap2.phase, 'play');
-  assert.equal(snap2.selectedUid, 'p0-3');
   assert.equal(snap2.modalKind, 'facedown');
 });
 
 test('conditionMet evaluates each wait from pure inputs', () => {
   assert.equal(conditionMet(WAITS.PHASE_PLAY, { phase: 'play' }, {}), true);
   assert.equal(conditionMet(WAITS.PHASE_PLAY, { phase: 'mulligan' }, {}), false);
-  assert.equal(conditionMet(WAITS.SELECTED, { selectedUid: 'x' }, {}), true);
-  assert.equal(conditionMet(WAITS.SELECTED, { selectedUid: null }, {}), false);
   assert.equal(conditionMet(WAITS.HUMAN_PLAY, {}, { humanPlayed: true }), true);
   assert.equal(conditionMet(WAITS.HUMAN_PASS, {}, { humanPassed: true }), true);
   assert.equal(conditionMet(WAITS.HUMAN_PASS, {}, { humanPassed: false }), false);

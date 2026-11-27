@@ -177,39 +177,50 @@ function configurableGame() {
   };
 }
 
-function reachSlotStep(doc, game) {
+function reachPlayStep(doc, game) {
   const tutorial = createTutorialController({ document: doc, gameController: game });
   pressBubble(doc, 'next'); // intro -> mulligan-mark
-  pressBubble(doc, 'next'); // mulligan-mark -> mulligan-confirm (auto) -> locations
-  pressBubble(doc, 'next'); // locations -> play-select (auto, selectedUid set) -> play-slot
-  assert.equal(tutorial.getState().stepId, 'play-slot');
+  pressBubble(doc, 'next'); // mulligan-mark -> mulligan-confirm (auto) -> dual-face
+  pressBubble(doc, 'next'); // dual-face -> battleline
+  pressBubble(doc, 'next'); // battleline -> play-unit (auto, waits for a human play)
+  assert.equal(tutorial.getState().stepId, 'play-unit');
   return tutorial;
 }
 
 test("onEvents with the human label '你' advances the play step after paint", () => {
   const { doc } = makeFakeDoc();
-  const tutorial = reachSlotStep(doc, configurableGame());
+  const tutorial = reachPlayStep(doc, configurableGame());
 
   // Mimic the real game-controller sequence: commit fires onEvents then paint.
   tutorial.hooks.onEvents({ who: '你', action: { type: 'playCard' } });
   tutorial.hooks.afterPaint();
-  assert.equal(tutorial.getState().stepId, 'pass');
+  assert.equal(tutorial.getState().stepId, 'play-environment');
   tutorial.destroy();
 });
 
-test("onEvents with the human label '你' advances the pass step; 'AI' never does", () => {
+test("AI never advances a play step; three human plays then a pass move through", () => {
   const { doc } = makeFakeDoc();
-  const game = configurableGame();
-  const tutorial = reachSlotStep(doc, game);
+  const tutorial = reachPlayStep(doc, configurableGame());
 
   // An AI action must not move the human play step.
   tutorial.hooks.onEvents({ who: 'AI', action: { type: 'playCard' } });
   tutorial.hooks.afterPaint();
-  assert.equal(tutorial.getState().stepId, 'play-slot');
+  assert.equal(tutorial.getState().stepId, 'play-unit');
 
-  // Human play moves to the pass step, then a human pass moves on to sanity.
+  // The three hands-on play steps (unit, environment, equipment) each need a
+  // real human play before advancing.
   tutorial.hooks.onEvents({ who: '你', action: { type: 'playCard' } });
   tutorial.hooks.afterPaint();
+  assert.equal(tutorial.getState().stepId, 'play-environment');
+  tutorial.hooks.onEvents({ who: '你', action: { type: 'playCard' } });
+  tutorial.hooks.afterPaint();
+  assert.equal(tutorial.getState().stepId, 'play-equipment');
+  tutorial.hooks.onEvents({ who: '你', action: { type: 'playCard' } });
+  tutorial.hooks.afterPaint();
+  assert.equal(tutorial.getState().stepId, 'leader');
+
+  // Walk through the leader explanation to reach the pass step.
+  pressBubble(doc, 'next'); // leader -> pass (waits for human pass)
   assert.equal(tutorial.getState().stepId, 'pass');
   tutorial.hooks.onEvents({ who: '你', action: { type: 'pass' } });
   tutorial.hooks.afterPaint();

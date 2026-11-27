@@ -11,7 +11,7 @@
 import { createGameController } from '../game-controller.mjs';
 import { asObject } from '../utils.mjs';
 import {
-  TUTORIAL_STEPS, TUTORIAL_SEED, TARGET_SELECTORS,
+  TUTORIAL_STEPS, TUTORIAL_SEED, TUTORIAL_DECK, TARGET_SELECTORS,
   buildTutorialSnapshot, conditionMet,
 } from './tutorial-steps.mjs';
 import { renderCoachBubble, renderTutorialOverlay } from './coach-mark.mjs';
@@ -63,6 +63,13 @@ export function createTutorialController(options = {}) {
         controlsRoot,
         baseSeed: TUTORIAL_SEED,
         matchConfig: { humanFaction: 'society', seedMode: 'fixed', baseSeed: TUTORIAL_SEED },
+        battleOptions: {
+          seed: TUTORIAL_SEED,
+          decks: [TUTORIAL_DECK.human, TUTORIAL_DECK.ai],
+          // 固定种子下首夜会抽到「无风之夜」，禁用环境牌会让本教程的
+          // 环境牌实操无法进行；教程不讲解异常机制，故在教学局关闭它。
+          mechanics: { anomaly: false },
+        },
         aiDelay: opts.aiDelay,
         schedule,
         cancel: cancelScheduled,
