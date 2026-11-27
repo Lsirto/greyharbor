@@ -428,7 +428,7 @@ node --test tests/codex/codex.test.mjs              # 卡牌图鉴纯逻辑
 node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架
 node --test tests/tutorial/*.test.mjs               # 交互式教程
 node --test tests/ai-v2/difficulty.test.mjs         # AI 难度选择
-node --test                                         # 全量递归：551 项 = 549 通过 + 2 跳过，0 失败
+node --test                                         # 全量递归：614 项 = 612 通过 + 2 跳过，0 失败
 ```
 
 `npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。
