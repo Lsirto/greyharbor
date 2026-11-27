@@ -246,6 +246,11 @@ test('注入的阵营与随机牌局选项生效', (t) => {
   assert.equal(selection.seedMode, 'random');
 });
 
+test('点击生成战报图：无留存对局时静默返回、不抛错', (t) => {
+  const { shell } = makeShell(t);
+  assert.doesNotThrow(() => emit(shell.el, 'click', { target: menuActionTarget('share-report') }));
+});
+
 test('destroy 移除监听与外壳且不抛错', (t) => {
   const { shell, root } = makeShell(t, { audio: makeFakeAudio() });
   emit(shell.el, 'click', { target: menuActionTarget('audio-settings') });

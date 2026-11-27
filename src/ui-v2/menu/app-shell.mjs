@@ -39,7 +39,9 @@ import {
   unequipSkin,
 } from '../../economy/economy.mjs';
 import { writeDailyResult } from '../../daily/daily.mjs';
-import { recordMatch } from '../../history/match-history.mjs';
+import { recordMatch, readHistorySummary } from '../../history/match-history.mjs';
+import { buildReport } from '../../report/report.mjs';
+import { createReportCanvas, downloadReport } from '../report/report-canvas.mjs';
 import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
 import {
   FACTION_CARDS,
@@ -85,6 +87,7 @@ export function createAppShell(options = {}) {
   let daily = null;
   let achievements = null;
   let history = null;
+  let lastReport = null;
   let shop = null;
   let deck = null;
   let codex = null;
@@ -269,16 +272,36 @@ export function createAppShell(options = {}) {
 
   function hideResult() {
     if (!resultLayer) return;
+    lastReport = null;
     resultLayer.hidden = true;
     resultLayer.innerHTML = '';
     if (gameScreen) gameScreen.classList.remove('is-over');
   }
 
-  function showResult(info) {
+  function showResult(info, mode) {
     if (!resultLayer) return;
+    lastReport = { info, mode: mode ?? entryMode ?? 'skirmish' };
     resultLayer.innerHTML = renderResultPanel(info);
     resultLayer.hidden = false;
     if (gameScreen) gameScreen.classList.add('is-over');
+  }
+
+  function generateReport() {
+    if (!lastReport) return;
+    const persistence = getStorage();
+    const summary = readHistorySummary(persistence);
+    const vm = buildReport(lastReport.info, {
+      mode: lastReport.mode,
+      now: opts.now ?? Date.now(),
+      summary,
+    });
+    try {
+      const canvas = createReportCanvas(vm);
+      const stamp = typeof opts.now === 'number' && Number.isFinite(opts.now) ? opts.now : Date.now();
+      downloadReport(canvas, `灰港三夜战报-${stamp}`);
+    } catch (error) {
+      // 出图失败不应阻断再来一局 / 返回菜单。
+    }
   }
 
   function destroyController() {
@@ -321,7 +344,7 @@ export function createAppShell(options = {}) {
       onGameOver: (info) => {
         recordMatch(persistence, info, { mode: 'skirmish', now: opts.now ?? Date.now() });
         grantMatchWinReward(info, persistence);
-        showResult(info);
+        showResult(info, 'skirmish');
       },
     });
     if (typeof window !== 'undefined') window.__greyharborGame = controller;
@@ -428,7 +451,7 @@ export function createAppShell(options = {}) {
         });
         if (typeof handleGameOver === 'function') handleGameOver(info);
         grantMatchWinReward(info, persistence);
-        showResult(info);
+        showResult(info, mode);
       },
     });
     if (typeof window !== 'undefined') window.__greyharborGame = controller;
@@ -926,6 +949,8 @@ export function createAppShell(options = {}) {
     } else if (action === 'rematch') {
       hideResult();
       if (controller) controller.restart();
+    } else if (action === 'share-report') {
+      generateReport();
     } else if (action === 'menu') {
       destroyController();
       showScreen('menu');

@@ -16,7 +16,7 @@ export const RESULT_REASON_ZH = Object.freeze({
 export const OBJECTIVE_WIN_ZH = Object.freeze({ clue: '真相大白', doom: '旧神降临' });
 
 /** Human-readable reason; objective wins name the faction-specific ending. */
-function reasonText(result) {
+export function reasonText(result) {
   const base = asObject(result);
   if (base.reason === 'objective') {
     return OBJECTIVE_WIN_ZH[base.objectiveType] ?? RESULT_REASON_ZH.objective;
@@ -63,6 +63,7 @@ export function renderResultPanel(info = {}) {
       <button type="button" class="gh2-menu-btn gh2-menu-btn--primary" data-menu-action="rematch">
         <b>再来一局</b><small>${random ? '开一局全新牌局' : '再来一局相同牌局'}</small>
       </button>
+      <button type="button" class="gh2-menu-btn" data-menu-action="share-report"><b>生成战报图</b><small>把本局胜负与数据存成图片</small></button>
       <button type="button" class="gh2-menu-btn" data-menu-action="menu"><b>返回主菜单</b><small>重新选择阵营与模式</small></button>
     </div>
   </div>`;
