@@ -1,5 +1,13 @@
 export { createGame, EngineV2 } from './engine.js';
-export { CARDS, CARD_LIST, PRESET_DECKS, DEFAULT_DECK_ORDER, makeCardIndex } from './cards.js';
+export {
+  CARDS,
+  CARD_LIST,
+  PRESET_DECKS,
+  PRESET_GROUPS,
+  DEFAULT_DECK_ORDER,
+  findPresetById,
+  makeCardIndex,
+} from './cards.js';
 export {
   LOCATIONS,
   LOCATION_CAPACITY,

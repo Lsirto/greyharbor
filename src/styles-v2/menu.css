@@ -309,6 +309,49 @@
 .gh2-difficulty__option.is-selected b { color: var(--gh2-lamp); }
 .gh2-difficulty__option.is-selected small { color: var(--gh2-parchment-dim); }
 
+/* ── recommended preset picker ─────────────────────────────── */
+.gh2-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: var(--gh2-radius);
+  background: rgba(13, 24, 26, 0.6);
+}
+.gh2-preset__head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.gh2-preset__mark { color: var(--gh2-lamp); font-size: 12px; letter-spacing: 0.18em; }
+.gh2-preset__hint { color: var(--gh2-silver-faint); font-size: 12px; }
+.gh2-preset__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.gh2-preset__option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  color: var(--gh2-silver-dim);
+  text-align: left;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: var(--gh2-ink-1);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.gh2-preset__option b { color: var(--gh2-silver); font-size: 15px; }
+.gh2-preset__option small { color: var(--gh2-silver-faint); font-size: 11px; line-height: 1.5; }
+.gh2-preset__option:hover { transform: translateY(-2px); border-color: var(--gh2-lamp-dim); }
+.gh2-preset__option.is-selected {
+  border-color: var(--gh2-lamp);
+  color: var(--gh2-lamp);
+  background: rgba(232, 201, 138, 0.16);
+  box-shadow: var(--gh2-glow-lamp), inset 0 0 0 1px rgba(232, 201, 138, 0.25);
+}
+.gh2-preset__option.is-selected b { color: var(--gh2-lamp); }
+.gh2-preset__option.is-selected small { color: var(--gh2-parchment-dim); }
+
 /* ── character select ──────────────────────────────────────── */
 
 .gh2-character-select {
@@ -1457,6 +1500,38 @@
   background: rgba(232, 201, 138, 0.12);
   color: var(--gh2-lamp);
 }
+
+.gh2-deck-preset {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: var(--gh2-radius);
+  background: rgba(13, 24, 26, 0.6);
+}
+.gh2-deck-preset__head { color: var(--gh2-lamp); font-size: 12px; letter-spacing: 0.18em; }
+.gh2-deck-preset__options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.gh2-deck-preset__btn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--gh2-line);
+  border-radius: var(--gh2-radius);
+  background: var(--gh2-ink-1);
+  color: var(--gh2-silver-dim);
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease, transform 0.12s ease;
+}
+.gh2-deck-preset__btn b { color: var(--gh2-silver); font-size: 14px; }
+.gh2-deck-preset__btn small { color: var(--gh2-silver-faint); font-size: 11px; line-height: 1.5; }
+.gh2-deck-preset__btn:hover { transform: translateY(-2px); border-color: var(--gh2-lamp-dim); }
 
 .gh2-deck-body {
   display: grid;

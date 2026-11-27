@@ -8,7 +8,7 @@
  * duplicate ability wording.
  */
 
-import { CARDS } from '../../../engine/v2/cards.js';
+import { CARDS, PRESET_GROUPS } from '../../../engine/v2/cards.js';
 import { escapeHtml } from '../../utils.mjs';
 import { DEFAULT_DIFFICULTY, DIFFICULTY_LIST, isDifficulty } from '../../../ai/v2/difficulty.mjs';
 import { FACTION_CARDS } from './faction-select.mjs';
@@ -240,6 +240,29 @@ export function renderDifficultySelect(selected = DEFAULT_DIFFICULTY) {
   </div>`;
 }
 
+/** Pre-battle recommended preset selector; hidden in arena draft mode. */
+export function renderPresetSelect(faction, selectedId = null) {
+  const group = PRESET_GROUPS[faction] ?? PRESET_GROUPS.society;
+  const activeId = group.some((preset) => preset.id === selectedId) ? selectedId : group[0].id;
+  const options = group.map((preset) => {
+    const active = preset.id === activeId;
+    return `<button type="button"
+        class="gh2-preset__option${active ? ' is-selected' : ''}"
+        data-deck-preset="${escapeHtml(preset.id)}"
+        aria-pressed="${active ? 'true' : 'false'}">
+      <b>${escapeHtml(preset.nameZh)}</b>
+      <small>${escapeHtml(preset.descZh)}</small>
+    </button>`;
+  }).join('');
+  return `<div class="gh2-preset" role="group" aria-label="推荐牌组">
+    <div class="gh2-preset__head">
+      <span class="gh2-preset__mark">推荐牌组</span>
+      <span class="gh2-preset__hint">选一套直接出战，也可以去卡组编辑器自己组</span>
+    </div>
+    <div class="gh2-preset__options">${options}</div>
+  </div>`;
+}
+
 /**
  * @param {{faction?: string, selected?: string, arena?: boolean, difficulty?:
  *          string, portraits?: Object, skinState?: Object, previewId?: string|null}} options
@@ -269,6 +292,7 @@ export function renderCharacterSelect(options = {}) {
     </header>
     <div class="gh2-character-select__grid">${cards}</div>
     <div class="gh2-skin-switcher-host" data-role="skin-switcher-host">${switcher}</div>
+    ${arena ? '' : renderPresetSelect(faction, input.selectedDeckId ?? null)}
     ${renderDifficultySelect(input.difficulty)}
     <footer class="gh2-character-select__foot">
       <button type="button" class="gh2-menu-btn gh2-menu-btn--primary gh2-character-start" data-menu-action="start-character-match">

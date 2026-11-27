@@ -165,7 +165,25 @@
   box-shadow: var(--gh2-glow-cult);
   border-color: var(--gh2-cult-glow);
 }
+.gh2-sanity__cell.is-danger-zone { border-color: rgba(143, 224, 205, 0.5); }
 .gh2-sanity__value { color: var(--gh2-silver-dim); font-variant-numeric: tabular-nums; }
+.gh2-sanity__state {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.gh2-sanity__state--sane {
+  color: var(--gh2-lamp);
+  border: 1px solid rgba(232, 201, 138, 0.5);
+  background: rgba(232, 201, 138, 0.12);
+}
+.gh2-sanity__state--mad {
+  color: var(--gh2-cult-glow);
+  border: 1px solid rgba(143, 224, 205, 0.55);
+  background: rgba(143, 224, 205, 0.14);
+}
 .gh2-sanity--compact { gap: 4px; font-size: 10px; }
 .gh2-sanity--compact .gh2-sanity__cell { width: 8px; height: 11px; }
 

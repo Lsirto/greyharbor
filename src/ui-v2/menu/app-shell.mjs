@@ -21,6 +21,7 @@ import { createShopController } from '../shop/shop-controller.mjs';
 import { createDeckController } from '../deck/deck-controller.mjs';
 import { createCodexController } from '../codex/codex-controller.mjs';
 import { buildDeckBattleOptions } from '../../deck/battle.mjs';
+import { PRESET_DECKS } from '../../engine/v2/index.js';
 import { createStorage } from '../storage.mjs';
 import { readDifficulty, writeDifficulty } from '../../ai/v2/difficulty.mjs';
 import {
@@ -66,6 +67,8 @@ export function createAppShell(options = {}) {
   let seedMode = opts.seedMode === 'random' ? 'random' : 'fixed';
   // The chosen character (leader id); defaults to the faction's first character.
   let selectedCharacter = characterIdsFor(selectedFaction)[0] ?? null;
+  // The chosen recommended preset deck id; defaults to the faction's default preset.
+  let selectedDeckId = PRESET_DECKS[selectedFaction]?.id ?? null;
   // Transient skin-switcher preview (skin id, or 'default' for the base look).
   let previewSkinId = undefined;
   // Chosen AI difficulty; lazily loaded from storage on first use.
@@ -213,6 +216,7 @@ export function createAppShell(options = {}) {
     characterHost.innerHTML = renderCharacterSelect({
       faction: selectedFaction,
       selected: selectedCharacter,
+      selectedDeckId,
       arena: entryMode === 'arena',
       difficulty: getAiDifficulty(),
       portraits,
@@ -300,6 +304,7 @@ export function createAppShell(options = {}) {
         humanFaction: selectedFaction,
         seedMode,
         humanLeader: selectedCharacter,
+        humanDeckId: selectedDeckId,
       },
       hooks: fx.hooks,
       onGameOver: (info) => {
@@ -656,6 +661,7 @@ export function createAppShell(options = {}) {
       const faction = factionButton.dataset.faction;
       if (!FACTION_CARDS[faction]) return;
       selectedFaction = faction;
+      selectedDeckId = PRESET_DECKS[faction]?.id ?? null;
       for (const card of factionHost.querySelectorAll('[data-faction]')) {
         const active = card.dataset.faction === faction;
         card.classList.toggle('is-selected', active);
@@ -707,6 +713,18 @@ export function createAppShell(options = {}) {
     if (skinPreviewEl) {
       previewSkinId = skinPreviewEl.dataset.skinPreview;
       refreshSkinPanel();
+      return;
+    }
+    // ── Recommended preset picker (character-select) ──
+    const presetEl = target.closest('[data-deck-preset]');
+    if (presetEl) {
+      const deckId = presetEl.dataset.deckPreset;
+      selectedDeckId = deckId;
+      for (const option of characterHost.querySelectorAll('[data-deck-preset]')) {
+        const active = option.dataset.deckPreset === deckId;
+        option.classList.toggle('is-selected', active);
+        option.setAttribute('aria-pressed', active ? 'true' : 'false');
+      }
       return;
     }
     const characterButton = target.closest('[data-character]');

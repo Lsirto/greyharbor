@@ -53,18 +53,19 @@ test('createDraft：拒绝非法阵营，缺省种子回退默认值', () => {
   assert.equal(isComplete(draft), false);
 });
 
-test('draftPoolFor：本阵营 11 张 + 中立 6 张 = 17 张，全部非领袖且不含敌阵营', () => {
+test('draftPoolFor：本阵营非领袖 + 中立卡，全部非领袖且不含敌阵营', () => {
+  const poolSize = { society: 18, cult: 20 };
   for (const faction of ['society', 'cult']) {
     const pool = draftPoolFor(faction);
     const enemy = faction === 'society' ? 'cult' : 'society';
-    assert.equal(pool.length, 17);
+    assert.equal(pool.length, poolSize[faction]);
     for (const id of pool) {
       const card = CARDS[id];
       assert.notEqual(card.type, 'leader');
       assert.ok(card.faction === faction || card.faction === 'neutral');
       assert.notEqual(card.faction, enemy);
     }
-    assert.equal(new Set(pool).size, 17, '候选池无重复');
+    assert.equal(new Set(pool).size, poolSize[faction], '候选池无重复');
   }
 });
 

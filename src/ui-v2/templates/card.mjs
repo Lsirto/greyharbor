@@ -113,6 +113,7 @@ export function renderCard(card, options = {}) {
     data-face="${escapeHtml(view.face)}"
     data-power="${escapeHtml(displayPower(view))}"${slotAttr}>
     <div class="gh2-card__surface">
+      <span class="gh2-card__face-tag gh2-card__face-tag--${view.face}">${view.face === 'madness' ? '疯狂' : '理性'}</span>
       <div class="gh2-card__header">
         ${renderPower(view)}
         ${auraBadge}

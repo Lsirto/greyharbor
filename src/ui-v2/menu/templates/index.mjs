@@ -19,4 +19,5 @@ export {
   renderCharacterSelect,
   renderSkinSwitcher,
   renderDifficultySelect,
+  renderPresetSelect,
 } from './character-select.mjs';

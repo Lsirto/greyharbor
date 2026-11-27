@@ -23,7 +23,7 @@
  * `crypto.randomUUID` in the browser.
  */
 
-import { createGame, CARDS, PRESET_DECKS } from '../engine/v2/index.js';
+import { createGame, CARDS, PRESET_DECKS, findPresetById } from '../engine/v2/index.js';
 import { chooseAction } from '../ai/v2/ai.mjs';
 import { DEFAULT_DIFFICULTY, isDifficulty } from '../ai/v2/difficulty.mjs';
 import { createBoardRenderer } from './board-render.mjs';
@@ -31,6 +31,7 @@ import { publicActionLabel } from './demo-controller.mjs';
 import { findMatchingActions, matchAction } from './action-matcher.mjs';
 import { createSelection } from './selection.mjs';
 import { createLeaderComposer, LEADER_STEPS, LEADER_STEP_LABELS } from './leader-composer.mjs';
+import { renderNightSummary } from './templates/night-summary.mjs';
 import { asArray, asObject, escapeHtml, safeInt } from './utils.mjs';
 
 export const DEFAULT_PLAY_SEED = 'greyharbor-seed-1';
@@ -49,6 +50,7 @@ const FACTION_NAMES_ZH = Object.freeze({ society: '学会', cult: '教团' });
 export const DEFAULT_MATCH_CONFIG = Object.freeze({
   humanFaction: 'society',
   humanLeader: 'harold-ashby',
+  humanDeckId: 'society',
   seedMode: 'fixed',
   baseSeed: DEFAULT_PLAY_SEED,
 });
@@ -72,6 +74,15 @@ function resolveLeader(faction, requested) {
   return requested;
 }
 
+/** Resolve a requested preset deck id for the human faction, falling back to the default preset. */
+function resolveDeckId(faction, requested) {
+  const fallback = PRESET_DECKS[faction]?.id ?? null;
+  if (typeof requested !== 'string' || requested.length === 0) return fallback;
+  const preset = findPresetById(requested);
+  if (!preset || preset.faction !== faction) return fallback;
+  return preset.id;
+}
+
 export function normalizeMatchConfig(raw = {}, legacySeed) {
   const input = asObject(raw);
   const humanFaction = input.humanFaction === 'cult' ? 'cult' : 'society';
@@ -81,7 +92,8 @@ export function normalizeMatchConfig(raw = {}, legacySeed) {
     ? candidate
     : DEFAULT_PLAY_SEED;
   const humanLeader = resolveLeader(humanFaction, input.humanLeader);
-  return Object.freeze({ humanFaction, humanLeader, seedMode, baseSeed });
+  const humanDeckId = resolveDeckId(humanFaction, input.humanDeckId);
+  return Object.freeze({ humanFaction, humanLeader, humanDeckId, seedMode, baseSeed });
 }
 
 function isNodeRuntime() {
@@ -189,6 +201,8 @@ export function createGameController(options = {}) {
   let leaderDisabled = false;
   let leaderReason = '';
   let modal = null;
+  // A nightEnd payload awaiting the post-refresh modal, unless the match ends at once.
+  let pendingNightSummary = null;
   let aiThinking = false;
   let inputLocked = false;
   let message = '准备开始';
@@ -288,7 +302,9 @@ export function createGameController(options = {}) {
     // the chosen character while the 19-card preset list stays unchanged. The
     // AI seat keeps its faction's preset leader.
     const decks = factionOrder.map((faction, seat) => {
-      const preset = PRESET_DECKS[faction];
+      const preset = seat === HUMAN
+        ? (findPresetById(matchConfig.humanDeckId) ?? PRESET_DECKS[faction])
+        : PRESET_DECKS[faction];
       const leader = seat === HUMAN ? matchConfig.humanLeader : preset.leader;
       return { faction, leader, cards: preset.cards.slice() };
     });
@@ -498,6 +514,8 @@ export function createGameController(options = {}) {
             <div class="gh2-modal__options">${options}</div>
             <div class="gh2-modal__foot">${skip}<button type="button" class="gh2-modal__cancel" data-gh2="modal-cancel">取消编排</button></div>
           </div>`;
+        } else if (modal.kind === 'night-summary') {
+          modalEl.innerHTML = renderNightSummary(modal.nightData);
         } else {
           const restart = modal.kind === 'result'
             ? '<button type="button" class="gh2-modal__restart" data-gh2="restart">再来一局</button>'
@@ -824,6 +842,7 @@ export function createGameController(options = {}) {
         const winner = data.winner === HUMAN ? '你' : data.winner === AI ? 'AI' : '平夜';
         eventLog.push(`第 ${safeInt(data.night, 0)} 夜结算 · ${winner} · ${safeInt(data.scores?.[HUMAN]?.total, 0)}:${safeInt(data.scores?.[AI]?.total, 0)}`);
         say(`第 ${safeInt(data.night, 0)} 夜结算：${winner}`, 'good');
+        pendingNightSummary = data;
       } else if (data.type === 'gameOver') {
         eventLog.push(`对局结束 · ${reasonText({ result: data })}`);
       } else {
@@ -1069,6 +1088,13 @@ export function createGameController(options = {}) {
     if (phase !== 'play' || view.current !== HUMAN) {
       leaderDisabled = false;
       leaderReason = '';
+    }
+    if (phase === 'gameOver') {
+      // The result modal supersedes any pending night breakdown.
+      pendingNightSummary = null;
+    } else if (pendingNightSummary && !modal) {
+      modal = { kind: 'night-summary', nightData: pendingNightSummary };
+      pendingNightSummary = null;
     }
     enemyIntent = computeEnemyIntent();
     paint();
@@ -1331,6 +1357,8 @@ export function createGameController(options = {}) {
   }
 
   function cancel() {
+    // The info-only night modal can always be dismissed, even during an AI turn.
+    if (modal?.kind === 'night-summary') return closeModal();
     if (inputLocked && view?.phase !== 'mulligan') {
       say('AI 思考中，无法取消', 'warn');
       return false;
@@ -1374,6 +1402,7 @@ export function createGameController(options = {}) {
     clearInteraction();
     composer.cancel();
     eventLog = [];
+    pendingNightSummary = null;
     lastAction = '等待你的第一个动作';
     message = '新对局已开始';
     inputLocked = false;
@@ -1453,6 +1482,7 @@ export function createGameController(options = {}) {
         break;
       }
       case 'composer-skip': composerSkip(); break;
+      case 'night-continue': closeModal(); break;
       case 'modal-cancel':
         if (modal?.kind === 'leader-compose') composerCancel();
         else closeModal();

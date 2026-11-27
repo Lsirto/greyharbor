@@ -14,6 +14,7 @@ import {
   copiesOf,
   createEditor,
   leadersFor,
+  loadPreset,
   poolFor,
   removeCard,
   setFaction,
@@ -23,6 +24,7 @@ import {
   typeBreakdown,
   validateEditor,
 } from '../../src/deck/editor.mjs';
+import { PRESET_GROUPS, findPresetById } from '../../src/engine/v2/cards.js';
 import {
   CUSTOM_DECKS_KEY,
   hasSavedDeck,
@@ -70,11 +72,12 @@ test('createEditor：默认学会阵营与首个领袖，空选择', () => {
   assert.equal(createEditor({ faction: 'neutral' }).faction, 'society');
 });
 
-test('poolFor / leadersFor：每阵营 17 张非领袖池、3 名领袖，无敌人卡', () => {
+test('poolFor / leadersFor：非领袖池按阵营区分、3 名领袖，无敌人卡', () => {
+  const poolSize = { society: 18, cult: 20 };
   for (const faction of ['society', 'cult']) {
     const pool = poolFor(faction);
     const enemy = faction === 'society' ? 'cult' : 'society';
-    assert.equal(pool.length, 17);
+    assert.equal(pool.length, poolSize[faction]);
     for (const card of pool) {
       assert.notEqual(card.type, 'leader');
       assert.notEqual(card.faction, enemy);
@@ -223,4 +226,43 @@ test('headless 验收：自定义牌组可直接 createGame 并由 AI 打完一�
     }
     assert.ok([0, 1].includes(game.result().winner));
   }
+});
+
+test('PRESET_GROUPS：每阵营恰好 2 套，均含中文名/说明且 19 张合法', () => {
+  for (const faction of ['society', 'cult']) {
+    const group = PRESET_GROUPS[faction];
+    assert.equal(group.length, 2);
+    for (const preset of group) {
+      assert.equal(preset.faction, faction);
+      assert.equal(preset.cards.length, 19);
+      assert.ok(preset.nameZh.length > 0);
+      assert.ok(preset.descZh.length > 0);
+      const editor = createEditor({ faction });
+      assert.equal(loadPreset(editor, preset).ok, true);
+      assert.equal(validateEditor(editor).ok, true);
+      assert.equal(totalCount(editor), 19);
+    }
+    // The two styles must actually differ in their card lists.
+    assert.notDeepEqual(group[0].cards, group[1].cards);
+  }
+});
+
+test('findPresetById：命中返回套，异类型/未知 id 返回 null', () => {
+  assert.equal(findPresetById('society-aggro').nameZh, '强攻阵线');
+  assert.equal(findPresetById('cult-madness').nameZh, '狂乱深渊');
+  assert.equal(findPresetById('no-such-preset'), null);
+  assert.equal(findPresetById(42), null);
+});
+
+test('loadPreset：替换非领袖卡但保留当前领袖，异阵营套被拒绝', () => {
+  const editor = createEditor({ faction: 'society' });
+  setLeader(editor, 'enid-halloway');
+  const preset = findPresetById('society-aggro');
+  assert.equal(loadPreset(editor, preset).ok, true);
+  assert.equal(editor.leader, 'enid-halloway');
+  assert.equal(copiesOf(editor, 'brass-badge'), 1);
+
+  const cultPreset = findPresetById('cult-madness');
+  assert.equal(loadPreset(editor, cultPreset).ok, false);
+  assert.equal(loadPreset(editor, { cards: null }).ok, false);
 });

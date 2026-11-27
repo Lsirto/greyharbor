@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { countCards } from '../../src/engine/v2/index.js';
+import { countCards, findPresetById, PRESET_DECKS } from '../../src/engine/v2/index.js';
 import {
   DEFAULT_MATCH_CONFIG,
   DEFAULT_PLAY_SEED,
@@ -40,6 +40,7 @@ test('normalizeMatchConfig：缺省值 / 非法值回退 / 旧 seed 选项兼容
     seedMode: 'fixed',
     baseSeed: DEFAULT_PLAY_SEED,
     humanLeader: 'harold-ashby',
+    humanDeckId: 'society',
   });
   assert.deepEqual(DEFAULT_MATCH_CONFIG, normalizeMatchConfig());
   assert.deepEqual(normalizeMatchConfig({ humanFaction: 'CULT', seedMode: 'RANDOM' }), {
@@ -47,12 +48,14 @@ test('normalizeMatchConfig：缺省值 / 非法值回退 / 旧 seed 选项兼容
     seedMode: 'fixed',
     baseSeed: DEFAULT_PLAY_SEED,
     humanLeader: 'harold-ashby',
+    humanDeckId: 'society',
   });
   assert.deepEqual(normalizeMatchConfig({ humanFaction: 'cult', seedMode: 'random', baseSeed: '' }), {
     humanFaction: 'cult',
     seedMode: 'random',
     baseSeed: DEFAULT_PLAY_SEED,
     humanLeader: 'elias-thorne',
+    humanDeckId: 'cult',
   });
   assert.equal(normalizeMatchConfig({}, 'legacy-seed').baseSeed, 'legacy-seed');
   assert.equal(normalizeMatchConfig({ baseSeed: 'config-seed' }, 'legacy-seed').baseSeed, 'config-seed');
@@ -66,7 +69,7 @@ test('人类选学会：decks 顺序 society/cult，名称与领袖席位正确'
   assert.deepEqual(state.players.map((player) => player.name), ['你 · 学会', 'AI · 教团']);
   assert.deepEqual(controller.getMatchConfig(), {
     humanFaction: 'society', seedMode: 'fixed', baseSeed: DEFAULT_PLAY_SEED,
-    humanLeader: 'harold-ashby',
+    humanLeader: 'harold-ashby', humanDeckId: 'society',
   });
   controller.destroy();
 });
@@ -96,6 +99,28 @@ test('humanLeader：覆盖人类座领袖，AI 座保留预设领袖', () => {
   const c = cult.controller.getEngine().state;
   assert.deepEqual(c.players.map((player) => player.leaderId), ['gregor-pestilence', 'harold-ashby']);
   cult.controller.destroy();
+});
+
+test('humanDeckId：选强攻套时人类牌组换成该套，AI 仍用默认套', () => {
+  const ctx = makeController({
+    matchConfig: { humanFaction: 'society', humanDeckId: 'society-aggro' },
+  });
+  const sorted = (list) => list.slice().sort();
+  const allCardIds = (player) =>
+    [...player.deck, ...player.hand].map((inst) => inst.cardId);
+  const players = ctx.controller.getEngine().state.players;
+  assert.deepEqual(sorted(allCardIds(players[0])), sorted(findPresetById('society-aggro').cards));
+  assert.deepEqual(sorted(allCardIds(players[1])), sorted(PRESET_DECKS.cult.cards));
+  assert.equal(ctx.controller.getMatchConfig().humanDeckId, 'society-aggro');
+  ctx.controller.destroy();
+});
+
+test('humanDeckId：非法/异阵营套回退阵营默认', () => {
+  const ctx = makeController({
+    matchConfig: { humanFaction: 'society', humanDeckId: 'cult-madness' },
+  });
+  assert.equal(ctx.controller.getMatchConfig().humanDeckId, 'society');
+  ctx.controller.destroy();
 });
 
 test('humanLeader：非法领袖（异阵营 / 非领袖卡 / 垃圾值）回退阵营预设', () => {
@@ -220,6 +245,8 @@ function chooseModalFor(controller, action) {
 function afterClick(controller, action) {
   const modal = controller.getUiState().modal;
   if (!modal || modal.kind === 'result') return true;
+  // The info-only night breakdown has no options; dismiss it and continue.
+  if (modal.kind === 'night-summary') return controller.cancel();
   return chooseModalFor(controller, action);
 }
 
@@ -320,6 +347,9 @@ test('20 局脚本化对战：学会 / 教团各 5 局，无卡死崩溃且守�
       assert.equal(driveSoakAction(ctx.controller, action), true, `game ${game}: action rejected: ${action.type}`);
       ctx.toasts.length = 0;
       drain(ctx.queue);
+      if (ctx.controller.getUiState().modal?.kind === 'night-summary') {
+        assert.equal(ctx.controller.cancel(), true);
+      }
       steps += 1;
       stats.actions += 1;
       for (const player of [0, 1]) {

@@ -68,6 +68,30 @@
   box-shadow: var(--gh2-shadow), var(--gh2-glow-cult), inset 0 0 16px rgba(0, 0, 0, 0.5);
 }
 
+.gh2-card__face-tag {
+  position: absolute;
+  top: 0.28em;
+  right: 0.28em;
+  z-index: 2;
+  padding: 0.06em 0.45em;
+  border-radius: 999px;
+  font-size: 0.6em;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+.gh2-card__face-tag--reason {
+  color: #6d5630;
+  background: rgba(238, 227, 201, 0.92);
+  border: 1px solid rgba(109, 86, 48, 0.5);
+}
+.gh2-card__face-tag--madness {
+  color: #d6f5ea;
+  background: rgba(45, 139, 123, 0.92);
+  border: 1px solid rgba(146, 227, 209, 0.6);
+  box-shadow: 0 0 8px rgba(146, 227, 209, 0.5);
+}
+
 .gh2-card__header {
   display: flex;
   justify-content: space-between;

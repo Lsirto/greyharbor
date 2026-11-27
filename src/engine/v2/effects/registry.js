@@ -867,6 +867,60 @@ export const EFFECT_REGISTRY = Object.freeze({
       operations: [],
     }),
   ]),
+  /**
+   * Brass Battle Badge is an aggressive equipment: +3 with no destroy/seal
+   * replacement. The +3 is read from KEYWORD_SPECS.equipment by scoring.js.
+   */
+  'brass-badge': Object.freeze([
+    Object.freeze({
+      id: 'brass-badge-passive',
+      trigger: TRIGGER.PASSIVE,
+      kind: 'equipment',
+      equipment: { power: 3 },
+    }),
+  ]),
+  /**
+   * Bone Ward gives the cult a cheap protective equipment: +1 and it absorbs
+   * a destroy effect. Numbers live in KEYWORD_SPECS.equipment.
+   */
+  'bone-ward': Object.freeze([
+    Object.freeze({
+      id: 'bone-ward-passive',
+      trigger: TRIGGER.PASSIVE,
+      kind: 'equipment',
+      equipment: { power: 1, replaceOnDestroy: true },
+    }),
+  ]),
+  /**
+   * Drowning Curse is the cult's first event: a single enemy face-up unit
+   * loses 3 power for this night through the generic buff primitive.
+   */
+  'drowning-curse': Object.freeze([
+    Object.freeze({
+      id: 'drowning-curse',
+      trigger: TRIGGER.ON_PLAY,
+      choices: [
+        {
+          id: 'curse',
+          label: '指定一个敌方正面单位：本夜战力-3',
+          labelWithTarget: true,
+          targetKey: 'targetUid',
+          target: selector({
+            side: SIDE.ENEMY,
+            zones: [ZONE.BOARD],
+            types: SLOT_TYPES,
+            face: 'up',
+            count: 1,
+            required: true,
+          }),
+          operations: [
+            { op: 'buffThisNight', targetKey: 'targetUid', amount: -3 },
+          ],
+        },
+      ],
+      operations: [],
+    }),
+  ]),
 });
 
 /** Cards whose entire text is a keyword rule already implemented below. */
@@ -901,6 +955,13 @@ export const KEYWORD_SPECS = Object.freeze({
     'silver-lantern': Object.freeze({
       power: 2,
       replaceOnSeal: true,
+      replaceOnDestroy: true,
+    }),
+    'brass-badge': Object.freeze({
+      power: 3,
+    }),
+    'bone-ward': Object.freeze({
+      power: 1,
       replaceOnDestroy: true,
     }),
   }),

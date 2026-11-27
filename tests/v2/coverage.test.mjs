@@ -32,12 +32,12 @@ const NULL_WHITELIST = Object.freeze({
   'the-sleeper': '引擎原语已完整覆盖：封印免疫由 KEYWORD_SPECS.sealImmune 实现，理智代价前置为 sanityCost 3，跨夜扣费随每夜清空移除',
 });
 
-test('card table declares exactly 34 unique card ids', () => {
-  assert.equal(cardIds.length, 34, 'the normalized card table has 34 cards');
-  assert.equal(new Set(cardIds).size, 34, 'card ids are unique');
+test('card table declares exactly 37 unique card ids', () => {
+  assert.equal(cardIds.length, 37, 'the normalized card table has 37 cards');
+  assert.equal(new Set(cardIds).size, 37, 'card ids are unique');
 });
 
-test('all 34 cards are covered by a non-empty effect array or the explicit null whitelist', () => {
+test('all 37 cards are covered by a non-empty effect array or the explicit null whitelist', () => {
   for (const id of cardIds) {
     assert.ok(
       Object.prototype.hasOwnProperty.call(EFFECT_REGISTRY, id),

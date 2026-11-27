@@ -311,6 +311,44 @@
   color: var(--gh2-lamp);
 }
 
+/* ── end-of-night summary modal ─────────────────────────────── */
+.gh2-modal__panel--night {
+  border-color: rgba(143, 224, 205, 0.5);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.7), var(--gh2-glow-cult);
+}
+.gh2-night-summary__rows {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 12px;
+  list-style: none;
+}
+.gh2-night-summary__rows li {
+  padding: 8px 12px;
+  border: 1px solid var(--gh2-line-soft);
+  border-radius: 4px;
+  background: var(--gh2-ink-2);
+  color: var(--gh2-silver);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.gh2-night-summary__wins { color: var(--gh2-lamp); font-size: 13px; }
+.gh2-modal__continue {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--gh2-lamp-dim);
+  border-radius: 4px;
+  background: rgba(232, 201, 138, 0.14);
+  color: var(--gh2-lamp);
+  text-align: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+.gh2-modal__continue:hover {
+  border-color: var(--gh2-lamp);
+  box-shadow: var(--gh2-glow-lamp);
+}
+
 @media (max-width: 760px) {
   .gh2-play-controls__buttons { gap: 6px; }
   .gh2-play-btn { padding: 5px 10px; font-size: 12px; }

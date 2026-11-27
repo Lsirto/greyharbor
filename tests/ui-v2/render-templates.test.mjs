@@ -189,6 +189,10 @@ test('双面卡按 face 取对应样式与当前战力', () => {
   assert.match(madness, /当前战力 6/);
   assert.match(madness, /理 3/);
   assert.match(madness, /狂 6/);
+
+  // 面角标用文字标明当前是理性还是疯狂
+  assert.match(reason, /gh2-card__face-tag--reason">理性/);
+  assert.match(madness, /gh2-card__face-tag--madness">疯狂/);
 });
 
 test('六个关键词以中文徽标呈现', () => {
@@ -212,17 +216,22 @@ test('六个关键词以中文徽标呈现', () => {
 
 test('理智计量条按数值渲染 6 格，坏值钳制', () => {
   const html = renderSanityMeter(4);
-  assert.equal(countMatches(html, /gh2-sanity__cell(?: is-lit)?"/g), 6);
-  assert.equal(countMatches(html, /gh2-sanity__cell is-lit"/g), 4);
+  assert.equal(countMatches(html, /gh2-sanity__cell(?: is-lit)?(?: is-danger-zone)?"/g), 6);
+  assert.equal(countMatches(html, /gh2-sanity__cell is-lit(?: is-danger-zone)?"/g), 4);
   assert.match(html, /data-sanity="4"/);
   assert.match(html, /4\/6/);
 
   assert.match(renderSanityMeter(99), /data-sanity="6"/);
-  assert.equal(countMatches(renderSanityMeter(99), /gh2-sanity__cell is-lit"/g), 6);
+  assert.equal(countMatches(renderSanityMeter(99), /gh2-sanity__cell is-lit(?: is-danger-zone)?"/g), 6);
   assert.match(renderSanityMeter(-3), /data-sanity="0"/);
   assert.match(renderSanityMeter('bad'), /data-sanity="0"/);
   assert.match(renderSanityMeter(2), /is-madness/);
   assert.ok(!renderSanityMeter(5).includes('is-madness'));
+
+  // 危险区格子（前 3 格）与清醒/疯狂状态徽章
+  assert.equal(countMatches(renderSanityMeter(6), /is-danger-zone/g), 3);
+  assert.match(renderSanityMeter(2), /gh2-sanity__state--mad">疯狂/);
+  assert.match(renderSanityMeter(5), /gh2-sanity__state--sane">清醒/);
 });
 
 test('目标进度轨按阵营渲染线索/末日，pips 与阈值一致且坏值钳制', () => {
@@ -387,7 +396,7 @@ test('真实 buildView 数据可直接驱动整盘模板', () => {
   assert.ok(!html.includes('data-location="archive"'));
   assert.ok(!html.includes('data-location="dream"'));
   assert.equal(countMatches(html, /data-location="front"/g), 2, '双方各一条对峙线');
-  assert.equal(countMatches(html, /gh2-sanity__cell(?: is-lit)?"/g), 12, '双方各一条 6 格理智条');
+  assert.equal(countMatches(html, /gh2-sanity__cell(?: is-lit)?(?: is-danger-zone)?"/g), 12, '双方各一条 6 格理智条');
   assert.ok(!html.includes('<script'));
 });
 

@@ -184,7 +184,13 @@ test('10 局脚本化完整人机对战：无卡死、无拒绝、守恒 ok', ()
       for (const ui of controller.getUiState().eventLog) {
         if (ui.includes('夜结算')) stats.nights.add(view.night + 1);
       }
-      if (controller.getUiState().modal) stats.modalKinds.add(controller.getUiState().modal.kind);
+      if (controller.getUiState().modal?.kind === 'night-summary') {
+        // The info-only night modal must be dismissed before play can continue.
+        assert.equal(controller.cancel(), true);
+        stats.modalKinds.add('night-summary');
+      } else if (controller.getUiState().modal) {
+        stats.modalKinds.add(controller.getUiState().modal.kind);
+      }
       for (const player of [0, 1]) {
         assert.equal(
           countCards(controller.getEngine().state, player),
@@ -247,6 +253,7 @@ test('onGameOver 回传的夜分可被终局面板渲染（不再显示 0:0）',
       : view.actions.find((entry) => entry.type === 'pass') ?? pickHumanAction(view, 0);
     driveHumanAction(controller, action);
     drain(queue);
+    if (controller.getUiState().modal?.kind === 'night-summary') controller.cancel();
     steps += 1;
   }
 

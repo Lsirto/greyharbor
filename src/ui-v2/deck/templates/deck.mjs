@@ -4,7 +4,7 @@
  * all dynamic text escaped. The controller wires the data-deck actions.
  */
 
-import { CARDS } from '../../../engine/v2/cards.js';
+import { CARDS, PRESET_GROUPS } from '../../../engine/v2/cards.js';
 import {
   copiesOf,
   leadersFor,
@@ -90,6 +90,20 @@ function renderValidation(editor) {
   return `<div class="gh2-deck-invalid"><b>牌组尚未完成</b><ul>${items}</ul></div>`;
 }
 
+function renderPresetLoader(editor) {
+  const group = PRESET_GROUPS[editor.faction] ?? [];
+  const options = group.map((preset) =>
+    `<button type="button" class="gh2-deck-preset__btn"
+      data-deck="load-preset" data-preset="${escapeHtml(preset.id)}">
+      <b>${escapeHtml(preset.nameZh)}</b>
+      <small>${escapeHtml(preset.descZh)}</small>
+    </button>`).join('');
+  return `<div class="gh2-deck-preset" role="group" aria-label="载入推荐牌组">
+    <span class="gh2-deck-preset__head">一键载入推荐套</span>
+    <div class="gh2-deck-preset__options">${options}</div>
+  </div>`;
+}
+
 function renderBreakdown(editor) {
   const breakdown = typeBreakdown(editor);
   return Object.entries(breakdown).map(([type, count]) =>
@@ -127,6 +141,8 @@ export function renderDeckEditor(editor, extra = {}) {
           data-deck="leader" data-leader="${escapeHtml(leader.id)}" aria-pressed="${editor.leader === leader.id}">
           ${escapeHtml(leader.nameZh)}</button>`).join('')}
     </div>
+
+    ${renderPresetLoader(editor)}
 
     <div class="gh2-deck-body">
       <div class="gh2-deck-pool">

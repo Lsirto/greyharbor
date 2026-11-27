@@ -82,6 +82,27 @@ export function setLeader(editor, leaderId) {
   return { ok: true };
 }
 
+/**
+ * Replace the non-leader count map with a recommended preset's cards.
+ * The chosen leader is left untouched so the player keeps their character.
+ */
+export function loadPreset(editor, preset) {
+  if (!preset || typeof preset !== 'object' || !Array.isArray(preset.cards)) {
+    return { ok: false, reason: 'invalid' };
+  }
+  if (preset.faction !== editor.faction) return { ok: false, reason: 'faction' };
+  const counts = {};
+  for (const id of preset.cards) {
+    if (!isEligible(editor, CARDS[id])) return { ok: false, reason: 'invalid' };
+    counts[id] = (counts[id] ?? 0) + 1;
+    if (counts[id] > DECK_RULES.maxCopies) return { ok: false, reason: 'copy-cap' };
+  }
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  if (total !== DECK_RULES.nonLeaderCount) return { ok: false, reason: 'count' };
+  editor.counts = counts;
+  return { ok: true };
+}
+
 export function setFaction(editor, faction) {
   if (!DECK_RULES.factions.includes(faction)) return { ok: false, reason: 'invalid' };
   editor.faction = faction;

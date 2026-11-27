@@ -544,5 +544,50 @@
     "copies": 1,
     "effect": "目标己方卡+3并解除其封印或腐化",
     "flavor": "门开了门外站着一个不该存在的人"
+  },
+  {
+    "id": "brass-badge",
+    "nameZh": "黄铜战徽",
+    "nameEn": "Brass Battle Badge",
+    "faction": "neutral",
+    "type": "equipment",
+    "location": "attach",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "附属单位+3；夜末返回手牌",
+    "flavor": "徽章擦得越亮，越说明它换过太多主人"
+  },
+  {
+    "id": "bone-ward",
+    "nameZh": "骨制护符",
+    "nameEn": "Bone Ward",
+    "faction": "cult",
+    "type": "equipment",
+    "location": "attach",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "附属单位+1；单位将被摧毁时弃掉护符代替；夜末返回手牌",
+    "flavor": "护符上的每一道刻痕，都记着一条替死的命"
+  },
+  {
+    "id": "drowning-curse",
+    "nameZh": "溺亡诅咒",
+    "nameEn": "Drowning Curse",
+    "faction": "cult",
+    "type": "event",
+    "location": "any",
+    "reasonPower": null,
+    "madnessPower": null,
+    "keywords": [],
+    "sanityCost": 0,
+    "copies": 1,
+    "effect": "指定一个敌方正面单位，本夜战力-3",
+    "flavor": "它没淹死在海里，海却跟着它回了家"
   }
 ]

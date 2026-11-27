@@ -7,10 +7,12 @@
 import {
   addCard,
   createEditor,
+  loadPreset,
   removeCard,
   setLeader,
 } from '../../deck/editor.mjs';
 import { hasSavedDeck, loadDeck, saveDeck } from '../../deck/decks-store.mjs';
+import { findPresetById } from '../../engine/v2/index.js';
 import { asObject } from '../utils.mjs';
 import { renderDeckEditor } from './templates/index.mjs';
 
@@ -60,6 +62,9 @@ export function createDeckController(options = {}) {
       if (addCard(editor, source.dataset.card).ok) saved = false;
     } else if (action === 'remove') {
       if (removeCard(editor, source.dataset.card).ok) saved = false;
+    } else if (action === 'load-preset') {
+      const preset = findPresetById(source.dataset.preset);
+      if (preset && loadPreset(editor, preset).ok) saved = false;
     } else if (action === 'save') {
       saveDeck(opts.storage, editor);
       saved = true;

@@ -14,6 +14,7 @@ import {
   renderCharacterCard,
   renderCharacterSelect,
   renderSkinSwitcher,
+  renderPresetSelect,
 } from '../../src/ui-v2/menu/templates/index.mjs';
 
 test('角色名册：每阵营 3 名，共 6 个，且均为同阵营领袖卡', () => {
@@ -161,4 +162,25 @@ test('角色选择屏：接入皮肤状态，网格下方渲染面板且无脚�
   assert.match(html, /data-role="skin-switcher-host"/);
   assert.match(html, /使用中/);
   assert.ok(!/<script/i.test(html));
+});
+
+test('推荐牌组选择器：渲染同阵营 2 套，默认选中第一套并带打法说明', () => {
+  const html = renderPresetSelect('society');
+  assert.match(html, /data-deck-preset="society"[^>]*aria-pressed="true"/);
+  assert.match(html, /data-deck-preset="society-aggro"/);
+  assert.match(html, /强攻阵线/);
+  assert.match(html, /卡组编辑器自己组/);
+
+  const picked = renderPresetSelect('cult', 'cult-madness');
+  assert.match(picked, /data-deck-preset="cult-madness"[^>]*aria-pressed="true"/);
+  // An unknown selected id falls back to the first preset.
+  const fallback = renderPresetSelect('cult', 'society-aggro');
+  assert.match(fallback, /data-deck-preset="cult"[^>]*aria-pressed="true"/);
+});
+
+test('角色选择屏：普通对局含推荐牌组，竞技场模式隐藏', () => {
+  const normal = renderCharacterSelect({ faction: 'society' });
+  assert.match(normal, /aria-label="推荐牌组"/);
+  const arena = renderCharacterSelect({ faction: 'society', arena: true });
+  assert.ok(!arena.includes('data-deck-preset'));
 });

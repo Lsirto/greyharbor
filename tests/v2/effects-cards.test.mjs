@@ -754,3 +754,55 @@ test('the-sleeper: cannot be sealed and pays 3 sanity on entry, with no cross-ni
   passUntilNight(engine, 2);
   assert.equal(engine.state.players[0].sanity, 2, 'the unit is cleared at night end, so no further drain exists');
 });
+
+// ── brass-badge: aggressive +3 equipment with no replacement ───────────────
+test('brass-badge: gives +3 but does not replace a destroy', () => {
+  const engine = setup({
+    seed: 301,
+    mechanics: { anomaly: false },
+    p0: { leader: 'harold-ashby', cards: ['brass-badge', 'finn-calloway', 'finn-calloway'] },
+    p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
+  });
+  const host = putUnit(engine, 0, 'finn-calloway', 'front', 0);
+  const badge = putEquipment(engine, 0, 'brass-badge', host);
+  assert.equal(currentUnitPower(engine.state, 0, host, 'front', 0), 6, 'brass badge gives +3');
+  assert.equal(equipmentSpecFor('brass-badge').replaceOnDestroy, undefined, 'no destroy replacement');
+  const target = { kind: 'unit', uid: host.uid, inst: host, player: 0, location: 'front', slot: 0 };
+  engine._destroyTarget(target, 'destroy');
+  assert.equal(engine.state.players[0].board.front[0], null, 'host is destroyed, badge does not save it');
+  assert.ok(engine.state.players[0].discard.some((inst) => inst.uid === badge.uid));
+});
+
+// ── bone-ward: +1 equipment that absorbs a destroy, not a seal ─────────────
+test('bone-ward: gives +1 and replaces destroy but not seal', () => {
+  const engine = setup({
+    seed: 302,
+    mechanics: { anomaly: false },
+    p0: { leader: 'elias-thorne', cards: ['bone-ward', 'finn-calloway', 'finn-calloway'] },
+    p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
+  });
+  const host = putUnit(engine, 0, 'finn-calloway', 'front', 0);
+  const ward = putEquipment(engine, 0, 'bone-ward', host);
+  assert.equal(currentUnitPower(engine.state, 0, host, 'front', 0), 4, 'bone ward gives +1');
+  assert.equal(equipmentSpecFor('bone-ward').replaceOnSeal, undefined, 'no seal replacement');
+  const target = { kind: 'unit', uid: host.uid, inst: host, player: 0, location: 'front', slot: 0 };
+  assert.equal(engine._destroyTarget(target, 'destroy'), false, 'ward absorbs the destroy');
+  assert.equal(host.equipment, null);
+  assert.equal(engine.state.players[0].board.front[0].uid, host.uid, 'host survives the replaced destroy');
+  assert.ok(engine.state.players[0].discard.some((inst) => inst.uid === ward.uid));
+});
+
+// ── drowning-curse: enemy unit -3 this night ───────────────────────────────
+test('drowning-curse: an enemy face-up unit loses 3 power this night', () => {
+  const engine = setup({
+    seed: 303,
+    mechanics: { anomaly: false },
+    p0: { leader: 'elias-thorne', cards: ['drowning-curse', 'finn-calloway', 'finn-calloway'] },
+    p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
+  });
+  const enemy = putUnit(engine, 1, 'finn-calloway', 'front', 0);
+  assert.equal(currentUnitPower(engine.state, 1, enemy, 'front', 0), 3);
+  play(engine, 0, 'drowning-curse', (action) => action.choice?.mode === 'curse');
+  assert.equal(enemy.thisNightPower, -3, 'the curse writes a this-night modifier');
+  assert.equal(currentUnitPower(engine.state, 1, enemy, 'front', 0), 0, 'enemy power drops by 3 this night');
+});
