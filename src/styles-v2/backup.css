@@ -1,0 +1,39 @@
+/* ============================================================
+   styles-v2/backup.css — 存档备份浮层（导出 / 导入本地存档文件）
+   沿用 theme.css 哥特暗色 token，遮罩与面板复用音频浮层样式。
+   ============================================================ */
+
+.gh2-backup__hint {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--gh2-silver-dim);
+}
+
+.gh2-backup__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gh2-backup__actions .gh2-menu-btn {
+  min-width: 0;
+}
+
+.gh2-backup__message {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.gh2-backup__message--ok {
+  color: var(--gh2-cult-glow);
+}
+
+.gh2-backup__message--warn {
+  color: var(--gh2-danger);
+}
+
+.gh2-backup__file {
+  display: none;
+}

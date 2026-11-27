@@ -42,6 +42,8 @@ import { writeDailyResult } from '../../daily/daily.mjs';
 import { recordMatch, readHistorySummary } from '../../history/match-history.mjs';
 import { buildReport } from '../../report/report.mjs';
 import { createReportCanvas, downloadReport } from '../report/report-canvas.mjs';
+import { collectBackup, parseBackup, restoreBackup } from '../../save/backup.mjs';
+import { renderBackupPanel } from './templates/backup-panel.mjs';
 import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
 import {
   FACTION_CARDS,
@@ -96,6 +98,7 @@ export function createAppShell(options = {}) {
   let fx = null;
   const audioEngine = opts.audio ?? defaultAudio;
   let audioLayer = null;
+  let backupLayer = null;
 
   const el = document.createElement('div');
   el.className = 'gh2-app-shell';
@@ -725,6 +728,76 @@ export function createAppShell(options = {}) {
     audioLayer.innerHTML = renderAudioSettings(audioEngine.getSettings());
   }
 
+  function closeBackupPanel() {
+    if (!backupLayer) return;
+    const old = backupLayer;
+    backupLayer = null;
+    try { old.remove(); } catch (_) { /* ignore */ }
+  }
+
+  function openBackupPanel() {
+    closeBackupPanel();
+    const layer = document.createElement('div');
+    layer.innerHTML = renderBackupPanel({ message: '' });
+    el.appendChild(layer);
+    backupLayer = layer;
+  }
+
+  function refreshBackupPanel(message, messageKind) {
+    if (!backupLayer) return;
+    backupLayer.innerHTML = renderBackupPanel({ message, messageKind });
+  }
+
+  function stampDate(ts) {
+    const d = new Date(ts);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
+  }
+
+  function exportBackup() {
+    try {
+      const backup = collectBackup(getStorage(), { now: opts.now ?? Date.now() });
+      const text = JSON.stringify(backup, null, 2);
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `灰港三夜存档-${stampDate(opts.now ?? Date.now())}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      refreshBackupPanel('存档已导出，请妥善保存备份文件。', 'ok');
+    } catch (_) {
+      refreshBackupPanel('导出失败，请重试。', 'warn');
+    }
+  }
+
+  function importBackup(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = parseBackup(String(reader.result ?? ''));
+        const count = restoreBackup(getStorage(), parsed);
+        refreshBackupPanel(`已恢复 ${count} 项存档，返回主菜单后生效。`, 'ok');
+      } catch (error) {
+        refreshBackupPanel(error?.message || '导入失败，存档文件无法识别。', 'warn');
+      }
+    };
+    reader.onerror = () => refreshBackupPanel('读取文件失败，请重试。', 'warn');
+    reader.readAsText(file);
+  }
+
+  function handleBackupChange(event) {
+    const input = event?.target;
+    const file = input && typeof input.closest === 'function'
+      ? input.closest('[data-backup-file]')
+      : null;
+    if (!file) return;
+    importBackup(file.files?.[0]);
+  }
+
   function handleAudioToggle(button) {
     const turningOn = button.getAttribute('aria-pressed') !== 'true';
     if (button.dataset.audioToggle === 'sfx') audioEngine.setSfxEnabled(turningOn);
@@ -748,6 +821,26 @@ export function createAppShell(options = {}) {
   function handleClick(event) {
     const target = event?.target;
     if (!target || typeof target.closest !== 'function') return;
+    const backupClose = target.closest('[data-backup-close]');
+    if (backupClose) {
+      closeBackupPanel();
+      return;
+    }
+    const backupExport = target.closest('[data-backup-export]');
+    if (backupExport) {
+      exportBackup();
+      return;
+    }
+    const backupImport = target.closest('[data-backup-import]');
+    if (backupImport) {
+      const fileInput = backupLayer?.querySelector?.('[data-backup-file]');
+      fileInput?.click();
+      return;
+    }
+    if (target.closest('[data-backup-layer]') && !target.closest('.gh2-audio-modal')) {
+      closeBackupPanel();
+      return;
+    }
     const audioClose = target.closest('[data-audio-close]');
     if (audioClose) {
       closeAudioSettings();
@@ -930,6 +1023,8 @@ export function createAppShell(options = {}) {
       showScreen('multiplayer');
     } else if (action === 'audio-settings') {
       openAudioSettings();
+    } else if (action === 'start-backup') {
+      openBackupPanel();
     } else if (action === 'back') showScreen('menu');
     else if (action === 'start-match') {
       if (entryMode === 'campaign') {
@@ -959,6 +1054,7 @@ export function createAppShell(options = {}) {
 
   el.addEventListener('click', handleClick);
   el.addEventListener('input', handleAudioInput);
+  el.addEventListener('change', handleBackupChange);
 
   return {
     el,
@@ -1002,8 +1098,10 @@ export function createAppShell(options = {}) {
       destroyCodex();
       destroyTutorial();
       closeAudioSettings();
+      closeBackupPanel();
       el.removeEventListener('click', handleClick);
       el.removeEventListener('input', handleAudioInput);
+      el.removeEventListener('change', handleBackupChange);
       el.remove();
     },
   };

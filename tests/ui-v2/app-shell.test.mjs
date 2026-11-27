@@ -246,6 +246,16 @@ test('注入的阵营与随机牌局选项生效', (t) => {
   assert.equal(selection.seedMode, 'random');
 });
 
+test('存档备份浮层可打开、用关闭按钮关闭', (t) => {
+  const { shell } = makeShell(t);
+  emit(shell.el, 'click', { target: menuActionTarget('start-backup') });
+  assert.equal(shell.el.children.length, 1);
+
+  const closeNode = makeNode();
+  emit(shell.el, 'click', { target: targetHitting({ '[data-backup-close]': closeNode }) });
+  assert.equal(shell.el.children.length, 0);
+});
+
 test('点击生成战报图：无留存对局时静默返回、不抛错', (t) => {
   const { shell } = makeShell(t);
   assert.doesNotThrow(() => emit(shell.el, 'click', { target: menuActionTarget('share-report') }));

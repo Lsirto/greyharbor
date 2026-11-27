@@ -33,6 +33,8 @@ export const MAIN_MENU_TEXT = Object.freeze({
   multiplayerHint: '与真人在线对战，房间号加入（开发中）',
   settingsLabel: '声音设置',
   settingsHint: '分别开关音效与背景音乐，调节各自音量',
+  backupLabel: '存档备份',
+  backupHint: '导出存档文件，重装或换设备后导入恢复',
   rulesLabel: '规则简介',
 });
 
@@ -91,6 +93,10 @@ export function renderMainMenu(options = {}) {
       <button type="button" class="gh2-menu-btn" data-menu-action="start-multiplayer">
         <span class="gh2-menu-btn__icon" aria-hidden="true">⚑</span>
         <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.multiplayerLabel)} <em class="gh2-menu-btn__badge" aria-label="功能开发中">开发中</em></b><small>${escapeHtml(MAIN_MENU_TEXT.multiplayerHint)}</small></span>
+      </button>
+      <button type="button" class="gh2-menu-btn" data-menu-action="start-backup">
+        <span class="gh2-menu-btn__icon" aria-hidden="true">💾</span>
+        <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.backupLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.backupHint)}</small></span>
       </button>
       <button type="button" class="gh2-menu-btn" data-menu-action="audio-settings">
         <span class="gh2-menu-btn__icon" aria-hidden="true">⚙</span>

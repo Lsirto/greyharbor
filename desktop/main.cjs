@@ -15,6 +15,14 @@ const { app, BrowserWindow, Menu, shell } = require('electron');
 const ROOT = path.resolve(__dirname, '..');
 const ENTRY = '/app.html';
 
+// 固定本地端口：localStorage 按 origin（含端口）隔离，随机端口会让每次启动
+// 落在不同 origin，上次存的金币/库存读不到。这里优先固定端口，被占用才顺延。
+const FIXED_PORT = 8799;
+const PORT_RANGE = 20;
+
+// 显式锁定 userData 目录，避免包名 / productName 变化导致存档目录漂移。
+app.setPath('userData', path.join(app.getPath('appData'), 'greyharbor'));
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -71,11 +79,21 @@ function startStaticServer() {
         res.end('Internal Error');
       }
     });
-    server.on('error', reject);
-    server.listen(0, '127.0.0.1', () => {
-      const { port } = server.address();
-      resolve({ server, port });
+    let port = FIXED_PORT;
+    const tryListen = () => {
+      server.listen(port, '127.0.0.1', () => {
+        resolve({ server, port });
+      });
+    };
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE' && port < FIXED_PORT + PORT_RANGE) {
+        port += 1;
+        tryListen();
+      } else {
+        reject(error);
+      }
     });
+    tryListen();
   });
 }
 
