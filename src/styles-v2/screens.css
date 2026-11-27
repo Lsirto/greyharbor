@@ -24,7 +24,11 @@
   flex-direction: column;
   gap: 10px;
 }
-.gh2-screen--game.is-active { display: flex; }
+.gh2-screen--game.is-active {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+}
 .gh2-game-top {
   display: flex;
   align-items: center;
@@ -39,8 +43,17 @@
 }
 
 /* Board + controls keep their phase 3.2 layout inside the shell. */
-.gh2-screen--game .gh2-play-controls-host,
-.gh2-screen--game .gh2-board { width: 100%; }
+.gh2-screen--game .gh2-play-controls-host { width: 100%; }
+/* The board wrapper must shrink within the fixed-height screen and pass the
+   flex constraint down, otherwise a filling board overflows and pushes the
+   hand dock below the viewport. */
+.gh2-screen--game .gh2-board {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 
 /* The shell provides its own result wrapper; hide the in-controls modal. */
 .gh2-screen--game.is-over .gh2-modal { display: none !important; }
