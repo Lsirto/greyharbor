@@ -3,49 +3,584 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>灰港三夜 · THREE NIGHTS IN GREYHARBOR</title>
-  <meta name="description" content="《灰港三夜》正式入口：原创三夜牌局、人机对战、阵营选择与氛围层。原生 ES Modules，零运行时依赖、零构建。">
+  <title>灰港三夜 · 克苏鲁主题原创卡牌对局</title>
+  <meta name="description" content="《灰港三夜》：雾锁灰港的三夜牌局，学会与教团在灯火与深渊之间轮番落子。网页即玩，也可下载 Windows 桌面安装包。">
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☠</text></svg>">
   <link rel="stylesheet" href="./src/styles-v2/theme.css">
-  <link rel="stylesheet" href="./src/styles-v2/card.css">
-  <link rel="stylesheet" href="./src/styles-v2/board.css">
-  <link rel="stylesheet" href="./src/styles-v2/interaction.css">
-  <link rel="stylesheet" href="./src/styles-v2/menu.css">
-  <link rel="stylesheet" href="./src/styles-v2/screens.css">
-  <link rel="stylesheet" href="./src/styles-v2/fx.css">
-  <link rel="stylesheet" href="./src/styles-v2/layout.css">
-  <link rel="stylesheet" href="./src/styles-v2/campaign.css">
-  <link rel="stylesheet" href="./src/styles-v2/tutorial.css">
-  <link rel="stylesheet" href="./src/styles-v2/multiplayer.css">
 
-  <!-- Browser-only shim: the v2 engine reads its canonical card table via
-       node:fs in Node.  Legacy GWENT lives at ./gwent.html. -->
-  <script type="importmap">
-    {
-      "imports": {
-        "node:fs": "./src/ui-v2/shims/fs-browser.mjs"
+  <style>
+    /* ===== 落地页布局（复用 theme.css 配色变量） ===== */
+    .gh-landing {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 22px;
+    }
+
+    /* 顶部导航 */
+    .gh-nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      background: rgba(4, 8, 10, 0.72);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--gh2-line-soft);
+    }
+
+    .gh-nav__brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--gh2-font-display);
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--gh2-lamp);
+      text-decoration: none;
+    }
+
+    .gh-nav__links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .gh-nav__links a {
+      color: var(--gh2-silver-dim);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.15s ease;
+    }
+
+    .gh-nav__links a:hover {
+      color: var(--gh2-lamp);
+    }
+
+    /* 首屏 */
+    .gh-hero {
+      text-align: center;
+      padding: 96px 0 72px;
+    }
+
+    .gh-hero__badge {
+      display: inline-block;
+      padding: 6px 16px;
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: var(--gh2-cult-glow);
+      border: 1px solid var(--gh2-line);
+      border-radius: 999px;
+      margin-bottom: 26px;
+    }
+
+    .gh-hero h1 {
+      font-family: var(--gh2-font-display);
+      font-size: clamp(40px, 7vw, 64px);
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: var(--gh2-parchment);
+      text-shadow: 0 0 24px rgba(232, 201, 138, 0.18);
+      margin-bottom: 20px;
+    }
+
+    .gh-hero__tagline {
+      max-width: 620px;
+      margin: 0 auto 36px;
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--gh2-silver-dim);
+    }
+
+    .gh-hero__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .gh-hero__meta {
+      margin-top: 26px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px 22px;
+      font-size: 13px;
+      color: var(--gh2-silver-faint);
+    }
+
+    /* 按钮 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 26px;
+      font-family: var(--gh2-font-ui);
+      font-size: 15px;
+      letter-spacing: 1px;
+      text-decoration: none;
+      border-radius: var(--gh2-radius);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn--primary {
+      color: var(--gh2-ink-1);
+      background: linear-gradient(180deg, var(--gh2-lamp), var(--gh2-lamp-dim));
+      border: 1px solid var(--gh2-lamp-dim);
+      box-shadow: var(--gh2-glow-lamp);
+    }
+
+    .btn--primary:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn--ghost {
+      color: var(--gh2-silver);
+      background: var(--gh2-ink-1);
+      border: 1px solid var(--gh2-line);
+    }
+
+    .btn--ghost:hover {
+      color: var(--gh2-lamp);
+      border-color: var(--gh2-lamp-dim);
+    }
+
+    /* 通用区块 */
+    .gh-section {
+      padding: 56px 0;
+    }
+
+    .gh-section__title {
+      font-family: var(--gh2-font-display);
+      font-size: 26px;
+      letter-spacing: 3px;
+      color: var(--gh2-lamp);
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .gh-section__sub {
+      text-align: center;
+      font-size: 14px;
+      color: var(--gh2-silver-faint);
+      margin-bottom: 36px;
+    }
+
+    /* 特色网格 */
+    .gh-features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .gh-feature {
+      padding: 22px 20px;
+      background: linear-gradient(180deg, var(--gh2-ink-3), var(--gh2-ink-2));
+      border: 1px solid var(--gh2-line-soft);
+      border-radius: var(--gh2-radius);
+      box-shadow: var(--gh2-shadow);
+    }
+
+    .gh-feature__icon {
+      font-size: 22px;
+      margin-bottom: 12px;
+    }
+
+    .gh-feature h3 {
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: var(--gh2-parchment);
+      margin-bottom: 10px;
+    }
+
+    .gh-feature p {
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--gh2-silver-dim);
+    }
+
+    /* 截图画廊 */
+    .gh-gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .gh-shot {
+      overflow: hidden;
+      background: var(--gh2-ink-1);
+      border: 1px solid var(--gh2-line-soft);
+      border-radius: var(--gh2-radius);
+      box-shadow: var(--gh2-shadow);
+    }
+
+    .gh-shot img {
+      display: block;
+      width: 100%;
+      height: 210px;
+      object-fit: cover;
+      object-position: top center;
+      border-bottom: 1px solid var(--gh2-line-soft);
+    }
+
+    .gh-shot figcaption {
+      padding: 12px 14px;
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: var(--gh2-silver-dim);
+    }
+
+    /* 玩法速览 */
+    .gh-rules {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      counter-reset: rule;
+    }
+
+    .gh-rule {
+      padding: 22px 20px;
+      border-left: 2px solid var(--gh2-cult-dim, var(--gh2-cult));
+      background: rgba(13, 26, 26, 0.5);
+      border-radius: 0 var(--gh2-radius) var(--gh2-radius) 0;
+    }
+
+    .gh-rule__num {
+      font-family: var(--gh2-font-display);
+      font-size: 15px;
+      color: var(--gh2-cult-glow);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .gh-rule h3 {
+      font-size: 15px;
+      color: var(--gh2-parchment);
+      margin-bottom: 8px;
+    }
+
+    .gh-rule p {
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--gh2-silver-dim);
+    }
+
+    /* 更新日志 */
+    .gh-changelog {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .gh-log {
+      padding: 20px 22px;
+      background: linear-gradient(180deg, var(--gh2-ink-3), var(--gh2-ink-2));
+      border: 1px solid var(--gh2-line-soft);
+      border-radius: var(--gh2-radius);
+    }
+
+    .gh-log__head {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .gh-log__ver {
+      font-family: var(--gh2-font-display);
+      font-size: 17px;
+      color: var(--gh2-lamp);
+      letter-spacing: 1px;
+    }
+
+    .gh-log__date {
+      font-size: 13px;
+      color: var(--gh2-silver-faint);
+    }
+
+    .gh-log ul {
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .gh-log li {
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--gh2-silver-dim);
+    }
+
+    /* 下载区 */
+    .gh-download {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 32px 26px;
+      text-align: center;
+      background: linear-gradient(180deg, var(--gh2-ink-3), var(--gh2-ink-2));
+      border: 1px solid var(--gh2-line);
+      border-radius: var(--gh2-radius);
+      box-shadow: var(--gh2-shadow), var(--gh2-glow-lamp);
+    }
+
+    .gh-download h2 {
+      font-family: var(--gh2-font-display);
+      font-size: 24px;
+      letter-spacing: 2px;
+      color: var(--gh2-parchment);
+      margin-bottom: 12px;
+    }
+
+    .gh-download p {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--gh2-silver-dim);
+      margin-bottom: 24px;
+    }
+
+    .gh-download__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .gh-download__note {
+      margin-top: 18px;
+      font-size: 12.5px;
+      color: var(--gh2-silver-faint);
+    }
+
+    /* 页脚 */
+    .gh-footer {
+      padding: 34px 0 44px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--gh2-silver-faint);
+      border-top: 1px solid var(--gh2-line-soft);
+      margin-top: 40px;
+    }
+
+    .gh-footer a {
+      color: var(--gh2-silver-dim);
+      text-decoration: none;
+    }
+
+    .gh-footer a:hover {
+      color: var(--gh2-lamp);
+    }
+
+    /* 窄屏适配 */
+    @media (max-width: 860px) {
+      .gh-features,
+      .gh-gallery,
+      .gh-rules {
+        grid-template-columns: 1fr;
+      }
+
+      .gh-shot img {
+        height: 200px;
+      }
+
+      .gh-nav__links {
+        gap: 12px;
       }
     }
-  </script>
+  </style>
 </head>
 <body>
-  <div class="gh2-app" id="app"></div>
+  <div class="gh-landing">
 
-  <script type="module">
-    import { createAppShell } from './src/ui-v2/menu/app-shell.mjs';
+    <!-- ===== 顶部导航 ===== -->
+    <nav class="gh-nav wrap">
+      <a class="gh-nav__brand" href="./index.html">☠ 灰港三夜</a>
+      <div class="gh-nav__links">
+        <a href="./app.html">在线游玩</a>
+        <a href="#download">下载</a>
+        <a href="https://github.com/Lsirto/greyharbor" target="_blank" rel="noopener">源码仓库</a>
+      </div>
+    </nav>
 
-    try {
-      const app = createAppShell({ root: document.getElementById('app') });
-      window.__greyharborApp = app;
-    } catch (error) {
-      document.getElementById('app').innerHTML =
-        '<div class="gh2-screen gh2-screen--menu is-active"><div class="gh2-main-menu">' +
-        '<h1 class="gh2-main-menu__title">启动失败</h1><p>' +
-        String(error && error.message ? error.message : error).replace(/[<>&"']/g, '') +
-        '</p><p>请使用 npm start 后访问 http://127.0.0.1:8788/</p></div></div>';
-      console.error(error);
-    }
-  </script>
+    <!-- ===== 首屏 ===== -->
+    <header class="gh-hero wrap">
+      <span class="gh-hero__badge">克苏鲁主题 · 原创卡牌对局</span>
+      <h1>灰港三夜</h1>
+      <p class="gh-hero__tagline">
+        雾锁的灰港，三夜牌局。学会与教团在灯火与深渊之间轮番落子；
+        理智耗尽者坠入疯狂，先赢两夜者带走港口。学会追查线索求「真相大白」，
+        教团累积末日召「旧神降临」——双面卡牌在理与狂之间翻转，封印、腐化、献祭与双目标竞速，
+        构成一套独立于传统卡牌规则的原创玩法。
+      </p>
+      <div class="gh-hero__actions">
+        <a class="btn btn--primary" href="./app.html">▶ 直接在线游玩</a>
+        <a class="btn btn--ghost" href="https://github.com/Lsirto/greyharbor/releases/latest" target="_blank" rel="noopener">⬇ 下载桌面安装包</a>
+      </div>
+      <div class="gh-hero__meta">
+        <span>网页浏览器即玩</span>
+        <span>Windows 桌面版</span>
+        <span>全中文界面</span>
+        <span>零运行时依赖</span>
+      </div>
+    </header>
+
+    <!-- ===== 特色 ===== -->
+    <section class="gh-section wrap">
+      <h2 class="gh-section__title">游戏特色</h2>
+      <p class="gh-section__sub">两条阵营、一套原创规则，多种玩法模式与外观收集</p>
+      <div class="gh-features">
+        <div class="gh-feature">
+          <div class="gh-feature__icon">⚔</div>
+          <h3>原创三夜牌局</h3>
+          <p>双方在同一条对峙线上各占六个槽位，每夜结束单位清空、据点保留；三夜之内争夺线索与末日两条胜负线，节奏紧凑、决策分明。</p>
+        </div>
+        <div class="gh-feature">
+          <div class="gh-feature__icon">☯</div>
+          <h3>双阵营对峙</h3>
+          <p>学会追查线索、寻求真相大白；教团累积末日、召唤旧神降临。两套不对称的牌组与领袖技能，打法思路截然不同。</p>
+        </div>
+        <div class="gh-feature">
+          <div class="gh-feature__icon">🌑</div>
+          <h3>理智与疯狂翻转</h3>
+          <p>双面卡牌在理面与狂面之间翻转，理智持续承压；一旦坠入疯狂，局势会急转直下。留意危险区警示，稳住心神落子。</p>
+        </div>
+        <div class="gh-feature">
+          <div class="gh-feature__icon">🗺</div>
+          <h3>多种玩法模式</h3>
+          <p>人机对战、Roguelike 战役、竞技场三选一构筑、每日固定挑战、自建牌组，另有交互式新手教程，几分钟学会核心规则。</p>
+        </div>
+        <div class="gh-feature">
+          <div class="gh-feature__icon">🎴</div>
+          <h3>抽卡与外观收集</h3>
+          <p>对局赚取理智币，在商店召唤卡背与角色皮肤；支持单抽与十连抽，稀有保底，重复自动返还，外观在对局与角色选择中真实渲染。</p>
+        </div>
+        <div class="gh-feature">
+          <div class="gh-feature__icon">🏆</div>
+          <h3>战绩与成就记录</h3>
+          <p>跨模式记录胜负、胜率与连胜，按模式、阵营、领袖分组统计；数据驱动的成就墙追踪长期目标，结算后还能一键生成战报分享图。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 截图画廊 ===== -->
+    <section class="gh-section wrap">
+      <h2 class="gh-section__title">界面一览</h2>
+      <p class="gh-section__sub">主菜单、对局棋盘、调查员选择、商店召唤、每日挑战与成就墙</p>
+      <div class="gh-gallery">
+        <figure class="gh-shot">
+          <img src="./screenshots/menu-v2.png" alt="灰港三夜主菜单">
+          <figcaption>主菜单 · 模式入口</figcaption>
+        </figure>
+        <figure class="gh-shot">
+          <img src="./screenshots/match-v2.png" alt="对局棋盘">
+          <figcaption>对局棋盘 · 三线对峙</figcaption>
+        </figure>
+        <figure class="gh-shot">
+          <img src="./screenshots/character-vertical.png" alt="调查员选择">
+          <figcaption>调查员选择 · 领袖与外观</figcaption>
+        </figure>
+        <figure class="gh-shot">
+          <img src="./screenshots/shop.png" alt="商店召唤">
+          <figcaption>商店 · 卡背与皮肤召唤</figcaption>
+        </figure>
+        <figure class="gh-shot">
+          <img src="./screenshots/daily-challenge.png" alt="每日挑战">
+          <figcaption>每日挑战 · 当天同一局</figcaption>
+        </figure>
+        <figure class="gh-shot">
+          <img src="./screenshots/achievements.png" alt="成就墙">
+          <figcaption>成就墙 · 长期目标追踪</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ===== 玩法速览 ===== -->
+    <section class="gh-section wrap">
+      <h2 class="gh-section__title">三夜怎么玩</h2>
+      <p class="gh-section__sub">三步看懂一局牌的核心循环</p>
+      <div class="gh-rules">
+        <div class="gh-rule">
+          <div class="gh-rule__num">第一夜</div>
+          <h3>选阵营与领袖</h3>
+          <p>从学会或教团中挑选调查员领袖，搭配初始牌组进入牌局；不同领袖自带主动技与被动技，决定开局节奏。</p>
+        </div>
+        <div class="gh-rule">
+          <div class="gh-rule__num">第二夜</div>
+          <h3>在线上落子博弈</h3>
+          <p>出牌、换牌、发动装备与事件，在对峙线上争夺槽位；留意己方理智与敌方意图，双面卡随时可能翻向狂面。</p>
+        </div>
+        <div class="gh-rule">
+          <div class="gh-rule__num">第三夜</div>
+          <h3>夜末判定胜负</h3>
+          <p>每夜结束单位清空、据点保留；先赢下两夜，或率先达成线索 / 末日目标，即可带走灰港。理智归零则坠入疯狂。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 更新日志 ===== -->
+    <section class="gh-section wrap">
+      <h2 class="gh-section__title">更新日志</h2>
+      <p class="gh-section__sub">版本迭代与近期新增内容</p>
+      <div class="gh-changelog">
+        <div class="gh-log">
+          <div class="gh-log__head">
+            <span class="gh-log__ver">v1.0.0</span>
+            <span class="gh-log__date">2026-11-27</span>
+          </div>
+          <ul>
+            <li>首发完整三夜牌局：双阵营对峙、六名调查员领袖、双面理智翻转与双目标竞速。</li>
+            <li>人机对战、Roguelike 战役、竞技场选牌、每日挑战、自建牌组与新手教程。</li>
+            <li>货币经济、商店双 banner 召唤、卡背与皮肤外观、成就墙与卡牌图鉴。</li>
+            <li>提供 Windows x64 桌面安装包，网页浏览器可直接试玩。</li>
+          </ul>
+        </div>
+        <div class="gh-log">
+          <div class="gh-log__head">
+            <span class="gh-log__ver">近期更新</span>
+            <span class="gh-log__date">main 分支</span>
+          </div>
+          <ul>
+            <li>全局战绩记录：跨模式汇总胜负、胜率与连胜，按模式 / 阵营 / 领袖分组展示。</li>
+            <li>一键战报分享图：结算后把本局结果与累计战绩绘制成竖版 PNG 下载保存。</li>
+            <li>存档备份与桌面持久化加固：固定本地端口与存档目录，主菜单可导出 / 导入 JSON 备份。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 下载 ===== -->
+    <section class="gh-section wrap" id="download">
+      <div class="gh-download">
+        <h2>开始游玩</h2>
+        <p>不想下载？网页版打开即玩，进度保存在本机浏览器；想要桌面体验，可下载 Windows 安装包，进度随桌面软件保留，并支持导出备份。</p>
+        <div class="gh-download__actions">
+          <a class="btn btn--primary" href="./app.html">▶ 在线试玩</a>
+          <a class="btn btn--ghost" href="https://github.com/Lsirto/greyharbor/releases/latest" target="_blank" rel="noopener">⬇ Windows 安装包</a>
+        </div>
+        <p class="gh-download__note">桌面版仅提供 Windows x64（NSIS 安装包，约 120 MB）；macOS 与 Linux 暂未打包。安装包与最新版本均发布在 Releases 页面。</p>
+      </div>
+    </section>
+
+    <!-- ===== 页脚 ===== -->
+    <footer class="gh-footer wrap">
+      <p>《灰港三夜》为原创克苏鲁主题卡牌对局 · 原生 ES Modules，零运行时依赖、零构建步骤</p>
+      <p style="margin-top:8px;">
+        <a href="https://github.com/Lsirto/greyharbor" target="_blank" rel="noopener">GitHub 仓库</a>
+        &nbsp;·&nbsp;
+        <a href="https://github.com/Lsirto/greyharbor/releases/latest" target="_blank" rel="noopener">最新发行版</a>
+      </p>
+    </footer>
+
+  </div>
 </body>
 </html>
