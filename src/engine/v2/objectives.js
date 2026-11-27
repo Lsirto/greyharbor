@@ -8,11 +8,26 @@
  */
 
 /**
- * Shipped threshold.  A v1.4 data sweep (scripts/balance-objectives-sweep.mjs)
- * showed a sharp cliff: 6 → 62% objective endings (too dominant), 7 → ~31% with
- * all three ending types balanced, 8 → ~5% (mechanism nearly dead). Finalised at 7.
+ * Shipped fallback threshold (Cult Doom).  A v1.4 data sweep showed a sharp
+ * cliff: 6 → 62% objective endings, 7 → ~31% balanced, 8 → ~5% nearly dead.
  */
 export const OBJECTIVE_THRESHOLD = 7;
+
+/**
+ * Per-faction thresholds.  Society clues accrue on nearly every face-up entry
+ * (high frequency after the single-line redesign), so the clue track needs a
+ * higher threshold than the lower-frequency Cult doom track.  The Society value
+ * was calibrated by the cross-seat AI sweep; see docs/EXPANSION_V2_OBJECTIVES_DESIGN.md.
+ */
+export const OBJECTIVE_THRESHOLDS = Object.freeze({
+  society: 10,
+  cult: OBJECTIVE_THRESHOLD,
+});
+
+/** Objective threshold for a player faction, falling back to the shared default. */
+export function thresholdForFaction(faction) {
+  return OBJECTIVE_THRESHOLDS[faction] ?? OBJECTIVE_THRESHOLD;
+}
 
 export const OBJECTIVE_TYPES = Object.freeze({
   CLUE: 'clue',

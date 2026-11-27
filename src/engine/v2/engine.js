@@ -49,6 +49,7 @@ import { drawAnomaly } from './anomalies.js';
 import { drawChaosToken } from './chaos-bag.js';
 import {
   OBJECTIVE_THRESHOLD,
+  thresholdForFaction,
   objectiveMetaForFaction,
   objectiveTypeForFaction,
 } from './objectives.js';
@@ -221,9 +222,27 @@ function normalizeOptions(options = {}) {
 
   // Experiment hook (defaults to the shipped constant in objectives.js) so a
   // diagnostic can sweep thresholds without editing the single source of truth.
-  const objectiveThreshold = options.objectiveThreshold ?? OBJECTIVE_THRESHOLD;
-  if (!Number.isInteger(objectiveThreshold) || objectiveThreshold < 1) {
+  // Optional global override; when absent, each faction uses its own threshold.
+  const objectiveThreshold = options.objectiveThreshold === undefined
+    ? null
+    : options.objectiveThreshold;
+  if (objectiveThreshold !== null && (!Number.isInteger(objectiveThreshold) || objectiveThreshold < 1)) {
     throw new Error('objectiveThreshold must be a positive integer');
+  }
+
+  // Optional per-faction override map { society?, cult? }; lower priority than
+  // the global objectiveThreshold above, higher than the shipped constants.
+  let objectiveThresholds = null;
+  if (options.objectiveThresholds !== undefined && options.objectiveThresholds !== null) {
+    const src = options.objectiveThresholds;
+    objectiveThresholds = {};
+    for (const f of ['society', 'cult']) {
+      const v = src[f];
+      if (v !== undefined) {
+        if (!Number.isInteger(v) || v < 1) throw new Error(`objectiveThresholds.${f} must be a positive integer`);
+        objectiveThresholds[f] = v;
+      }
+    }
   }
 
   const names = options.names ?? ['P0', 'P1'];
@@ -237,6 +256,7 @@ function normalizeOptions(options = {}) {
     startingSanity,
     maxNights,
     objectiveThreshold,
+    objectiveThresholds,
     names: names.map(String),
     compensation: normalizeCompensation(options.firstPlayerCompensation),
     mechanics: normalizeMechanics(options.mechanics),
@@ -2391,7 +2411,10 @@ export class EngineV2 {
       total: player.objective,
     });
 
-    if (player.objective >= this.config.objectiveThreshold && !this._sanityAtZero()) {
+    const threshold = this.config.objectiveThreshold
+      ?? this.config.objectiveThresholds?.[player.faction]
+      ?? thresholdForFaction(player.faction);
+    if (player.objective >= threshold && !this._sanityAtZero()) {
       this._gameOver(p, 'objective', { objectiveType });
       return true;
     }

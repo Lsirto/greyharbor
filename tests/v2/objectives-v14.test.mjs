@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { createGame, buildView, countCards } from '../../src/engine/v2/index.js';
 import {
   OBJECTIVE_THRESHOLD,
+  OBJECTIVE_THRESHOLDS,
+  thresholdForFaction,
   objectiveMetaForFaction,
   objectiveTypeForFaction,
 } from '../../src/engine/v2/objectives.js';
@@ -78,6 +80,10 @@ test('objectiveTypeForFaction maps factions and rejects others', () => {
 
 test('threshold is 7 and metadata carries bilingual labels', () => {
   assert.equal(OBJECTIVE_THRESHOLD, 7);
+  assert.equal(OBJECTIVE_THRESHOLDS.cult, 7);
+  assert.equal(thresholdForFaction('cult'), 7);
+  assert.equal(thresholdForFaction('society'), OBJECTIVE_THRESHOLDS.society);
+  assert.equal(thresholdForFaction('neutral'), 7);
   assert.equal(objectiveMetaForFaction('society').nameZh, '线索');
   assert.equal(objectiveMetaForFaction('society').winZh, '真相大白');
   assert.equal(objectiveMetaForFaction('cult').nameZh, '末日');
@@ -96,8 +102,10 @@ test('players start at 0 and the view exposes objective fields', () => {
     assert.equal(engine.state.players[p].objective, 0);
     const view = buildView(engine, p);
     assert.equal(view.players[p].objective, 0);
-    assert.equal(view.players[p].objectiveThreshold, 7);
   }
+  const openView = buildView(engine, 0);
+  assert.equal(openView.players[0].objectiveThreshold, OBJECTIVE_THRESHOLDS.society);
+  assert.equal(openView.players[1].objectiveThreshold, OBJECTIVE_THRESHOLDS.cult);
   assert.equal(buildView(engine, 0).players[0].objectiveType, 'clue');
   assert.equal(buildView(engine, 0).players[1].objectiveType, 'doom');
 });
@@ -234,7 +242,7 @@ test('reaching the threshold ends the game immediately with objective reason', (
     },
     { leader: 'elias-thorne', cards: ['zealot'] },
   );
-  engine.state.players[0].objective = 6;
+  engine.state.players[0].objective = OBJECTIVE_THRESHOLDS.society - 1;
   forceTurn(engine, 0);
   const walter = engine.state.players[0].hand.find((i) => i.cardId === 'walter-morse');
   const action = engine.getActions(0).find((a) =>

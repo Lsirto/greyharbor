@@ -8,6 +8,7 @@
  */
 
 import { createGame } from '../engine/v2/index.js';
+import { OBJECTIVE_THRESHOLD } from '../engine/v2/objectives.js';
 import { chooseAction } from '../ai/v2/ai.mjs';
 import { getRelic } from './data/relics.mjs';
 
@@ -51,6 +52,9 @@ export function buildBattleConfig(run, node) {
     startingSanity: [playerSanity, 6],
     mechanics,
     names: ['调查员', '对手'],
+    // PvE headless fights are resource-disadvantage scenarios; keep the original
+    // shared threshold here rather than the PvP per-faction balance values.
+    objectiveThreshold: OBJECTIVE_THRESHOLD,
   };
   if (extraMulligan > 0) {
     options.firstPlayerCompensation = { extraMulligan };

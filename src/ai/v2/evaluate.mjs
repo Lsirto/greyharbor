@@ -198,6 +198,7 @@ export function buildPosition(view, me) {
     myObjective: view.players[me]?.objective ?? 0,
     oppObjective: view.players[opp]?.objective ?? 0,
     objectiveThreshold: view.players[me]?.objectiveThreshold ?? 7,
+    oppObjectiveThreshold: view.players[opp]?.objectiveThreshold ?? 7,
     myPassed: !!view.passed?.[me],
     oppPassed: !!view.passed?.[opp],
     myHandCount: myHand.length,
@@ -247,12 +248,13 @@ export function evaluate(pos) {
 
   // v1.4 objective race: stored progress (escalating near the threshold) and
   // immediate objective victory/ defeat once the projected count reaches it.
-  const threshold = pos.objectiveThreshold;
-  const near = (count) => Math.max(0, count - (threshold - CONFIG.objectives.nearThresholdWindow));
+  const window = CONFIG.objectives.nearThresholdWindow;
+  const nearMy = Math.max(0, pos.myObjective - (pos.objectiveThreshold - window));
+  const nearOpp = Math.max(0, pos.oppObjective - (pos.oppObjectiveThreshold - window));
   score += (pos.myObjective - pos.oppObjective) * CONFIG.objectives.progressWeight;
-  score += (near(pos.myObjective) - near(pos.oppObjective)) * CONFIG.objectives.nearThresholdExtraWeight;
-  if (pos.myObjective >= threshold) score += CONFIG.night.matchWinBonus;
-  if (pos.oppObjective >= threshold) score += CONFIG.night.matchLossPenalty;
+  score += (nearMy - nearOpp) * CONFIG.objectives.nearThresholdExtraWeight;
+  if (pos.myObjective >= pos.objectiveThreshold) score += CONFIG.night.matchWinBonus;
+  if (pos.oppObjective >= pos.oppObjectiveThreshold) score += CONFIG.night.matchLossPenalty;
 
   if (pos.mySanity <= 0) score += CONFIG.sanity.zeroMatchLossPenalty;
   if (pos.oppSanity <= 0) score += CONFIG.sanity.zeroMatchWinBonus;

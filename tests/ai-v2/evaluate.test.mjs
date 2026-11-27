@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { buildView, createGame } from '../../src/engine/v2/index.js';
+import { OBJECTIVE_THRESHOLDS } from '../../src/engine/v2/objectives.js';
 import { CONFIG } from '../../src/ai/v2/config.mjs';
 import { scoreAction } from '../../src/ai/v2/evaluate.mjs';
 
@@ -73,4 +74,12 @@ test('对手领袖可用时，己方出牌评分低于其已用过后的处境',
       `leader ${opp} available should be a threat: ${safeScore} < ${threatScore}`,
     );
   }
+});
+
+test('双方视角各自暴露本阵营目标阈值，互不串用', () => {
+  const view = playView('evaluate-threshold');
+  const me = view.current;
+  const opp = 1 - me;
+  assert.equal(view.players[me].objectiveThreshold, OBJECTIVE_THRESHOLDS[view.players[me].faction]);
+  assert.equal(view.players[opp].objectiveThreshold, OBJECTIVE_THRESHOLDS[view.players[opp].faction]);
 });

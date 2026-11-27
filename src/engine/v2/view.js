@@ -13,7 +13,7 @@ import {
   printedPower,
   scorePlayer,
 } from './scoring.js';
-import { objectiveTypeForFaction } from './objectives.js';
+import { objectiveTypeForFaction, thresholdForFaction } from './objectives.js';
 
 function fullCardView(inst, card, {
   onBoard = false,
@@ -150,7 +150,9 @@ export function buildView(engine, pov) {
       sanity: player.sanity,
       objective: player.objective ?? 0,
       objectiveType: objectiveTypeForFaction(player.faction),
-      objectiveThreshold: engine.config.objectiveThreshold,
+      objectiveThreshold: engine.config.objectiveThreshold
+        ?? engine.config.objectiveThresholds?.[player.faction]
+        ?? thresholdForFaction(player.faction),
       hand,
       handCount: player.hand.length,
       deckCount: player.deck.length,
