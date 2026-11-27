@@ -13,6 +13,7 @@
 
 import { createGameController } from '../game-controller.mjs';
 import { createFxController } from '../fx/fx-controller.mjs';
+import { audio as defaultAudio } from '../audio/audio-engine.mjs';
 import { createCampaignController } from '../campaign/campaign-controller.mjs';
 import { createArenaController } from '../arena/arena-controller.mjs';
 import { createDailyController } from '../daily/daily-controller.mjs';
@@ -42,6 +43,7 @@ import {
   FACTION_CARDS,
   characterIdsFor,
   getCharacterCard,
+  renderAudioSettings,
   renderCharacterSelect,
   renderFactionSelect,
   renderMainMenu,
@@ -86,6 +88,8 @@ export function createAppShell(options = {}) {
   let storage = null;
   let tutorial = null;
   let fx = null;
+  const audioEngine = opts.audio ?? defaultAudio;
+  let audioLayer = null;
 
   const el = document.createElement('div');
   el.className = 'gh2-app-shell';
@@ -629,9 +633,65 @@ export function createAppShell(options = {}) {
     return tutorial;
   }
 
+  function closeAudioSettings() {
+    if (!audioLayer) return;
+    const old = audioLayer;
+    audioLayer = null;
+    try { old.remove(); } catch (_) { /* ignore */ }
+  }
+
+  function openAudioSettings() {
+    closeAudioSettings();
+    const layer = document.createElement('div');
+    layer.className = 'gh2-audio-layer-host';
+    layer.innerHTML = renderAudioSettings(audioEngine.getSettings());
+    el.appendChild(layer);
+    audioLayer = layer;
+  }
+
+  function refreshAudioSettings() {
+    if (!audioLayer) return;
+    audioLayer.innerHTML = renderAudioSettings(audioEngine.getSettings());
+  }
+
+  function handleAudioToggle(button) {
+    const turningOn = button.getAttribute('aria-pressed') !== 'true';
+    if (button.dataset.audioToggle === 'sfx') audioEngine.setSfxEnabled(turningOn);
+    else if (button.dataset.audioToggle === 'bgm') audioEngine.setBgmEnabled(turningOn);
+    else return;
+    refreshAudioSettings();
+  }
+
+  // 滑块拖动：实时把 0–100 换算成 0–1 写入对应总线。
+  function handleAudioInput(event) {
+    const source = event?.target;
+    const slider = source && typeof source.closest === 'function'
+      ? source.closest('[data-audio-volume]')
+      : null;
+    if (!slider) return;
+    const value = Number(slider.value) / 100;
+    if (slider.dataset.audioVolume === 'sfx') audioEngine.setVolume(value);
+    else if (slider.dataset.audioVolume === 'bgm') audioEngine.setBgmVolume(value);
+  }
+
   function handleClick(event) {
     const target = event?.target;
     if (!target || typeof target.closest !== 'function') return;
+    const audioClose = target.closest('[data-audio-close]');
+    if (audioClose) {
+      closeAudioSettings();
+      return;
+    }
+    const audioToggle = target.closest('[data-audio-toggle]');
+    if (audioToggle) {
+      handleAudioToggle(audioToggle);
+      return;
+    }
+    // 点遮罩空白处（浮层根节点本身）关闭，点面板内部不关闭。
+    if (target.closest('[data-audio-layer]') && !target.closest('.gh2-audio-modal')) {
+      closeAudioSettings();
+      return;
+    }
     const modeButton = target.closest('[data-seed-mode]');
     if (modeButton) {
       seedMode = modeButton.dataset.seedMode === 'random' ? 'random' : 'fixed';
@@ -795,6 +855,8 @@ export function createAppShell(options = {}) {
       startTutorial();
     } else if (action === 'start-multiplayer') {
       showScreen('multiplayer');
+    } else if (action === 'audio-settings') {
+      openAudioSettings();
     } else if (action === 'back') showScreen('menu');
     else if (action === 'start-match') {
       if (entryMode === 'campaign') {
@@ -821,6 +883,7 @@ export function createAppShell(options = {}) {
   }
 
   el.addEventListener('click', handleClick);
+  el.addEventListener('input', handleAudioInput);
 
   return {
     el,
@@ -860,7 +923,9 @@ export function createAppShell(options = {}) {
       destroyDeck();
       destroyCodex();
       destroyTutorial();
+      closeAudioSettings();
       el.removeEventListener('click', handleClick);
+      el.removeEventListener('input', handleAudioInput);
       el.remove();
     },
   };

@@ -29,6 +29,8 @@ export const MAIN_MENU_TEXT = Object.freeze({
   tutorialHint: '交互式引导，几分钟学会换牌、出牌与理智规则',
   multiplayerLabel: '多人对战',
   multiplayerHint: '与真人在线对战，房间号加入（开发中）',
+  settingsLabel: '声音设置',
+  settingsHint: '分别开关音效与背景音乐，调节各自音量',
   rulesLabel: '规则简介',
 });
 
@@ -83,6 +85,10 @@ export function renderMainMenu(options = {}) {
       <button type="button" class="gh2-menu-btn" data-menu-action="start-multiplayer">
         <span class="gh2-menu-btn__icon" aria-hidden="true">⚑</span>
         <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.multiplayerLabel)} <em class="gh2-menu-btn__badge" aria-label="功能开发中">开发中</em></b><small>${escapeHtml(MAIN_MENU_TEXT.multiplayerHint)}</small></span>
+      </button>
+      <button type="button" class="gh2-menu-btn" data-menu-action="audio-settings">
+        <span class="gh2-menu-btn__icon" aria-hidden="true">⚙</span>
+        <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.settingsLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.settingsHint)}</small></span>
       </button>
     </div>
     <details class="gh2-rules">

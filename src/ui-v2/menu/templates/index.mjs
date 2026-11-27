@@ -9,6 +9,7 @@ export {
   renderStartButton,
   renderFactionSelect,
 } from './faction-select.mjs';
+export { renderAudioSettings } from './audio-settings.mjs';
 export { SEED_MODES, renderModeToggle } from './mode-toggle.mjs';
 export { RESULT_REASON_ZH, renderResultPanel } from './result-panel.mjs';
 export {

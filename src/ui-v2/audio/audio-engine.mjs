@@ -118,7 +118,10 @@ function readSettings(storage) {
     return {
       enabled: parsed.enabled !== false,
       muted: parsed.muted === true,
+      sfxEnabled: parsed.sfxEnabled !== false,
       volume: clamp(Number.isFinite(Number(parsed.volume)) ? Number(parsed.volume) : base.volume, 0, 1),
+      bgmEnabled: parsed.bgmEnabled !== false,
+      bgmVolume: clamp(Number.isFinite(Number(parsed.bgmVolume)) ? Number(parsed.bgmVolume) : base.bgmVolume, 0, 1),
     };
   } catch (_) {
     return base;
@@ -196,14 +199,23 @@ export function createAudioEngine(options = {}) {
     return ctx;
   }
 
-  function applyVolume() {
-    if (!master?.gain) return;
-    const value = settings.muted ? 0 : clamp(settings.volume, 0, 1) * 0.8;
+  function setParam(param, value, t) {
+    if (!param) return;
     try {
-      master.gain.setValueAtTime(value, ctx?.currentTime ?? 0);
+      param.setValueAtTime(value, t);
     } catch (_) {
-      try { master.gain.value = value; } catch (__) { /* ignore */ }
+      try { param.value = value; } catch (__) { /* ignore */ }
     }
+  }
+
+  function applyVolume() {
+    const t = ctx?.currentTime ?? 0;
+    const masterMuted = settings.muted || settings.enabled === false;
+    setParam(master?.gain, masterMuted ? 0 : 0.8, t);
+    const sfxOn = !masterMuted && settings.sfxEnabled !== false;
+    setParam(bus?.gain, sfxOn ? clamp(settings.volume, 0, 1) : 0, t);
+    const bgmOn = !masterMuted && settings.bgmEnabled !== false;
+    setParam(bgmBus?.gain, bgmOn ? clamp(settings.bgmVolume, 0, 1) * BGM_BUS_GAIN : 0, t);
   }
 
   function getNoiseBuffer(context) {
@@ -330,8 +342,8 @@ export function createAudioEngine(options = {}) {
     if (bgmStarted || destroyed || !ctx || failed) return;
     try {
       bgmBus = ctx.createGain();
-      bgmBus.gain.value = BGM_BUS_GAIN;
       bgmBus.connect(master);
+      applyVolume();
       for (const freq of BGM_DRONE) {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -370,7 +382,7 @@ export function createAudioEngine(options = {}) {
   }
 
   function play(voice, config = {}) {
-    if (!isReady() || settings.muted || settings.enabled === false) return false;
+    if (!isReady() || settings.muted || settings.enabled === false || settings.sfxEnabled === false) return false;
     if (!SOUND_VOICES.includes(voice)) return false;
     const recipe = RECIPES[voice] ?? RECIPES['ui-click'];
     const t = now();
@@ -438,6 +450,24 @@ export function createAudioEngine(options = {}) {
       applyVolume();
       persist();
       return settings.volume;
+    },
+    setSfxEnabled(value) {
+      settings = { ...settings, sfxEnabled: value === true };
+      applyVolume();
+      persist();
+      return settings.sfxEnabled;
+    },
+    setBgmEnabled(value) {
+      settings = { ...settings, bgmEnabled: value === true };
+      applyVolume();
+      persist();
+      return settings.bgmEnabled;
+    },
+    setBgmVolume(value) {
+      settings = { ...settings, bgmVolume: clamp(Number(value), 0, 1) };
+      applyVolume();
+      persist();
+      return settings.bgmVolume;
     },
     stats: () => ({ unlocked, failed, destroyed, voices: SOUND_VOICES.length, recipes: Object.keys(RECIPES).length, bgm: bgmStarted }),
     destroy() {

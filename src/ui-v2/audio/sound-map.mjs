@@ -86,7 +86,10 @@ export const UI_SOUND_MAP = Object.freeze({ click: V['ui-click'], hover: V['ui-h
 export const DEFAULT_AUDIO_SETTINGS = Object.freeze({
   enabled: true,
   muted: false,
+  sfxEnabled: true,
   volume: 0.7,
+  bgmEnabled: true,
+  bgmVolume: 0.6,
 });
 
 /** Guard against a burst of events producing a wall of overlapping voices. */
