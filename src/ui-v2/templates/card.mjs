@@ -87,6 +87,9 @@ export function renderCard(card, options = {}) {
   const costBadge = view.sanityCost > 0
     ? `<span class="gh2-card__cost" title="理智代价">${icon('eye')}${escapeHtml(view.sanityCost)}</span>`
     : '';
+  const auraBadge = view.auraPower !== 0
+    ? `<span class="gh2-card__aura gh2-card__aura--${view.auraPower < 0 ? 'down' : 'up'}" title="当夜环境/光环修正">${view.auraPower > 0 ? '+' : ''}${escapeHtml(view.auraPower)}</span>`
+    : '';
   const artIcon = hasIcon(`art-${view.type}`) ? icon(`art-${view.type}`) : icon('art-unit');
   const artSrc = typeof opts.artSrc === 'string'
     ? opts.artSrc
@@ -112,6 +115,7 @@ export function renderCard(card, options = {}) {
     <div class="gh2-card__surface">
       <div class="gh2-card__header">
         ${renderPower(view)}
+        ${auraBadge}
         ${costBadge}
       </div>
       <div class="gh2-card__art">

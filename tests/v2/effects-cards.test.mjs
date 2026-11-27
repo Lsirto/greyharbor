@@ -360,6 +360,27 @@ test('silver-lantern: replaces seal and destroy but not sacrifice', () => {
   }
 });
 
+test('equipment returns to hand at night cleanup while the host is discarded', () => {
+  const engine = setup({
+    seed: 231,
+    mechanics: { anomaly: false },
+    p0: { leader: 'harold-ashby', cards: ['silver-lantern', 'finn-calloway', 'finn-calloway'] },
+    p1: { leader: 'elias-thorne', cards: ['finn-calloway', 'deep-one'] },
+  });
+  const host = putUnit(engine, 0, 'finn-calloway', 'front', 0);
+  const lantern = putEquipment(engine, 0, 'silver-lantern', host);
+  passUntilNight(engine, 2);
+  // 单位在夜末照常被弃
+  assert.equal(engine.state.players[0].board.front[0], null);
+  assert.ok(engine.state.players[0].discard.some((inst) => inst.uid === host.uid), 'host discarded at night end');
+  // 装备返回手牌、不进弃牌堆，并解除附属状态
+  assert.equal(engine.state.players[0].discard.some((inst) => inst.uid === lantern.uid), false, 'lantern is not discarded');
+  assert.ok(engine.state.players[0].hand.some((inst) => inst.uid === lantern.uid), 'lantern returns to hand');
+  assert.equal(lantern.zone, 'hand');
+  assert.equal(lantern.attachedTo, null);
+  assert.ok(engine.state.events.some((event) => event.type === 'equipmentToHand' && event.uid === lantern.uid));
+});
+
 // ── old-library: corruption immunity + archive discount (§6.3 / §5.4) ─────
 
 test('old-library: archive cards are corruption immune and the first archive play costs 1 less', () => {
@@ -539,22 +560,29 @@ test('tide-ritual: gives the own dream row +3 this night and expires afterwards'
 
 // ── lunar-eclipse / stormy-night: global auras ────────────────────────────
 
-test('lunar-eclipse: this night reason face -1 and madness face +1 for both players', () => {
+test('lunar-eclipse: this night enemy reason -1 / madness +1, own madness +1 only', () => {
   const engine = setup({
     seed: 218,
     p0: { leader: 'elias-thorne', cards: ['lunar-eclipse', 'zealot', 'finn-calloway', 'finn-calloway'] },
     p1: { leader: 'harold-ashby', cards: ['finn-calloway', 'deep-one'] },
   });
-  putUnit(engine, 0, 'zealot', 'front', 0);
-  putUnit(engine, 1, 'finn-calloway', 'front', 0);
+  const ownReason = putUnit(engine, 0, 'zealot', 'front', 0);
+  const ownMad = putUnit(engine, 0, 'finn-calloway', 'front', 1, { face: 'madness' });
+  const enemyReason = putUnit(engine, 1, 'finn-calloway', 'front', 0);
+  const beforeOwnReason = currentUnitPower(engine.state, 0, ownReason, 'front', 0);
+  const beforeOwnMad = currentUnitPower(engine.state, 0, ownMad, 'front', 1);
+  const beforeEnemy = currentUnitPower(engine.state, 1, enemyReason, 'front', 0);
   const played = play(engine, 0, 'lunar-eclipse');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
-  // v1.2: zealot reasonPower 3 -> 2, Lunar Eclipse reason -1 unchanged; finn unaffected.
-  assert.equal(currentUnitPower(engine.state, 0, engine.state.players[0].board.front[0], 'front', 0), 1);
-  assert.equal(currentUnitPower(engine.state, 1, engine.state.players[1].board.front[0], 'front', 0), 2);
+  // 己方理性面不受月食影响
+  assert.equal(currentUnitPower(engine.state, 0, ownReason, 'front', 0), beforeOwnReason);
+  // 己方疯狂面 +1
+  assert.equal(currentUnitPower(engine.state, 0, ownMad, 'front', 1), beforeOwnMad + 1);
+  // 敌方理性面 -1
+  assert.equal(currentUnitPower(engine.state, 1, enemyReason, 'front', 0), Math.max(0, beforeEnemy - 1));
 });
 
-test('stormy-night: this night scene -2 for both players', () => {
+test('stormy-night: this night enemy front -2, own front -1', () => {
   const engine = setup({
     seed: 219,
     p0: { leader: 'elias-thorne', cards: ['stormy-night', 'zealot', 'finn-calloway', 'finn-calloway'] },
@@ -567,8 +595,9 @@ test('stormy-night: this night scene -2 for both players', () => {
   const before1 = currentUnitPower(engine.state, 1, finnInst, 'front', 0);
   const played = play(engine, 0, 'stormy-night');
   assert.ok(played.events.some((event) => event.type === 'auraAdded'));
-  // Stormy Night applies a this-night front -2 on top of every other modifier.
-  assert.equal(currentUnitPower(engine.state, 0, zealotInst, 'front', 0), Math.max(0, before0 - 2));
+  // 己方对峙线单位 -1
+  assert.equal(currentUnitPower(engine.state, 0, zealotInst, 'front', 0), Math.max(0, before0 - 1));
+  // 敌方对峙线单位 -2
   assert.equal(currentUnitPower(engine.state, 1, finnInst, 'front', 0), Math.max(0, before1 - 2));
 });
 

@@ -292,6 +292,37 @@
   border-bottom: 2px solid var(--gh2-lamp);
 }
 
+.gh2-card__aura {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.05em 0.32em;
+  border-radius: 3px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.gh2-card__aura--down {
+  background: rgba(150, 40, 40, 0.85);
+  color: #ffe6dd;
+}
+
+.gh2-card__aura--up {
+  background: rgba(180, 140, 60, 0.9);
+  color: #241a08;
+}
+
+.gh2-card.is-aura-down .gh2-card__surface {
+  box-shadow: var(--gh2-shadow), 0 0 10px rgba(190, 60, 50, 0.55), inset 0 0 14px rgba(120, 20, 16, 0.45);
+  outline: 2px solid rgba(210, 80, 66, 0.7);
+  outline-offset: -3px;
+}
+
+.gh2-card.is-aura-up .gh2-card__surface {
+  box-shadow: var(--gh2-shadow), 0 0 10px rgba(210, 170, 80, 0.55), inset 0 0 12px rgba(150, 110, 40, 0.4);
+  outline: 2px solid rgba(220, 180, 90, 0.7);
+  outline-offset: -3px;
+}
+
 /* 卡背：不渲染任何身份信息 */
 .gh2-card--back .gh2-card__back-frame {
   position: absolute;

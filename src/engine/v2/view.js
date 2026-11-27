@@ -8,6 +8,7 @@
 
 import {
   LOCATIONS,
+  auraPowerBonus,
   currentUnitPower,
   printedPower,
   scorePlayer,
@@ -19,6 +20,7 @@ function fullCardView(inst, card, {
   location = null,
   slot = null,
   power = null,
+  auraPower = null,
   cardIndex = null,
 } = {}) {
   return {
@@ -44,6 +46,7 @@ function fullCardView(inst, card, {
         corruptionLoss: inst.corruptionLoss ?? 0,
         permanentPower: inst.permanentPower ?? 0,
         thisNightPower: inst.thisNightPower ?? 0,
+        auraPower: auraPower ?? 0,
         chaos: inst.chaosToken
           ? { id: inst.chaosToken.id, modifier: inst.chaosToken.modifier }
           : null,
@@ -109,6 +112,7 @@ export function buildView(engine, pov) {
           location,
           slot,
           power: currentUnitPower(state, p, inst, location, slot),
+          auraPower: auraPowerBonus(state, p, inst, location, cardIndex[inst.cardId]),
           cardIndex,
         });
       });

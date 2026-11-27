@@ -815,6 +815,11 @@ export function createGameController(options = {}) {
       const data = asObject(event);
       const name = EVENT_NAMES_ZH[data.type] ?? data.type ?? '事件';
       if (data.type === 'chaosDraw') showChaosBanner(data);
+      if (data.type === 'archiveDiscount') {
+        say(`老图书馆：本夜首张入档牌理智代价 -${safeInt(data.amount, 1)}`, 'good');
+      }
+      if (data.type === 'sealBlocked') say('目标免疫封印，封印未生效', 'warn');
+      if (data.type === 'corruptionBlocked') say('目标免疫腐化，腐化未生效', 'warn');
       if (data.type === 'nightEnd') {
         const winner = data.winner === HUMAN ? '你' : data.winner === AI ? 'AI' : '平夜';
         eventLog.push(`第 ${safeInt(data.night, 0)} 夜结算 · ${winner} · ${safeInt(data.scores?.[HUMAN]?.total, 0)}:${safeInt(data.scores?.[AI]?.total, 0)}`);

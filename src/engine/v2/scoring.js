@@ -173,6 +173,7 @@ export function auraApplies(aura, state, p, inst, location, card) {
   if (!aura || !isAuraActive(state, aura)) return false;
   const scope = aura.scope ?? {};
   if (scope.side === 'own' && p !== aura.sourcePlayer) return false;
+  if (scope.side === 'enemy' && p === aura.sourcePlayer) return false;
   if (scope.location && location !== scope.location) return false;
   if (scope.types && (!card || !scope.types.includes(card.type))) return false;
   if (scope.faceUpOnly !== false && inst?.faceDown) return false;

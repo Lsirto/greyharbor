@@ -104,6 +104,7 @@ export function normalizeCardView(raw, options = {}) {
     corruptionLoss: hidden ? 0 : Math.max(0, safeInt(card.corruptionLoss, 0)),
     permanentPower: hidden ? 0 : safeInt(card.permanentPower, 0),
     thisNightPower: hidden ? 0 : safeInt(card.thisNightPower, 0),
+    auraPower: hidden ? 0 : safeInt(card.auraPower, 0),
     equipment: hidden || !equipmentName ? null : { name: equipmentName },
     chaos,
     size: SIZES.has(options.size) ? options.size : 'board',
@@ -205,6 +206,8 @@ export function cardClasses(card, options = {}) {
     if (view.sealed) classes.push('is-sealed');
     if (view.corruption > 0) classes.push('is-corrupted');
     if (view.equipment) classes.push('is-equipped');
+    if (view.auraPower < 0) classes.push('is-aura-down');
+    if (view.auraPower > 0) classes.push('is-aura-up');
   }
   return classes;
 }

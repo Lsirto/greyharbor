@@ -628,11 +628,19 @@ export const EFFECT_REGISTRY = Object.freeze({
           op: 'addAura',
           duration: DURATION.THIS_NIGHT,
           requiresSourceActive: true,
-          // Lunar Eclipse is player-wide across both boards; any face-up unit
-          // in scope receives the face-scoped modifier.
-          selector: selector({ side: SIDE.ANY, zones: [ZONE.BOARD], types: SLOT_TYPES, face: 'up', count: 1, required: true }),
-          scope: { side: 'both', location: null, types: SLOT_TYPES, faceUpOnly: true },
+          // The enemy keeps the full face-scoped penalty: reason -1, madness +1.
+          selector: selector({ side: SIDE.ENEMY, zones: [ZONE.LOCATION_ROW], location: 'front', count: 1, required: true }),
+          scope: { side: 'enemy', location: 'front', types: SLOT_TYPES, faceUpOnly: true },
           modifiers: { facePower: { reason: -1, madness: 1 } },
+        },
+        {
+          op: 'addAura',
+          duration: DURATION.THIS_NIGHT,
+          requiresSourceActive: true,
+          // Own cult units only gain the madness bonus, no reason penalty.
+          selector: selector({ side: SIDE.OWN, zones: [ZONE.LOCATION_ROW], location: 'front', count: 1, required: true }),
+          scope: { side: 'own', location: 'front', types: SLOT_TYPES, faceUpOnly: true },
+          modifiers: { facePower: { reason: 0, madness: 1 } },
         },
       ], { id: 'lunar-eclipse' }),
     ),
@@ -814,10 +822,19 @@ export const EFFECT_REGISTRY = Object.freeze({
           op: 'addAura',
           duration: DURATION.THIS_NIGHT,
           requiresSourceActive: true,
-          // Stormy Night weakens every face-up unit on the front line.
-          selector: selector({ side: SIDE.ANY, zones: [ZONE.BOARD], location: 'front', types: SLOT_TYPES, face: 'up', count: 1, required: true }),
-          scope: { side: 'both', location: 'front', types: SLOT_TYPES, faceUpOnly: true },
+          // The enemy bears the full storm: -2.
+          selector: selector({ side: SIDE.ENEMY, zones: [ZONE.LOCATION_ROW], location: 'front', count: 1, required: true }),
+          scope: { side: 'enemy', location: 'front', types: SLOT_TYPES, faceUpOnly: true },
           modifiers: { power: -2 },
+        },
+        {
+          op: 'addAura',
+          duration: DURATION.THIS_NIGHT,
+          requiresSourceActive: true,
+          // Own units weather the storm better: -1.
+          selector: selector({ side: SIDE.OWN, zones: [ZONE.LOCATION_ROW], location: 'front', count: 1, required: true }),
+          scope: { side: 'own', location: 'front', types: SLOT_TYPES, faceUpOnly: true },
+          modifiers: { power: -1 },
         },
       ], { id: 'stormy-night' }),
     ),

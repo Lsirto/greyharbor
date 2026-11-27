@@ -581,7 +581,10 @@ export class EngineV2 {
     player.hand.splice(handIndex, 1);
     inst.face = face;
     inst.enteredNight = state.night;
-    if (discount > 0) this.state.players[p].flags.libraryDiscountUsed = true;
+    if (discount > 0) {
+      this.state.players[p].flags.libraryDiscountUsed = true;
+      this._emit({ type: 'archiveDiscount', player: p, cardId: inst.cardId, amount: discount });
+    }
     if (sanityCost > 0) this._changeSanity(p, -sanityCost, 'sanityCost');
 
     if (plan.kind === 'unit') {
@@ -1518,7 +1521,17 @@ export class EngineV2 {
   _applyCorruption(controller, target, amount = 1, ctx = null) {
     if (!target?.inst || target.kind !== 'unit') return;
     if (target.inst.faceDown) return;
-    if (isCorruptionImmune(this.state, target.player, target.inst, target.location ?? null)) return;
+    if (isCorruptionImmune(this.state, target.player, target.inst, target.location ?? null)) {
+      this._emit({
+        type: 'corruptionBlocked',
+        player: controller,
+        targetPlayer: target.player,
+        uid: target.uid,
+        cardId: target.inst.cardId,
+        reason: 'immune',
+      });
+      return;
+    }
     const { state } = this;
     const inst = target.inst;
     inst.corruptionTokens ??= [];
@@ -1659,6 +1672,24 @@ export class EngineV2 {
     host.equipment = null;
     equipment.attachedTo = null;
     this._discardInstance(p, equipment, reason);
+  }
+
+  /**
+   * Night reset: equipment is not discarded with its host.  It returns to the
+   * owner's hand so it can be attached again on a later night.  Generic over
+   * every equipment card (no per-id branch).
+   */
+  _returnEquipmentToHand(p, equipment) {
+    const player = this.state.players[p];
+    equipment.attachedTo = null;
+    equipment.zone = 'hand';
+    equipment.faceDown = false;
+    equipment.location = null;
+    equipment.slot = null;
+    equipment.sealed = false;
+    equipment.face = faceForSanity(player.sanity);
+    player.hand.push(equipment);
+    this._emit({ type: 'equipmentToHand', player: p, uid: equipment.uid, cardId: equipment.cardId });
   }
 
   _moveAbyssToHand(p, uid, { excludeUid = null } = {}) {
@@ -2234,8 +2265,8 @@ export class EngineV2 {
           if (inst.equipment) {
             const equipment = inst.equipment;
             inst.equipment = null;
-            equipment.attachedTo = null;
-            this._discardInstance(player.id, equipment, 'nightReset');
+            // Equipment survives the night reset and returns to hand.
+            this._returnEquipmentToHand(player.id, equipment);
           }
           this._discardInstance(player.id, inst, 'nightReset');
           row[slot] = null;
