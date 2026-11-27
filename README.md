@@ -1,12 +1,27 @@
 # 灰港三夜 · THREE NIGHTS IN GREYHARBOR
 
-> 原创设定：雾锁的灰港，三夜牌局。学会（Society）与教团（Cult）在灯火与深渊之间轮番落子；
+> 原创设定：雾锁的灰港，三夜牌局。学会与教团在灯火与深渊之间轮番落子；
 > 理智耗尽者坠入疯狂，先赢两夜者带走港口，而学会追查线索求「真相大白」、教团累积末日召「旧神降临」。
-> 双面卡牌在「理 / 狂」之间翻转，封印、腐化、献祭、地点结算与双目标竞速共同构成一套
-> **独立于《昆特牌》规则的原创玩法**。
+> 双方在同一条「对峙线」上各占 6 个槽位，每夜结束单位清空、据点保留；双面卡牌在「理 / 狂」之间翻转，
+> 封印、腐化、献祭与双目标竞速共同构成一套**独立于《昆特牌》规则的原创玩法**。
 
 **《灰港三夜》是本项目的新版正式入口（`index.html`）。** 旧版《昆特牌》网页复刻完整保留在
 `gwent.html`，作为参考实现与遗留套件，不参与新版规则。
+
+## 桌面版（Electron）
+
+游戏提供原生 Windows 桌面软件，无需浏览器、无需手动起本地服务器：桌面主进程（`desktop/main.cjs`）
+内置零依赖静态服务器，在 `127.0.0.1` 随机端口起服务后加载同一份 `app.html`，窗口 1440×900（最小
+1280×800）、无菜单栏、单实例运行，外部链接自动交给系统浏览器。
+
+```bash
+npm run desktop          # 开发态直接运行桌面窗口
+npm run dist:win         # 用 electron-builder 打出 Windows 安装包（NSIS，x64）
+```
+
+- 安装包产物：`dist/灰港三夜 Setup 1.0.0.exe`（约 120 MB），向导式安装，可自选安装目录、自动创建桌面与开始菜单快捷方式。
+- 应用图标源文件在 `build/icon.ico`（含 16–256 共 7 个尺寸），窗口图标为 `desktop/icon.png`。
+- 打包只纳入 `app.html`、`desktop/`、`src/` 与 `assets/`，无运行时第三方依赖；`dist/` 已在 `.gitignore` 中。
 
 ## 设计亮点
 
@@ -25,7 +40,7 @@
 
 ## 技术栈
 
-- 原生 **ES Modules** + HTML + CSS，**零运行时依赖、零构建步骤、零外部 CDN**。
+- 原生 **ES Modules** + HTML + CSS，游戏本体**零运行时依赖、零构建步骤、零外部 CDN**；Electron 与 electron-builder 仅为桌面打包的开发依赖，不改变网页本体的零构建特性。
 - 测试只用 Node 内置 `node:test` / `node:assert`，浏览器侧无 jsdom、无 Playwright 运行依赖。
 - 引擎确定性：所有随机走注入式 rng，无 `Math.random`；卡面插画、6 张调查员立绘与背景均为本地美术资源（`assets/`，加载失败自动降级为内联 SVG），音效为 WebAudio 实时合成。
 - 对局界面为一屏式布局：对手、棋盘、手牌与操作台全部容纳在 `100dvh` 内，无需页面滚动。
@@ -40,7 +55,9 @@
 或命令行：
 
 ```bash
-npm start                        # node server.mjs → http://127.0.0.1:8788/
+npm start                        # node server.mjs → http://127.0.0.1:8788/（浏览器网页版）
+npm run desktop                  # 直接打开桌面窗口（Electron，无需浏览器）
+npm run dist:win                 # 打出 Windows 安装包，详见上方「桌面版」
 ```
 
 | 地址 | 内容 |
@@ -83,6 +100,9 @@ npm start                        # node server.mjs → http://127.0.0.1:8788/
 ```
 index.html / app.html / play.html / game.html / gwent.html
 server.mjs · 启动游戏.bat · README.md · LICENSE
+desktop/           Electron 主进程（内置静态服务器 + 窗口封装）与窗口图标 icon.png
+build/             应用图标（icon.ico 多尺寸 / icon-256.png），electron-builder 资源目录
+dist/              打包产物（安装包，gitignore，不入库）
 assets/
 ├─ art/             卡面插画与 6 张调查员立绘（JPG，按 card-id 命名，统一 512×683）
 ├─ skins/           6 张高级皮肤新立绘（JPG，按 skin-id 命名，统一 512×683）
@@ -116,14 +136,14 @@ src/
 ├─ engine/, ai/, ui/, styles/   旧版昆特牌参考实现（保留，勿改）
 └─ app.js / main.js 旧版入口（由 gwent.html 加载）
 tests/
-├─ campaign/        战役套件（地图 / 数据 / run 状态机 / 战斗配置 / 操作 / 模板，53 项）
-├─ arena/           竞技场选牌纯逻辑套件（11 项）
-├─ daily/           每日挑战纯逻辑 + 统计套件（15 项）
-├─ achievements/    成就引擎纯逻辑套件（7 项）
-├─ economy/         经济系统套件（钱包 / 单抽十连 / 保底 / 装备 / 卸下 / 迁移，27 项）
-├─ deck/            卡组编辑器纯逻辑套件（15 项）
-├─ codex/           卡牌图鉴纯逻辑套件（9 项）
-├─ v2/, ai-v2/      新版引擎 / AI 套件（含难度选择，9 项）
+├─ campaign/        战役套件（地图 / 数据 / run 状态机 / 战斗配置 / 操作 / 模板）
+├─ arena/           竞技场选牌纯逻辑套件
+├─ daily/           每日挑战纯逻辑 + 统计套件
+├─ achievements/    成就引擎纯逻辑套件
+├─ economy/         经济系统套件（钱包 / 单抽十连 / 保底 / 装备 / 卸下 / 迁移）
+├─ deck/            卡组编辑器纯逻辑套件
+├─ codex/           卡牌图鉴纯逻辑套件
+├─ v2/, ai-v2/      新版引擎 / AI 套件（含难度选择）
 ├─ ui-v2/           新版 UI、控制器、氛围层、存档、各模式模板套件（含商店、卡组编辑器，注入假对象）
 └─ *.test.mjs       旧版引擎 / 数据 / AI / E2E 遗留套件
 scripts/            自对弈、实验台、消融、E2E 等工具（零外部依赖）
@@ -148,8 +168,8 @@ research/           来源数据、QA 记录与审计产物
 规则事实源：`docs/EXPANSION_V1_DESIGN.md`。旧规则全部保留，三个机制均为增量，且可通过
 `createGame({ mechanics: { anomaly, chaosBag } })` 单独开关。
 
-1. **动态地点（地点异变）**：每夜开始随机抽取 1 个异变（共 12 个），作用于某一地点列或全局，
-   提供战力修正、入场腐化/理智、免疫封印、领袖禁入、环境禁用等单一效果，让每夜的地点价值不同。
+1. **动态地点（地点异变）**：每夜开始随机抽取 1 个异变（共 12 个），作用于对峙线或全局，
+   提供战力修正、入场腐化/理智、免疫封印、领袖禁入、环境禁用等单一效果，让每夜的对峙线环境不同。
 2. **混沌袋检定**：6 类共 19 枚代币（抽后放回）。明放单位入场、盖牌翻开时各抽 1 枚，按代币
    修正该实例战力（期望修正 ≈ 0，只增加波动）。平衡定稿移除了旧神之印原本的 −1 理智，仅保留 −3 战力。
 3. **发掘（Discover）**：芬恩·卡洛威（出牌时）与露西娅·沃恩（翻开时）查看牌堆顶 3 张，选 1 张入手，
@@ -165,7 +185,7 @@ research/           来源数据、QA 记录与审计产物
 胜利路径，且两个阵营的目标类型与达成方式真正分化；可通过 `createGame({ mechanics: { objectives } })`
 单独开关，与 v1.3 机制正交。
 
-1. **学会 · 线索（Clue）**：己方单位明放进入档案列、以及夜结算时档案列战力严格高于对手，各积累线索。
+1. **学会 · 线索（Clue）**：每把一个单位明放到对峙线即积累 1 点线索（盖牌不计），达到阈值需明放部署 7 个单位。
 2. **教团 · 末日（Doom）**：打出仪式卡（降灵会 / 潮汐仪式）、以及己方单位因献祭真正进入深渊（含吞噬），
    各积累末日。
 3. 目标进度只增不减、全程公开，达到阈值（**定稿 7**）立即获胜，胜利原因 `reason='objective'`；
@@ -381,20 +401,20 @@ Achievement wall 段。专项测试 `tests/achievements/achievements.test.mjs`�
 ## 测试
 
 ```bash
-npm test                                            # 根目录套件：104 通过 / 2 E2E 默认跳过（共 106）
-node --test tests/campaign/*.test.mjs               # 战役套件：53 项
-node --test tests/v2/*.test.mjs                     # 引擎套件：130 项
-node --test tests/ai-v2/*.test.mjs                  # AI 套件：7 项
-node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择 + 各模式模板 + 存档：137 项
-node --test tests/arena/*.test.mjs                  # 竞技场选牌纯逻辑：11 项
-node --test tests/daily/*.test.mjs                  # 每日挑战纯逻辑 + 统计：15 项
-node --test tests/achievements/*.test.mjs           # 成就引擎纯逻辑：7 项
-node --test tests/economy/*.test.mjs                # 经济系统（钱包/单抽十连/保底/装备/卸下/迁移）：27 项
-node --test tests/deck/*.test.mjs                   # 卡组编辑器纯逻辑：15 项
-node --test tests/codex/codex.test.mjs              # 卡牌图鉴纯逻辑：9 项
-node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架：11 项
-node --test tests/tutorial/*.test.mjs               # 交互式教程：14 项
-node --test tests/ai-v2/difficulty.test.mjs         # AI 难度选择：9 项
+npm test                                            # 根目录套件（含默认跳过的 E2E）
+node --test tests/campaign/*.test.mjs               # 战役套件
+node --test tests/v2/*.test.mjs                     # 引擎套件
+node --test tests/ai-v2/*.test.mjs                  # AI 套件
+node --test tests/ui-v2/*.test.mjs                  # UI + 氛围层 + 角色选择 + 各模式模板 + 存档
+node --test tests/arena/*.test.mjs                  # 竞技场选牌纯逻辑
+node --test tests/daily/*.test.mjs                  # 每日挑战纯逻辑 + 统计
+node --test tests/achievements/*.test.mjs           # 成就引擎纯逻辑
+node --test tests/economy/*.test.mjs                # 经济系统（钱包/单抽十连/保底/装备/卸下/迁移）
+node --test tests/deck/*.test.mjs                   # 卡组编辑器纯逻辑
+node --test tests/codex/codex.test.mjs              # 卡牌图鉴纯逻辑
+node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架
+node --test tests/tutorial/*.test.mjs               # 交互式教程
+node --test tests/ai-v2/difficulty.test.mjs         # AI 难度选择
 node --test                                         # 全量递归：551 项 = 549 通过 + 2 跳过，0 失败
 ```
 
@@ -436,5 +456,6 @@ node --test                                         # 全量递归：551 项 = 5
 
 - 正式可玩内容为单机对 AI；联机仅有确定性锁步框架与测试（菜单入口标注“开发中”），没有账号或战绩系统。
 - AI 是启发式评估，不做深度搜索。
-- 浏览器自动播放策略要求首次点击/按键后才会有声音；`file://` 直接打开不可用。
+- 浏览器自动播放策略要求首次点击/按键后才会有声音；网页版在 `file://` 下直接打开不可用，桌面版内置本地服务器不受此限制。
 - 粒子仅用于四类关键反馈（理智归零 / 腐化 / 封印 / 出牌），非全屏天气系统。
+- 安装包仅提供 Windows x64（NSIS）；macOS / Linux 未配置打包目标。

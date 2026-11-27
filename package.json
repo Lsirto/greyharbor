@@ -8,6 +8,8 @@
   "scripts": {
     "start": "node server.mjs",
     "desktop": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win nsis --x64",
     "test": "node --test 'tests/*.test.mjs'",
     "check": "node --test 'tests/*.test.mjs'",
     "e2e": "node scripts/e2e.mjs --mode=full",
@@ -17,6 +19,42 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "electron": "^45.5.0"
+    "electron": "^45.5.0",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.lsirto.greyharbor",
+    "productName": "灰港三夜",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "app.html",
+      "package.json",
+      "desktop/**/*",
+      "src/**/*",
+      "assets/**/*"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "灰港三夜",
+      "uninstallDisplayName": "灰港三夜",
+      "deleteAppDataOnUninstall": false
+    }
   }
 }
