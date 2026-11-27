@@ -1,0 +1,239 @@
+/* ============================================================
+   styles-v2/mobile.css — 手机竖屏适配
+   目标：手机浏览器（约 360–430px 宽）下各页面可读、可点、不溢出。
+   复用 theme.css 哥特暗色 token，无外部资源。
+   断点：760 平板竖屏/大手机、480 主流手机、380 小屏；
+   pointer:coarse 触控设备；orientation 横屏；safe-area 刘海安全区。
+   ============================================================ */
+
+/* ── 全局：防横向溢出，预留刘海安全区 ─────────────────── */
+html,
+body {
+  width: 100%;
+  overflow-x: clip;
+}
+
+/* 触控设备：统一增大可点目标，降低误触 */
+@media (pointer: coarse) {
+  .gh2-menu-btn,
+  .gh2-play-btn,
+  .gh2-mode-btn,
+  .gh2-back-btn,
+  .gh2-difficulty__option,
+  .gh2-skin-switcher__arrow,
+  .gh2-audio__toggle {
+    min-height: 44px;
+  }
+}
+
+/* ============================================================
+   760px 以下：平板竖屏 / 大手机（核心手机适配）
+   ============================================================ */
+@media (max-width: 760px) {
+  /* ── 主菜单 ─────────────────────────────────────── */
+  .gh2-main-menu {
+    width: min(680px, 100%);
+    padding: 28px 18px 24px;
+  }
+  .gh2-menu-btn {
+    padding: 14px 16px;
+    min-height: 48px;
+  }
+  .gh2-menu-btn__icon { font-size: 22px; }
+  .gh2-menu-btn__body b { font-size: 16px; }
+  .gh2-menu-btn__body small { font-size: 11.5px; }
+
+  /* ── 功能页通用容器 ─────────────────────────────── */
+  .gh2-faction-select,
+  .gh2-character-select {
+    width: 100%;
+    padding: 18px 12px;
+  }
+  .gh2-faction-card { min-height: 0; padding: 18px; }
+  .gh2-faction-select__start .gh2-menu-btn,
+  .gh2-character-start,
+  .gh2-mode-btn { min-width: 0; }
+
+  /* 功能页容器：基础样式用 vw 宽度加 auto 居中，窄屏下 auto 外边距会算出负值，
+     导致边缘横溢。统一改为占满可用宽度、外边距清零。 */
+  .gh2-faction-select,
+  .gh2-character-select,
+  .gh2-arena,
+  .gh2-daily,
+  .gh2-achievements,
+  .gh2-shop,
+  .gh2-deck-editor,
+  .gh2-codex {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+
+  /* ── 对局：一屏内边距收窄，预留底部安全区 ───────── */
+  .gh2-screen--game.is-active {
+    padding: 4px 8px 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+    gap: 3px;
+  }
+
+  /* 顶部操作：按钮改为横向滑动，避免挤成多行占用高度 */
+  .gh2-play-controls {
+    padding: 4px 6px;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .gh2-play-controls__buttons {
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .gh2-play-controls__buttons::-webkit-scrollbar { display: none; }
+  .gh2-play-btn {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 6px 12px;
+    white-space: nowrap;
+  }
+
+  /* 报头紧凑 */
+  .gh2-masthead--compact { padding: 3px 8px; gap: 8px; }
+  .gh2-masthead--compact h1 { font-size: 15px; }
+  .gh2-shell--compact .gh2-status-note { font-size: 9px; padding: 1px 6px; }
+  /* 返回按钮保底触控高度，不依赖 pointer:coarse */
+  .gh2-back-btn { min-height: 40px; }
+
+  /* ── 对局表：侧栏改横向紧凑条，地点占满宽度 ──────── */
+  .gh2-table { gap: 3px; }
+  .gh2-table__side,
+  .gh2-table__side--viewer {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 4px;
+  }
+  .gh2-table__rail {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 6px;
+    min-width: 0;
+    overflow: visible;
+  }
+  /* 手机窄屏只保留信息更全的玩家条；领袖区隐藏，避免名字与状态重复。
+     玩家条单行横向滑动，不换行，尽量少占垂直高度。 */
+  .gh2-table__rail .gh2-player-bar {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    min-width: 0;
+    padding: 4px 8px;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .gh2-table__rail .gh2-player-bar::-webkit-scrollbar { display: none; }
+  /* 内部各分组也不换行、按内容宽度，统一交给外层横向滑动 */
+  .gh2-table__rail .gh2-player-bar__identity,
+  .gh2-table__rail .gh2-player-bar__resources,
+  .gh2-table__rail .gh2-player-bar__score {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+  }
+  .gh2-table__rail .gh2-player-bar__score { flex-direction: row; align-items: baseline; gap: 4px; }
+  .gh2-table__rail .gh2-leader-zone { display: none; }
+  .gh2-table__rail .gh2-hand--opponent { flex: 0 0 auto; }
+  .gh2-table__rail .gh2-player-bar__score-value { font-size: 16px; }
+
+  /* 地点：去掉内部滚动，占满宽度，槽位与内边距收窄 */
+  .gh2-table__main > .gh2-location-grid { overflow: visible; gap: 6px; }
+  .gh2-table .gh2-location { padding: 4px; gap: 3px; }
+  .gh2-table .gh2-location__slots { gap: 3px; }
+  .gh2-table .gh2-location__slot--empty { min-height: 42px; }
+  .gh2-table .gh2-location__card-slot .gh2-card { width: 48px; height: 67px; }
+  .gh2-table .gh2-location__slot .gh2-card { max-width: none; }
+
+  /* 中线：单列堆叠，环境卡区紧凑 */
+  .gh2-midline--compact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+    padding: 2px 8px;
+  }
+  .gh2-midline--compact .gh2-env { gap: 4px; padding: 2px 0; }
+  .gh2-midline--compact .gh2-env__cards { gap: 3px; }
+  .gh2-midline--compact .gh2-midline__dial,
+  .gh2-midline--compact .gh2-env { font-size: 11px; }
+
+  /* ── 手牌：缩小卡片、降低停靠区高度 ─────────────── */
+  .gh2-hand-dock { padding: 2px 6px 3px; }
+  .gh2-hand-dock .gh2-hand__cards {
+    padding: 12px 4px 3px;
+    gap: 6px;
+  }
+  .gh2-hand-dock .gh2-card--size-hand {
+    --gh2-card-w: 78px;
+    --gh2-card-h: 109px;
+    font-size: 9.5px;
+  }
+  .gh2-hand-dock .gh2-card--size-hand:hover {
+    transform: translateY(-18px) scale(1.25);
+  }
+}
+
+/* ============================================================
+   480px 以下：主流手机竖屏
+   ============================================================ */
+@media (max-width: 480px) {
+  .gh2-main-menu { padding: 22px 12px 20px; }
+  .gh2-main-menu__title { font-size: 34px; }
+  .gh2-menu-btn { padding: 12px 14px; }
+
+  /* 固定多列网格降为单列，避免挤压 */
+  .gh2-difficulty__options,
+  .gh2-shop__grid,
+  .gh2-skin-group__cards { grid-template-columns: 1fr; }
+
+  /* 图鉴卡片更紧凑 */
+  .gh2-codex-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  /* 对局进一步压缩 */
+  .gh2-masthead--compact h1 { font-size: 14px; }
+  .gh2-masthead--compact .gh2-masthead__round { font-size: 11px; }
+  .gh2-table__rail { gap: 4px; }
+  .gh2-table__rail .gh2-player-bar__name,
+  .gh2-table__rail .gh2-leader-zone__name { font-size: 12px; }
+  .gh2-hand-dock .gh2-card--size-hand {
+    --gh2-card-w: 78px;
+    --gh2-card-h: 109px;
+  }
+}
+
+/* ============================================================
+   380px 以下：小屏手机
+   ============================================================ */
+@media (max-width: 380px) {
+  .gh2-main-menu__title { font-size: 30px; }
+  .gh2-codex-grid { grid-template-columns: 1fr; }
+  .gh2-table .gh2-location__name { font-size: 11px; }
+  .gh2-hand-dock .gh2-card--size-hand {
+    --gh2-card-w: 72px;
+    --gh2-card-h: 100px;
+  }
+}
+
+/* ============================================================
+   横屏（短高度）：优先保证棋盘与手牌，收起次要元素
+   ============================================================ */
+@media (max-height: 480px) and (orientation: landscape) {
+  .gh2-screen--game.is-active { padding: 2px 6px; }
+  .gh2-masthead--compact { display: none; }
+  .gh2-hand-dock .gh2-hand__cards { padding-top: 12px; }
+  .gh2-hand-dock .gh2-card--size-hand {
+    --gh2-card-w: 70px;
+    --gh2-card-h: 98px;
+  }
+}
