@@ -145,7 +145,7 @@ test('构造后停留在主菜单，默认阵营 society、固定牌局', (t) =>
   assert.equal(selection.humanFaction, 'society');
   assert.equal(selection.seedMode, 'fixed');
   assert.ok(root.children.includes(shell.el), '外壳应挂载到根节点');
-  assert.equal(SCREENS.length, 13);
+  assert.equal(SCREENS.length, 14);
 });
 
 test('showScreen 合法切换并同步节点显隐，非法屏幕返回 false', (t) => {

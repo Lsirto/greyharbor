@@ -80,6 +80,11 @@ export function createCampaignController(options = {}) {
       boardRoot: battleBoard,
       controlsRoot: battleControls,
       battleOptions,
+      matchConfig: {
+        humanFaction: run.faction,
+        humanLeader: run.leaderId,
+        seedMode: 'fixed',
+      },
       aiDelay: opts.aiDelay,
       aiDifficulty: opts.aiDifficulty,
       hooks: opts.hooks,
@@ -89,6 +94,7 @@ export function createCampaignController(options = {}) {
   }
 
   function handleBattleOver(info) {
+    if (typeof opts.onBattleOver === 'function') opts.onBattleOver(info);
     const result = asObject(info).result;
     const old = battleController;
     battleController = null;

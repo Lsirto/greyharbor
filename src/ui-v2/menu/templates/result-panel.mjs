@@ -13,7 +13,7 @@ export const RESULT_REASON_ZH = Object.freeze({
   objective: '目标达成',
 });
 
-const OBJECTIVE_WIN_ZH = Object.freeze({ clue: '真相大白', doom: '旧神降临' });
+export const OBJECTIVE_WIN_ZH = Object.freeze({ clue: '真相大白', doom: '旧神降临' });
 
 /** Human-readable reason; objective wins name the faction-specific ending. */
 function reasonText(result) {

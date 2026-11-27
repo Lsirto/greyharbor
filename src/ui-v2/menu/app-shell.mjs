@@ -18,6 +18,7 @@ import { createCampaignController } from '../campaign/campaign-controller.mjs';
 import { createArenaController } from '../arena/arena-controller.mjs';
 import { createDailyController } from '../daily/daily-controller.mjs';
 import { createAchievementsController } from '../achievements/achievements-controller.mjs';
+import { createHistoryController } from '../history/history-controller.mjs';
 import { createShopController } from '../shop/shop-controller.mjs';
 import { createDeckController } from '../deck/deck-controller.mjs';
 import { createCodexController } from '../codex/codex-controller.mjs';
@@ -38,6 +39,7 @@ import {
   unequipSkin,
 } from '../../economy/economy.mjs';
 import { writeDailyResult } from '../../daily/daily.mjs';
+import { recordMatch } from '../../history/match-history.mjs';
 import { createTutorialController } from '../tutorial/tutorial-controller.mjs';
 import {
   FACTION_CARDS,
@@ -52,7 +54,7 @@ import {
   renderStartButton,
 } from './templates/index.mjs';
 
-export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'daily', 'achievements', 'shop', 'deck', 'codex', 'tutorial', 'multiplayer']);
+export const SCREENS = Object.freeze(['menu', 'faction-select', 'character-select', 'in-game', 'campaign', 'arena', 'daily', 'achievements', 'history', 'shop', 'deck', 'codex', 'tutorial', 'multiplayer']);
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -82,6 +84,7 @@ export function createAppShell(options = {}) {
   let arena = null;
   let daily = null;
   let achievements = null;
+  let history = null;
   let shop = null;
   let deck = null;
   let codex = null;
@@ -127,6 +130,9 @@ export function createAppShell(options = {}) {
     </section>
     <section class="gh2-screen gh2-screen--achievements" data-screen="achievements" hidden>
       <div class="gh2-achievements-host" data-app="achievements"></div>
+    </section>
+    <section class="gh2-screen gh2-screen--history" data-screen="history" hidden>
+      <div class="gh2-history-host" data-app="history"></div>
     </section>
     <section class="gh2-screen gh2-screen--shop" data-screen="shop" hidden>
       <div class="gh2-shop-host" data-app="shop"></div>
@@ -178,6 +184,7 @@ export function createAppShell(options = {}) {
   const arenaHost = el.querySelector('[data-app="arena"]');
   const dailyHost = el.querySelector('[data-app="daily"]');
   const achievementsHost = el.querySelector('[data-app="achievements"]');
+  const historyHost = el.querySelector('[data-app="history"]');
   const shopHost = el.querySelector('[data-app="shop"]');
   const deckHost = el.querySelector('[data-app="deck"]');
   const codexHost = el.querySelector('[data-app="codex"]');
@@ -312,6 +319,7 @@ export function createAppShell(options = {}) {
       },
       hooks: fx.hooks,
       onGameOver: (info) => {
+        recordMatch(persistence, info, { mode: 'skirmish', now: opts.now ?? Date.now() });
         grantMatchWinReward(info, persistence);
         showResult(info);
       },
@@ -340,6 +348,9 @@ export function createAppShell(options = {}) {
       aiDelay: Number.isFinite(opts.aiDelay) ? opts.aiDelay : undefined,
       aiDifficulty: getAiDifficulty(),
       hooks: fx ? fx.hooks : undefined,
+      onBattleOver: (info) => {
+        recordMatch(getStorage(), info, { mode: 'campaign', now: opts.now ?? Date.now() });
+      },
       onExit: () => {
         destroyCampaign();
         showScreen('menu');
@@ -380,7 +391,7 @@ export function createAppShell(options = {}) {
         destroyArena();
         showScreen('menu');
       },
-      onComplete: (battleOptions) => mountBattleOptions(battleOptions),
+      onComplete: (battleOptions) => mountBattleOptions(battleOptions, undefined, 'arena'),
     });
     showScreen('arena');
     return arena;
@@ -391,7 +402,7 @@ export function createAppShell(options = {}) {
    * The driving loop, AI and result panel are unchanged; an optional custom
    * gameOver callback lets the caller record the outcome before it is shown.
    */
-  function mountBattleOptions(battleOptions, handleGameOver) {
+  function mountBattleOptions(battleOptions, handleGameOver, mode) {
     destroyArena();
     destroyDaily();
     destroyController();
@@ -408,6 +419,13 @@ export function createAppShell(options = {}) {
       aiDifficulty: getAiDifficulty(),
       hooks: fx.hooks,
       onGameOver: (info) => {
+        const humanDeck = Array.isArray(battleOptions?.decks) ? battleOptions.decks[0] : null;
+        recordMatch(persistence, info, {
+          mode,
+          faction: humanDeck && typeof humanDeck === 'object' ? humanDeck.faction : undefined,
+          leader: humanDeck && typeof humanDeck === 'object' ? humanDeck.leader : undefined,
+          now: opts.now ?? Date.now(),
+        });
         if (typeof handleGameOver === 'function') handleGameOver(info);
         grantMatchWinReward(info, persistence);
         showResult(info);
@@ -480,7 +498,7 @@ export function createAppShell(options = {}) {
               grantReward(persistence, `daily:${config.dateKey}:firstwin`, DAILY_FIRST_WIN_REWARD);
             }
           }
-        });
+        }, 'daily');
       },
     });
     showScreen('daily');
@@ -493,6 +511,14 @@ export function createAppShell(options = {}) {
     achievements = null;
     try { old.destroy(); } catch (_) { /* a half-built controller must not block routing */ }
     if (achievementsHost) achievementsHost.innerHTML = '';
+  }
+
+  function destroyHistory() {
+    if (!history) return;
+    const old = history;
+    history = null;
+    try { old.destroy(); } catch (_) { /* a half-built controller must not block routing */ }
+    if (historyHost) historyHost.innerHTML = '';
   }
 
   function startAchievements() {
@@ -513,6 +539,28 @@ export function createAppShell(options = {}) {
     });
     showScreen('achievements');
     return achievements;
+  }
+
+  function startHistory() {
+    destroyController();
+    destroyCampaign();
+    destroyArena();
+    destroyDaily();
+    destroyAchievements();
+    destroyShop();
+    destroyDeck();
+    destroyCodex();
+    destroyHistory();
+    history = createHistoryController({
+      host: historyHost,
+      storage: getStorage(),
+      onExit: () => {
+        destroyHistory();
+        showScreen('menu');
+      },
+    });
+    showScreen('history');
+    return history;
   }
 
   function destroyShop() {
@@ -566,7 +614,7 @@ export function createAppShell(options = {}) {
         showScreen('menu');
       },
       onBattle: (editor) => {
-        mountBattleOptions(buildDeckBattleOptions(editor, makeArenaSeed()));
+        mountBattleOptions(buildDeckBattleOptions(editor, makeArenaSeed()), undefined, 'deck');
       },
     });
     showScreen('deck');
@@ -845,6 +893,8 @@ export function createAppShell(options = {}) {
       startDaily();
     } else if (action === 'start-achievements') {
       startAchievements();
+    } else if (action === 'start-history') {
+      startHistory();
     } else if (action === 'start-shop') {
       startShop();
     } else if (action === 'start-deck') {
@@ -893,6 +943,7 @@ export function createAppShell(options = {}) {
     startArenaDraft,
     startDaily,
     startAchievements,
+    startHistory,
     startShop,
     startDeck,
     startCodex,
@@ -902,6 +953,7 @@ export function createAppShell(options = {}) {
     getArena: () => arena,
     getDaily: () => daily,
     getAchievements: () => achievements,
+    getHistory: () => history,
     getShop: () => shop,
     getDeck: () => deck,
     getCodex: () => codex,
@@ -919,6 +971,7 @@ export function createAppShell(options = {}) {
       destroyArena();
       destroyDaily();
       destroyAchievements();
+      destroyHistory();
       destroyShop();
       destroyDeck();
       destroyCodex();

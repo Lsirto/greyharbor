@@ -19,6 +19,8 @@ export const MAIN_MENU_TEXT = Object.freeze({
   dailyHint: '当天固定一局，所有人同场对局',
   achievementsLabel: '成就墙',
   achievementsHint: '解锁长期目标，记录调查员生涯',
+  historyLabel: '战绩记录',
+  historyHint: '汇总各模式胜负与胜率，回看最近对局',
   shopLabel: '神秘商店',
   shopHint: '用理智币抽取卡背，概率公示、带保底',
   deckLabel: '卡组编辑器',
@@ -65,6 +67,10 @@ export function renderMainMenu(options = {}) {
       <button type="button" class="gh2-menu-btn" data-menu-action="start-achievements">
         <span class="gh2-menu-btn__icon" aria-hidden="true">🏆</span>
         <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.achievementsLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.achievementsHint)}</small></span>
+      </button>
+      <button type="button" class="gh2-menu-btn" data-menu-action="start-history">
+        <span class="gh2-menu-btn__icon" aria-hidden="true">📜</span>
+        <span class="gh2-menu-btn__body"><b>${escapeHtml(MAIN_MENU_TEXT.historyLabel)}</b><small>${escapeHtml(MAIN_MENU_TEXT.historyHint)}</small></span>
       </button>
       <button type="button" class="gh2-menu-btn" data-menu-action="start-shop">
         <span class="gh2-menu-btn__icon" aria-hidden="true">🪙</span>
