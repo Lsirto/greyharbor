@@ -37,6 +37,7 @@ function fullCardView(inst, card, {
     madnessPower: card?.madnessPower ?? null,
     sanityCost: card?.sanityCost ?? 0,
     keywords: Array.isArray(card?.keywords) ? card.keywords.slice() : [],
+    effect: card?.effect ?? null,
     power: onBoard ? (power ?? 0) : printedPower(card, inst.face),
     ...(onBoard ? { boardLocation: location, slot } : {}),
     ...(onBoard

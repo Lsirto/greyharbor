@@ -368,6 +368,28 @@
 .gh2-history li { padding: 1px 0; }
 .gh2-history__empty { color: var(--gh2-silver-faint); }
 
+/* ── selected card note ─────────────────────────────────── */
+.gh2-selected-note {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 12px;
+  margin-bottom: 5px;
+  border: 1px solid var(--gh2-line-soft);
+  border-left: 2px solid var(--gh2-lamp);
+  border-radius: var(--gh2-radius);
+  background: rgba(20, 32, 30, 0.55);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.gh2-selected-note__name {
+  font-family: var(--gh2-font-display);
+  color: var(--gh2-lamp);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.gh2-selected-note__text { color: var(--gh2-silver); }
+
 /* ── hands ──────────────────────────────────────────────── */
 .gh2-hand { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .gh2-hand__head { display: flex; align-items: baseline; gap: 8px; }

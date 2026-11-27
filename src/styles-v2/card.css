@@ -283,6 +283,21 @@
 .gh2-status--equipment { color: #77602f; }
 .gh2-status--chaos { color: #4f8f86; background: rgba(67, 162, 145, 0.12); }
 
+.gh2-card__effect {
+  margin-top: 0.25em;
+  font-size: 0.72em;
+  line-height: 1.35;
+  opacity: 0.82;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gh2-card--size-hand .gh2-card__effect {
+  -webkit-line-clamp: 2;
+}
+
 .gh2-card__footer {
   display: flex;
   justify-content: space-between;

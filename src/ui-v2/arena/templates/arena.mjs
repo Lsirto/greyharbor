@@ -59,6 +59,7 @@ function renderCandidate(cardId, owned) {
     </span>
     ${renderPower(card)}
     ${renderKeywords(card)}
+    ${card.effect ? `<span class="gh2-arena-card__effect">${escapeHtml(card.effect)}</span>` : ''}
     <span class="gh2-arena-card__hint">${willMax ? '选后达到份数上限' : '点击加入牌组'}</span>
   </button>`;
 }

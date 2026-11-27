@@ -121,6 +121,16 @@ test('卡牌模板字段齐全且做 HTML 转义', () => {
   assert.match(html, /狂 4/);
 });
 
+test('卡牌模板在关键词下方显示效果简介并做 HTML 转义', () => {
+  const html = renderCard(unit({ effect: '入场封印敌方领袖能力一夜；对手每有一张隐秘卡自身+1' }), { size: 'hand' });
+  assert.match(html, /gh2-card__effect/);
+  assert.match(html, /入场封印敌方领袖能力一夜/);
+
+  const unsafe = renderCard(unit({ effect: '<img src=x onerror="boom()">简介文本' }));
+  assert.ok(!unsafe.includes('<img src=x'), '原始 img 标签不得进入 HTML');
+  assert.match(unsafe, /&lt;img src=x onerror=&quot;boom\(\)&quot;&gt;简介文本/);
+});
+
 test('盖牌只渲染统一卡背，不泄露身份/战力/关键词/uid', () => {
   const hidden = {
     uid: 'p0-secret-uid',
@@ -398,6 +408,20 @@ test('真实 buildView 数据可直接驱动整盘模板', () => {
   assert.equal(countMatches(html, /data-location="front"/g), 2, '双方各一条对峙线');
   assert.equal(countMatches(html, /gh2-sanity__cell(?: is-lit)?(?: is-danger-zone)?"/g), 12, '双方各一条 6 格理智条');
   assert.ok(!html.includes('<script'));
+});
+
+test('选中手牌时下方显示卡名与效果简介，未选中则不显示', () => {
+  const hand = [unit({ effect: '附属单位+3；夜末返回手牌' })];
+  const view = viewFixture({
+    players: [player({ hand, handCount: 1 }), player({ id: 1, hand: [], handCount: 4 })],
+  });
+  const html = renderBoardMarkup(view, { pov: 0, controller: { selectedUid: 'p0-1' } });
+  assert.match(html, /gh2-selected-note/);
+  assert.match(html, /诺拉·威尔斯/);
+  assert.match(html, /附属单位\+3；夜末返回手牌/);
+
+  const none = renderBoardMarkup(view, { pov: 0, controller: {} });
+  assert.ok(!none.includes('gh2-selected-note'), '未选中手牌时不渲染简介条');
 });
 
 test('演示控制器只从 view.actions 里选择合法动作（含双方换牌）', () => {

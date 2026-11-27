@@ -99,6 +99,7 @@ export function normalizeCardView(raw, options = {}) {
     madnessPower: hidden ? null : (card.madnessPower == null ? null : safeNumber(card.madnessPower, 0)),
     sanityCost: hidden ? 0 : Math.max(0, safeInt(card.sanityCost, 0)),
     keywords: hidden ? [] : (Array.isArray(card.keywords) ? card.keywords.filter((k) => typeof k === 'string') : []),
+    effect: hidden ? '' : cleanString(card.effect),
     sealed: !hidden && card.sealed === true,
     corruption: hidden ? 0 : Math.max(0, safeInt(card.corruption, 0)),
     corruptionLoss: hidden ? 0 : Math.max(0, safeInt(card.corruptionLoss, 0)),
@@ -117,6 +118,25 @@ export function isHiddenCard(card) {
 
 export function isUnitType(type) {
   return UNIT_TYPES.has(cleanString(type).toLowerCase());
+}
+
+/**
+ * Cards that ship a dedicated madness-face illustration.  Only units and old
+ * gods flip to a madness face; equipment and events keep a single picture.
+ */
+export const MAD_ART_IDS = Object.freeze(new Set([
+  'nora-wells', 'samuel-pike', 'edith-barrow', 'walter-morse', 'lucia-vaughn',
+  'frank-holt', 'arthur-pendleton', 'hooded-acolyte', 'zealot', 'sea-priestess',
+  'gravedigger', 'whisperer', 'deep-one', 'bell-claw', 'finn-calloway',
+  'silas-gold', 'the-sleeper', 'thousand-eyes',
+]));
+
+/** Resolve the illustration path, switching to the madness art when available. */
+export function artSrcFor(card) {
+  const view = normalizeCardView(card);
+  if (!view.cardId) return '';
+  const suffix = view.face === 'madness' && MAD_ART_IDS.has(view.cardId) ? '-mad' : '';
+  return `./assets/art/${encodeURIComponent(view.cardId)}${suffix}.jpg`;
 }
 
 /** Current (engine-calculated) power.  Hidden cards always read 0. */

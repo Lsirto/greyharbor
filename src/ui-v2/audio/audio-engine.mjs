@@ -34,18 +34,22 @@ const RECIPES = Object.freeze({
   'ui-hover': [{ kind: 'tone', type: 'sine', from: 1180, to: 1080, dur: 0.045, gain: 0.045 }],
   play: [
     { kind: 'tone', type: 'triangle', from: 240, to: 155, dur: 0.2, gain: 0.14 },
+    { kind: 'tone', type: 'sine', from: 120, to: 78, dur: 0.22, gain: 0.07 },
     { kind: 'noise', dur: 0.14, gain: 0.05, filter: 1400 },
   ],
   reveal: [
     { kind: 'tone', type: 'sine', from: 660, to: 920, dur: 0.26, gain: 0.13 },
+    { kind: 'tone', type: 'sine', from: 990, to: 1380, dur: 0.22, gain: 0.05, delay: 0.03 },
     { kind: 'noise', dur: 0.06, gain: 0.035, filter: 3600 },
   ],
   seal: [
     { kind: 'tone', type: 'sine', from: 440, to: 440, dur: 0.55, gain: 0.1 },
     { kind: 'tone', type: 'sine', from: 660, to: 660, dur: 0.42, gain: 0.075, delay: 0.05 },
+    { kind: 'tone', type: 'sine', from: 220, to: 220, dur: 0.5, gain: 0.06 },
   ],
   corruption: [
     { kind: 'tone', type: 'sawtooth', from: 95, to: 62, dur: 0.42, gain: 0.08 },
+    { kind: 'tone', type: 'sawtooth', from: 101, to: 66, dur: 0.42, gain: 0.04 },
     { kind: 'noise', dur: 0.3, gain: 0.06, filter: 520 },
   ],
   sacrifice: [
@@ -53,6 +57,7 @@ const RECIPES = Object.freeze({
     { kind: 'noise', dur: 0.4, gain: 0.05, filter: 900 },
   ],
   nightEnd: [
+    { kind: 'tone', type: 'sine', from: 196, to: 196, dur: 0.5, gain: 0.06 },
     { kind: 'tone', type: 'sine', from: 392, to: 392, dur: 0.5, gain: 0.09 },
     { kind: 'tone', type: 'sine', from: 523, to: 523, dur: 0.5, gain: 0.08, delay: 0.07 },
     { kind: 'tone', type: 'sine', from: 659, to: 659, dur: 0.6, gain: 0.07, delay: 0.14 },
@@ -68,15 +73,32 @@ const RECIPES = Object.freeze({
     { kind: 'tone', type: 'sawtooth', from: 175, to: 235, dur: 0.42, gain: 0.08 },
     { kind: 'tone', type: 'sine', from: 523, to: 784, dur: 0.5, gain: 0.07, delay: 0.08 },
   ],
-  draw: [{ kind: 'noise', dur: 0.1, gain: 0.05, filter: 2600, highpass: true }],
+  draw: [
+    { kind: 'noise', dur: 0.1, gain: 0.05, filter: 2600, highpass: true },
+    { kind: 'tone', type: 'sine', from: 880, to: 1100, dur: 0.08, gain: 0.035 },
+  ],
   gameOver: [
     { kind: 'tone', type: 'sine', from: 196, to: 196, dur: 1.1, gain: 0.1 },
     { kind: 'tone', type: 'sine', from: 247, to: 247, dur: 1.0, gain: 0.08, delay: 0.09 },
     { kind: 'tone', type: 'sine', from: 294, to: 294, dur: 1.2, gain: 0.07, delay: 0.18 },
   ],
-  buff: [{ kind: 'tone', type: 'sine', from: 330, to: 660, dur: 0.3, gain: 0.08 }],
+  buff: [
+    { kind: 'tone', type: 'sine', from: 330, to: 660, dur: 0.3, gain: 0.08 },
+    { kind: 'tone', type: 'sine', from: 495, to: 990, dur: 0.3, gain: 0.04, delay: 0.04 },
+  ],
   error: [{ kind: 'tone', type: 'square', from: 165, to: 110, dur: 0.16, gain: 0.05 }],
 });
+
+/** Slow, dark pad chords for the synthesized background drone (Hz). */
+const BGM_CHORDS = Object.freeze([
+  [110.0, 130.81, 164.81],
+  [98.0, 116.54, 146.83],
+  [87.31, 103.83, 130.81],
+  [103.83, 123.47, 155.56],
+]);
+const BGM_DRONE = Object.freeze([55.0, 82.41]);
+const BGM_INTERVAL_MS = 8000;
+const BGM_BUS_GAIN = 0.16;
 
 function asObject(value) {
   return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
@@ -116,6 +138,12 @@ export function createAudioEngine(options = {}) {
   let unlocked = false;
   let failed = false;
   let destroyed = false;
+  let bgmBus = null;
+  let bgmNodes = [];
+  let bgmTimer = null;
+  let bgmStarted = false;
+  let bgmChordIndex = 0;
+  let padNodes = [];
   const lastPlayed = new Map();
   const listeners = [];
   const now = typeof opts.now === 'function' ? opts.now : () => Date.now();
@@ -252,6 +280,77 @@ export function createAudioEngine(options = {}) {
     } catch (_) { /* some fakes only implement the graph, not buffers */ }
   }
 
+  function stopPad() {
+    for (const node of padNodes) {
+      try { node.osc?.stop?.(); } catch (_) { /* already stopped */ }
+      try { node.gain?.disconnect?.(); } catch (_) { /* ignore */ }
+    }
+    padNodes = [];
+  }
+
+  function playBgmChord() {
+    if (!ctx || !bgmBus) return;
+    const chord = BGM_CHORDS[bgmChordIndex % BGM_CHORDS.length];
+    bgmChordIndex += 1;
+    const t0 = Number(ctx.currentTime) || 0;
+    stopPad();
+    for (const freq of chord) {
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t0);
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.linearRampToValueAtTime(0.05, t0 + 2.5);
+        gain.gain.linearRampToValueAtTime(0.0001, t0 + 7.5);
+        osc.connect(gain);
+        gain.connect(bgmBus);
+        osc.start(t0);
+        osc.stop(t0 + 8);
+        padNodes.push({ osc, gain });
+      } catch (_) { /* fake context may lack a node */ }
+    }
+  }
+
+  function stopBgm() {
+    try { if (bgmTimer !== null) clearInterval(bgmTimer); } catch (_) { /* ignore */ }
+    bgmTimer = null;
+    stopPad();
+    for (const node of bgmNodes) {
+      try { node.osc?.stop?.(); } catch (_) { /* ignore */ }
+      try { node.gain?.disconnect?.(); } catch (_) { /* ignore */ }
+    }
+    bgmNodes = [];
+    try { bgmBus?.disconnect?.(); } catch (_) { /* ignore */ }
+    bgmBus = null;
+    bgmStarted = false;
+  }
+
+  function startBgm() {
+    if (bgmStarted || destroyed || !ctx || failed) return;
+    try {
+      bgmBus = ctx.createGain();
+      bgmBus.gain.value = BGM_BUS_GAIN;
+      bgmBus.connect(master);
+      for (const freq of BGM_DRONE) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, Number(ctx.currentTime) || 0);
+        gain.gain.setValueAtTime(0.035, Number(ctx.currentTime) || 0);
+        osc.connect(gain);
+        gain.connect(bgmBus);
+        osc.start();
+        bgmNodes.push({ osc, gain });
+      }
+      playBgmChord();
+      bgmTimer = setInterval(playBgmChord, BGM_INTERVAL_MS);
+      bgmStarted = true;
+    } catch (_) {
+      stopBgm();
+    }
+  }
+
   function isReady() {
     return !destroyed && unlocked && !!ctx && ctx.state !== 'suspended' && ctx.state !== 'closed';
   }
@@ -266,6 +365,7 @@ export function createAudioEngine(options = {}) {
     } catch (_) { /* an already-running context may reject resume */ }
     unlocked = true;
     silentTick();
+    startBgm();
     return true;
   }
 
@@ -339,9 +439,10 @@ export function createAudioEngine(options = {}) {
       persist();
       return settings.volume;
     },
-    stats: () => ({ unlocked, failed, destroyed, voices: SOUND_VOICES.length, recipes: Object.keys(RECIPES).length }),
+    stats: () => ({ unlocked, failed, destroyed, voices: SOUND_VOICES.length, recipes: Object.keys(RECIPES).length, bgm: bgmStarted }),
     destroy() {
       destroyed = true;
+      stopBgm();
       for (const off of listeners) off();
       listeners.length = 0;
       try { ctx?.close?.(); } catch (_) { /* ignore */ }

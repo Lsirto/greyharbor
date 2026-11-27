@@ -294,6 +294,7 @@ test('音频默认静默：unlock 前不发声，unlock 后可合成，静音持
   assert.equal(audio.play('play'), false, '首次手势前必须静默');
   assert.equal(audio.unlock(), true);
   assert.equal(audio.isUnlocked(), true);
+  assert.equal(audio.stats().bgm, true, 'unlock 后启动循环背景音乐');
   assert.equal(audio.play('play'), true);
   assert.equal(audio.play('play'), false, '同一音色的限流应生效');
   clock += 200;
@@ -307,6 +308,7 @@ test('音频默认静默：unlock 前不发声，unlock 后可合成，静音持
   assert.equal(audio.setVolume(-1), 0);
   audio.destroy();
   assert.equal(audio.play('play'), false);
+  assert.equal(audio.stats().bgm, false, 'destroy 后停止背景音乐并清理定时器');
 });
 
 test('无 AudioContext 时音频降级为静默而不抛异常', () => {

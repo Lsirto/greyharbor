@@ -21,6 +21,8 @@ test('竞技场屏：渲染 3 个候选按钮，data-arena-pick 与当前 offers
     assert.match(html, new RegExp(`data-arena-pick="${id}"`));
     assert.match(html, new RegExp(`src="\\./assets/art/${id}\\.jpg"`));
   }
+  assert.equal((html.match(/gh2-arena-card__effect/g) ?? []).length, 3, '三张候选均显示效果简介');
+  assert.match(html, /对峙线上每有一张其他己方单位/);
   assert.match(html, /第 1 \/ 19 轮/);
   assert.match(html, /守夜督察 · 哈罗德/);
   assert.match(html, /data-arena-exit/);

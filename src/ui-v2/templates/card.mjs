@@ -6,6 +6,7 @@
  */
 
 import {
+  artSrcFor,
   cardClasses,
   displayPower,
   isUnitType,
@@ -52,6 +53,12 @@ function renderKeywords(view) {
   ).join('')}</div>`;
 }
 
+function renderEffect(view) {
+  const text = typeof view.effect === 'string' ? view.effect.trim() : '';
+  if (!text) return '';
+  return `<div class="gh2-card__effect" title="${escapeHtml(text)}">${escapeHtml(text)}</div>`;
+}
+
 function renderStatuses(view) {
   const badges = statusBadges(view);
   if (!badges.length) return '';
@@ -93,7 +100,7 @@ export function renderCard(card, options = {}) {
   const artIcon = hasIcon(`art-${view.type}`) ? icon(`art-${view.type}`) : icon('art-unit');
   const artSrc = typeof opts.artSrc === 'string'
     ? opts.artSrc
-    : (view.cardId ? `./assets/art/${encodeURIComponent(view.cardId)}.jpg` : '');
+    : artSrcFor(view);
   const artFilterAttr = typeof opts.artFilter === 'string' && opts.artFilter
     ? ` style="filter:${escapeHtml(opts.artFilter)}"`
     : '';
@@ -129,6 +136,7 @@ export function renderCard(card, options = {}) {
       </div>
       ${renderPrintedPower(view)}
       ${renderKeywords(view)}
+      ${renderEffect(view)}
       ${renderStatuses(view)}
       <div class="gh2-card__footer">
         <span class="gh2-card__type-badge">${escapeHtml(typeLabel(view))}</span>

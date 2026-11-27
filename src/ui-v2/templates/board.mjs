@@ -94,6 +94,20 @@ function renderEnemyIntent(intent) {
   </div>`;
 }
 
+function renderSelectedNote(view, controller, me) {
+  const selectedUid = controller.selectedUid;
+  if (!selectedUid) return '';
+  const hand = asArray(me.hand);
+  const card = hand.find((entry) => entry?.uid === selectedUid);
+  if (!card) return '';
+  const effect = typeof card.effect === 'string' ? card.effect.trim() : '';
+  if (!effect) return '';
+  return `<div class="gh2-selected-note" data-selected-note="true">
+    <span class="gh2-selected-note__name">${escapeHtml(card.nameZh ?? card.name ?? '')}</span>
+    <span class="gh2-selected-note__text">${escapeHtml(effect)}</span>
+  </div>`;
+}
+
 function renderChaosBanner(banner) {
   if (!banner || typeof banner !== 'object') return '';
   return `<div class="gh2-chaos-pop" data-chaos-pop="true" role="status">
@@ -191,6 +205,7 @@ export function renderBoardMarkup(view, options = {}) {
     </div>
 
     <div class="gh2-hand-dock">
+      ${renderSelectedNote(view, controller, me)}
       ${renderHandZone({ visible: true, cards: me.hand, count: me.handCount, label: '己方手牌' })}
     </div>
 
