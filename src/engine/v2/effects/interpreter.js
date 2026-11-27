@@ -476,16 +476,17 @@ export function enumerateEffectChoices(engine, ctx, effectDef) {
       for (const secondary of secondaries) {
         for (const replaceWithUid of replacements) {
           let optionLabel = choice.label ?? choice.id;
-          // Append target names so otherwise identical options are distinct.
+          // Append the concrete target names so options that share a label but
+          // target different cards are always distinguishable. Verbs stay in
+          // the base label (指定/献祭/弃/取); here we only name the cards.
           if (choice.labelWithTarget === true) {
-            const secondaryNames = secondary.map((entry) => displayTargetName(engine, entry));
-            if (secondaryNames.length) {
-              const parts = [];
-              if (primary) parts.push(`弃 ${displayTargetName(engine, primary)}`);
-              parts.push(`取 ${secondaryNames.join('、')}`);
-              optionLabel = `${optionLabel}（${parts.join('，')}）`;
-            } else if (primary) {
-              optionLabel = `${optionLabel} · ${displayTargetName(engine, primary)}`;
+            const nameParts = [];
+            if (primary) nameParts.push(displayTargetName(engine, primary));
+            for (const entry of secondary) {
+              nameParts.push(`取 ${displayTargetName(engine, entry)}`);
+            }
+            if (nameParts.length) {
+              optionLabel = `${optionLabel} · ${nameParts.join('，')}`;
             }
           }
           out.push({

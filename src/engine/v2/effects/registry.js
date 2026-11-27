@@ -271,6 +271,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'removeCorruption',
           label: '移除 1 个腐化标记',
+          labelWithTarget: true,
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ANY,
@@ -286,6 +287,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'seal',
           label: '封印一个当前战力不超过 4 的敌方单位',
+          labelWithTarget: true,
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ENEMY,
@@ -362,6 +364,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'removeCorruption',
           label: '移除 1 个腐化标记（任意一方）',
+          labelWithTarget: true,
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ANY,
@@ -377,6 +380,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'removeEnvironment',
           label: '移除 1 张环境卡，送入弃牌堆',
+          labelWithTarget: true,
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ANY,
@@ -479,6 +483,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'corruptHighest',
           label: '腐化战力最高的合法敌方单位',
+          labelWithTarget: true,
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.ENEMY,
@@ -507,6 +512,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'grave',
           label: '献祭一个己方单位，再从深渊取回 1 个单位',
+          labelWithTarget: true,
           targetKey: 'sacrificeUid',
           target: ownSacrificeSelector({ excludeSelf: true }),
           secondary: {
@@ -551,6 +557,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'devour',
           label: '吞噬相邻的一个己方单位',
+          labelWithTarget: true,
           targetKey: 'targetUid',
           target: ownSacrificeSelector({
             adjacentToSource: true,
@@ -582,6 +589,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'seance',
           label: '献祭一个己方单位，再从深渊取回至多 2 个单位',
+          labelWithTarget: true,
           targetKey: 'sacrificeUid',
           target: ownSacrificeSelector(),
           secondary: {
@@ -822,6 +830,7 @@ export const EFFECT_REGISTRY = Object.freeze({
         {
           id: 'aid',
           label: '指定一个己方正面单位：+3，移除其全部封印与腐化',
+          labelWithTarget: true,
           targetKey: 'targetUid',
           target: selector({
             side: SIDE.OWN,
