@@ -60,6 +60,11 @@ export const CONFIG = deepFreeze({
     madnessHandUnlockBonus: 1.2,// 理智 ≤3 时手牌疯狂面高战力的期权价值
   },
 
+  /** 领袖主动技的潜在威胁（仅使用公开的领袖身份与可用状态）。 */
+  leader: {
+    availableThreat: 2.5, // 对手领袖本夜未用且未被封印时的悬置威胁扣分
+  },
+
   /** 夜胜局数与 Pass 时机（规则 §9.3 / §9.6）。 */
   pass: {
     futureCardThreat: 4.2,      // 我方 Pass 后对方每剩余手牌可追加的夜分
@@ -139,8 +144,8 @@ export const CONFIG = deepFreeze({
     corruptionImmediate: 0.4,
     harold: 1.5,
     sealLeader: 6,              // 千瞳封印敌方领袖（阻止 Elias/Harold 的主动技）
-    cultEcho: 2,
-    cultEchoWithAltar: 3,
+    // v1.2 定稿：首次献祭回响全场 +1；祭坛不再额外加成（§7.2 / BALANCE_PATCH_V1.2）。
+    cultEcho: 1,
     whispererDrain: 1,
     silasDraw: 2.5,
     infoPeek: 0.3,
@@ -184,19 +189,21 @@ export const CONFIG = deepFreeze({
     },
     equipment: {
       'silver-lantern': 2,
+      'brass-badge': 3,
+      'bone-ward': 1,
     },
     /** 带理智反噬关键词的卡（规则/卡面公开信息）。 */
     backlash: ['walter-morse', 'zealot', 'deep-one', 'the-sleeper'],
-    /** Elias 从牌堆直接打出的异怪（规则 §8.2），[理性面, 疯狂面]。 */
+    /** Elias 从牌堆直接打出的异怪（规则 §8.2），[理性面, 疯狂面]，对齐 v1.2 定稿战力。 */
     eliasSummon: {
-      'hooded-acolyte': [2, 3],
-      zealot: [3, 9],
-      'sea-priestess': [4, 5],
-      gravedigger: [3, 4],
+      'hooded-acolyte': [2, 2],
+      zealot: [2, 7],
+      'sea-priestess': [3, 4],
+      gravedigger: [2, 3],
       whisperer: [2, 7],
-      'deep-one': [5, 11],
-      'bell-claw': [6, 6],
-      'the-sleeper': [8, 12],
+      'deep-one': [4, 9],
+      'bell-claw': [5, 5],
+      'the-sleeper': [7, 10],
       'thousand-eyes': [7, 10],
     },
   },

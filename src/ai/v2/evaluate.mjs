@@ -271,6 +271,7 @@ export function evaluate(pos) {
   score += pos.myHandValue * CONFIG.hand.valueWeight
     - pos.oppHandCount * CONFIG.hand.opponentThreatWeight;
   score -= Math.max(0, pos.oppHandCount - pos.myHandCount) * CONFIG.hand.tempoGapWeight;
+  if (pos.oppLeaderAvailable) score -= CONFIG.leader.availableThreat;
   score += pos.myFaceDownCount * CONFIG.hidden.ownFaceDownInfoBonus;
   score += pos.myFutureBonus - pos.oppFuturePenalty;
 
@@ -306,12 +307,11 @@ function sacrificeUnit(pos, side, uid) {
 }
 
 function applyCultEcho(pos, view, me) {
-  if (view.players[me]?.faction !== 'cult') return;
+  // 引擎侧回响是伊莱亚斯·索恩的角色被动（_triggerCultEcho 按 leaderId 限定），
+  // 并非教团阵营通用；本夜已触发过则不再叠加。v1.2 定稿全场 +1，祭坛不再额外加成。
+  if (view.players[me]?.leaderId !== 'elias-thorne') return;
   if (view.players[me]?.flags?.cultSacrificeTriggered) return;
-  const altar = view.players[me]?.locations?.front;
-  const bonus = altar && altar.cardId === 'drowned-altar' && !altar.sealed
-    ? CONFIG.effects.cultEchoWithAltar
-    : CONFIG.effects.cultEcho;
+  const bonus = CONFIG.effects.cultEcho;
   for (const location of LOCATIONS) {
     for (const unit of pos.myBoard[location]) {
       if (unit && !unit.faceDown) bump(pos, 'my', unit, bonus);
@@ -319,9 +319,17 @@ function applyCultEcho(pos, view, me) {
   }
 }
 
-function applyBacklash(pos, unit, face) {
+/** 己方现场据点是否为未封印的溺钟祭坛（献祭免反噬，§6.4）。 */
+function hasUnsealedAltar(view, me) {
+  const altar = view.players[me]?.locations?.front;
+  return !!altar && altar.cardId === 'drowned-altar' && !altar.sealed;
+}
+
+function applyBacklash(pos, unit, face, opts = {}) {
   if (!unit || face !== 'madness') return;
   if (!hasKeyword(unit, 'backlash')) return;
+  if (unit.sealed) return; // 被封印单位献祭/入场均不触发反噬（§6.6）
+  if (opts.altarImmune) return; // 现场 + 未封印祭坛：献祭免反噬（§6.4）
   pos.mySanity -= CONFIG.sanity.backlashLoss;
   if (pos.mySanity <= CONFIG.sanity.madnessThreshold) {
     pos.myFutureBonus -= CONFIG.sanity.lowSanityBacklashExtra;
@@ -450,7 +458,7 @@ function applyPlayEffect(pos, view, card, action, face) {
       if (!target) break;
       const source = findBoardUnit(pos.myBoard, card.uid);
       bump(pos, 'my', source?.unit, estimateUnitPower(target, pos.myBoard, pos.oppBoard));
-      applyBacklash(pos, target, target.face);
+      applyBacklash(pos, target, target.face, { altarImmune: hasUnsealedAltar(view, me) && target.location === 'front' });
       applyCultEcho(pos, view, me);
       bumpObjective(pos, 'my', 1); // cult sacrifice → doom
       break;
@@ -459,7 +467,7 @@ function applyPlayEffect(pos, view, card, action, face) {
     case 'seance': {
       const target = sacrificeUnit(pos, 'my', action.choice?.targetUid);
       if (!target) break;
-      applyBacklash(pos, target, target.face);
+      applyBacklash(pos, target, target.face, { altarImmune: hasUnsealedAltar(view, me) && target.location === 'front' });
       applyCultEcho(pos, view, me);
       bumpObjective(pos, 'my', 1); // cult sacrifice → doom
       const abyss = view.players[me]?.abyss ?? [];
@@ -490,7 +498,11 @@ function simulatePlayCard(view, base, action) {
   const isUnit = card.type === 'unit' || card.type === 'oldgod';
   next.myHandCount = Math.max(0, next.myHandCount - 1);
   next.myHandValue -= handCardValue(view, card);
-  next.mySanity -= card.sanityCost ?? 0;
+  // 旧图书馆：己方现场据点未封印时，本夜第一个打出的单位理智代价 -1（§5.4）。
+  // view 不暴露本夜减费是否已用过，这里按可用做乐观估算。
+  const library = view.players[me]?.locations?.front;
+  const archiveDiscount = isUnit && library && library.cardId === 'old-library' && !library.sealed ? 1 : 0;
+  next.mySanity -= Math.max(0, (card.sanityCost ?? 0) - archiveDiscount);
 
   if (isUnit) {
     const unit = {
@@ -581,7 +593,7 @@ function simulateUseLeader(view, base, action) {
   } else if (leaderId === 'elias-thorne') {
     const sacrificed = sacrificeUnit(next, 'my', action.sacrificeUid);
     if (sacrificed) {
-      applyBacklash(next, sacrificed, sacrificed.face);
+      applyBacklash(next, sacrificed, sacrificed.face, { altarImmune: hasUnsealedAltar(view, me) && sacrificed.location === 'front' });
       applyCultEcho(next, view, me);
       bumpObjective(next, 'my', 1); // cult leader sacrifice → doom
     }
