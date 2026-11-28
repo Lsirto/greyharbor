@@ -23,8 +23,38 @@ const EVENT_PARTICLES = Object.freeze({
   gameOver: 'sanityZero',
 });
 
+/* Ambient weather thresholds, measured in total corruption tokens across every
+   unit on the board.  No per-card ids: the atmosphere reacts only to how
+   corrupted the table has become.
+     0 tokens        → rain (Grey Harbour's default drizzle)
+     1–3 tokens      → fog (the rot thickens)
+     4+ tokens       → corruption (spores fill the air) */
+export const WEATHER_CORRUPTION_FOG = 1;
+export const WEATHER_CORRUPTION_HEAVY = 4;
+
 function cssValue(value) {
   return String(value).replace(/["\\]/g, '\\$&');
+}
+
+export function countCorruption(view) {
+  let total = 0;
+  for (const player of asArray(view?.players)) {
+    const board = asObject(player?.board);
+    for (const units of Object.values(board)) {
+      for (const unit of asArray(units)) {
+        if (unit && Number(unit.corruption) > 0) total += Number(unit.corruption);
+      }
+    }
+  }
+  return total;
+}
+
+export function weatherForView(view) {
+  if (!view || typeof view !== 'object' || asArray(view.players).length === 0) return null;
+  const corruption = countCorruption(view);
+  if (corruption >= WEATHER_CORRUPTION_HEAVY) return 'corruption';
+  if (corruption >= WEATHER_CORRUPTION_FOG) return 'fog';
+  return 'rain';
 }
 
 export function createFxController(options = {}) {
@@ -109,6 +139,7 @@ export function createFxController(options = {}) {
     const diff = diffViews(lastView, view);
     lastView = view;
     animations.apply(diff);
+    particles.setWeather(weatherForView(view));
 
     for (const uid of asArray(diff.entered)) particles.emit('play', rectFor(uid));
     for (const uid of asArray(diff.sealed)) particles.emit('seal', rectFor(uid), { count: 22 });

@@ -3,15 +3,21 @@
  * canvas.  No external assets and no Math.random: every particle is seeded by
  * an injected rng (a deterministic LCG by default).
  *
- * Only four bursts exist: sanityZero (shatter), corruption (motes), seal
- * (rune expansion) and play (dust).  The canvas is pointer-events:none, the
- * loop pauses on visibilitychange, and reduced-motion disables emission.
+ * Two layers share the canvas and the single rAF loop:
+ *   1. Burst pool — short-lived particles (sanityZero shatter, corruption
+ *      motes, seal rune expansion, play dust) that die when their life runs out.
+ *   2. Ambient weather — persistent rain / fog / corruption particles that
+ *      wrap around the screen edges instead of dying, giving a full-screen
+ *      atmosphere driven by the current scene and corruption level.
+ * The canvas is pointer-events:none, the loop pauses on visibilitychange, and
+ * reduced-motion disables emission and weather.
  */
 
 import { asObject, clamp, safeInt } from '../utils.mjs';
 
 export const PARTICLE_LIMIT = 300;
 export const PARTICLE_KINDS = Object.freeze(['sanityZero', 'corruption', 'seal', 'play']);
+export const WEATHER_MODES = Object.freeze(['rain', 'fog', 'corruption']);
 export const DPR_CAP = 2;
 
 export const PARTICLE_DEFAULTS = Object.freeze({
@@ -32,6 +38,28 @@ const STYLE = Object.freeze({
   corruption: { color: '#8b7ab5', gravity: -26, life: [0.7, 1.5], speed: [12, 58], size: [1, 3], shape: 'mote' },
   seal: { color: '#e8c98a', gravity: -8, life: [0.65, 1.3], speed: [55, 145], size: [1.5, 3.5], shape: 'rune' },
   play: { color: '#cabb96', gravity: 95, life: [0.32, 0.72], speed: [18, 78], size: [1, 2.5], shape: 'dust' },
+});
+
+/* Persistent ambient layer. Ranges are [min, max] sampled with the seeded rng.
+   Rain falls fast on a slant, fog drifts in large soft puffs, and corruption
+   spores float upward with a sideways sway.  None of these ever "die": leaving
+   one edge wraps the particle back to the opposite edge. */
+const WEATHER_STYLE = Object.freeze({
+  rain: {
+    count: 70, shape: 'rainline', color: '#9fb4c8',
+    speedY: [620, 880], speedX: [-130, -60],
+    size: [1, 1.6], alpha: [0.22, 0.45], len: [14, 26],
+  },
+  fog: {
+    count: 26, shape: 'fog', color: '#b8c0c8',
+    speedX: [18, 42], bob: 8, drift: 0.6,
+    size: [46, 110], alpha: [0.05, 0.12],
+  },
+  corruption: {
+    count: 46, shape: 'spore', colors: ['#8b7ab5', '#a78bfa', '#7dd3c0'],
+    speedY: [-58, -22], speedX: [-8, 8], swing: 16, drift: 2.2,
+    size: [1.6, 4], alpha: [0.3, 0.6],
+  },
 });
 
 /** Small deterministic LCG; two draws give an angle + speed without bias. */
@@ -85,6 +113,13 @@ export function createParticles(options = {}) {
   let listeners = [];
   let stats = { emitted: 0, skipped: 0, frames: 0, peak: 0 };
 
+  // Ambient weather state. `requestedWeather` remembers what the controller
+  // asked for even while reduced-motion/hidden; `weatherMode` is what is
+  // actually being drawn, and `ambient` holds its persistent particles.
+  let requestedWeather = null;
+  let weatherMode = null;
+  let ambient = [];
+
   function openContext() {
     if (!canvas) return false;
     try { ctx = canvas.getContext('2d') ?? null; } catch (_) { ctx = null; }
@@ -103,6 +138,13 @@ export function createParticles(options = {}) {
       canvas.style.height = `${height}px`;
       if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     } catch (_) { /* a canvas without style/ctx is simply not drawn */ }
+  }
+
+  function viewWidth() {
+    return Math.max(1, Number(win?.innerWidth) || Number(doc?.documentElement?.clientWidth) || 800);
+  }
+  function viewHeight() {
+    return Math.max(1, Number(win?.innerHeight) || Number(doc?.documentElement?.clientHeight) || 600);
   }
 
   function listen(target, type, handler) {
@@ -131,11 +173,11 @@ export function createParticles(options = {}) {
     listen(doc, 'visibilitychange', () => {
       hidden = doc.hidden === true;
       if (hidden) stopLoop();
-      else if (activeCount > 0) ensureLoop();
+      else { applyWeather(); ensureLoop(); }
     });
     const mq = typeof win?.matchMedia === 'function' ? win.matchMedia('(prefers-reduced-motion: reduce)') : null;
     if (mq) {
-      const onChange = () => { if (mq.matches === true) clear(); };
+      const onChange = () => { clear(); applyWeather(); };
       if (typeof mq.addEventListener === 'function') listen(mq, 'change', onChange);
       else if (typeof mq.addListener === 'function') listen(mq, 'change', onChange);
     }
@@ -195,6 +237,101 @@ export function createParticles(options = {}) {
     return spawned;
   }
 
+  function canAnimate() { return !reducedFlag() && !hidden && !!ctx; }
+  function pick(range) { return range[0] + rng() * (range[1] - range[0]); }
+
+  function buildAmbient(mode) {
+    const s = WEATHER_STYLE[mode];
+    const width = viewWidth();
+    const height = viewHeight();
+    const list = [];
+    for (let i = 0; i < s.count; i += 1) {
+      const item = {
+        x: rng() * width,
+        y: rng() * height,
+        phase: rng() * Math.PI * 2,
+        alpha: pick(s.alpha),
+        size: pick(s.size),
+        shape: s.shape,
+        color: s.colors ? s.colors[Math.floor(rng() * s.colors.length)] : s.color,
+      };
+      if (mode === 'rain') {
+        item.vy = pick(s.speedY);
+        item.vx = pick(s.speedX);
+        item.len = pick(s.len);
+      } else if (mode === 'fog') {
+        item.vx = pick(s.speedX);
+        item.vy = s.bob;
+        item.drift = s.drift;
+      } else {
+        item.vy = pick(s.speedY);
+        item.vx = pick(s.speedX);
+        item.swing = s.swing;
+        item.drift = s.drift;
+      }
+      list.push(item);
+    }
+    return list;
+  }
+
+  /* Rebuild the ambient layer to match the requested mode and current
+     accessibility/visibility state. Idempotent: an unchanged mode is a no-op. */
+  function applyWeather() {
+    const target = canAnimate() ? requestedWeather : null;
+    if (target === weatherMode && (target === null || ambient.length > 0)) return;
+    weatherMode = target;
+    ambient = target ? buildAmbient(target) : [];
+    if (ambient.length > 0) { lastTs = 0; ensureLoop(); }
+    else if (activeCount === 0) stopLoop();
+  }
+
+  function setWeather(mode) {
+    requestedWeather = WEATHER_MODES.includes(mode) ? mode : null;
+    applyWeather();
+    return weatherMode;
+  }
+
+  function updateAndDrawAmbient(dt, width, height) {
+    for (const a of ambient) {
+      a.phase += dt;
+      if (a.shape === 'rainline') {
+        a.x += a.vx * dt;
+        a.y += a.vy * dt;
+        if (a.y > height + a.len) { a.y = -a.len; a.x = rng() * (width + 80) - 40; }
+        if (a.x < -40) a.x = width + 20;
+        ctx.globalAlpha = a.alpha;
+        ctx.strokeStyle = a.color;
+        ctx.lineWidth = a.size;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(a.x - (a.vx / a.vy) * a.len, a.y - a.len);
+        ctx.stroke();
+      } else if (a.shape === 'fog') {
+        a.x += a.vx * dt;
+        a.y += Math.sin(a.phase * a.drift) * a.vy * dt;
+        if (a.x - a.size > width) a.x = -a.size;
+        if (a.x + a.size < 0) a.x = width + a.size;
+        ctx.globalAlpha = a.alpha;
+        ctx.fillStyle = a.color;
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.size, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        a.y += a.vy * dt;
+        a.x += (a.vx + Math.sin(a.phase * a.drift) * a.swing) * dt;
+        if (a.y < -12) { a.y = height + 10; a.x = rng() * width; }
+        if (a.y > height + 12) a.y = -10;
+        if (a.x < -12) a.x = width + 10;
+        if (a.x > width + 12) a.x = -10;
+        ctx.globalAlpha = a.alpha;
+        ctx.fillStyle = a.color;
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
   function drawParticle(p) {
     const alpha = clamp(p.life / p.maxLife, 0, 1);
     ctx.globalAlpha = alpha;
@@ -221,13 +358,14 @@ export function createParticles(options = {}) {
 
   function loop(timestamp) {
     frameId = null;
-    if (hidden || activeCount === 0) return;
+    if (hidden || (activeCount === 0 && ambient.length === 0)) return;
     const dt = lastTs > 0 ? clamp((timestamp - lastTs) / 1000, 0.001, 0.05) : 0.016;
     lastTs = timestamp;
     try {
-      const width = Number(win?.innerWidth) || canvas?.width || 0;
-      const height = Number(win?.innerHeight) || canvas?.height || 0;
+      const width = viewWidth();
+      const height = viewHeight();
       ctx.clearRect(0, 0, width, height);
+      updateAndDrawAmbient(dt, width, height);
       for (const particle of pool) {
         if (!particle.active) continue;
         particle.life -= dt;
@@ -252,7 +390,8 @@ export function createParticles(options = {}) {
   }
 
   function ensureLoop() {
-    if (frameId !== null || hidden || activeCount === 0 || reducedFlag() || !ctx) return;
+    if (frameId !== null || hidden || reducedFlag() || !ctx) return;
+    if (activeCount === 0 && ambient.length === 0) return;
     try {
       frameId = requestFrame(loop);
       if (frameId === null || frameId === undefined) frameId = 0;
@@ -273,8 +412,10 @@ export function createParticles(options = {}) {
     stopLoop();
     for (const particle of pool) particle.active = false;
     activeCount = 0;
+    weatherMode = null;
+    ambient = [];
     if (ctx) {
-      try { ctx.clearRect(0, 0, Number(win?.innerWidth) || 0, Number(win?.innerHeight) || 0); } catch (_) { /* ignore */ }
+      try { ctx.clearRect(0, 0, viewWidth(), viewHeight()); } catch (_) { /* ignore */ }
     }
   }
 
@@ -283,8 +424,18 @@ export function createParticles(options = {}) {
     emit,
     clear,
     resize,
+    setWeather,
+    getWeather: () => weatherMode,
     getCanvas: () => canvas,
-    stats: () => ({ ...stats, active: activeCount, capacity: maxParticles, reducedMotion: reducedFlag(), hidden }),
+    stats: () => ({
+      ...stats,
+      active: activeCount,
+      capacity: maxParticles,
+      reducedMotion: reducedFlag(),
+      hidden,
+      weather: weatherMode,
+      ambient: ambient.length,
+    }),
     destroy() {
       clear();
       for (const off of listeners) off();

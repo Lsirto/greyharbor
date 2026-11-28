@@ -130,6 +130,38 @@
   animation: gh2-fx-banner-kf 2600ms ease-out both;
 }
 
+/* ── portrait fade-in & idle breathing ──────────────────────── */
+
+/* First paint: the illustration settles in from a slight zoom. */
+@keyframes gh2-fx-portrait-in-kf {
+  0%   { opacity: 0; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Idle "alive" breathing: a very slow, subtle scale around the figure. */
+@keyframes gh2-fx-breath-kf {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.028); }
+}
+
+/* Simple one-shot fade for secondary illustrations (skins, arena cards). */
+@keyframes gh2-fx-soft-in-kf {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.gh2-character-card__portrait {
+  transform-origin: center 22%;
+  animation:
+    gh2-fx-portrait-in-kf 520ms ease-out both,
+    gh2-fx-breath-kf 4.8s ease-in-out 520ms infinite;
+}
+
+.gh2-skin-switcher__media img,
+.gh2-arena-card__img {
+  animation: gh2-fx-soft-in-kf 420ms ease-out both;
+}
+
 /* ── mute button ────────────────────────────────────────────── */
 
 .gh2-play-btn--mute { min-width: 92px; color: var(--gh2-cult-glow); border-color: var(--gh2-cult); }
@@ -180,5 +212,8 @@
   .gh2-fx-fade { animation: gh2-fx-fade-kf 160ms linear both !important; }
   .gh2-fx-seal::after,
   .gh2-fx-corrupt::before { display: none; }
+  .gh2-character-card__portrait,
+  .gh2-skin-switcher__media img,
+  .gh2-arena-card__img { animation: none !important; }
   .gh2-fx-canvas { display: none; }
 }

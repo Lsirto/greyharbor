@@ -173,7 +173,7 @@ research/           来源数据、QA 记录与审计产物
 - 点击手牌 → 点击高亮落点出牌；可点击己方领袖、盖牌翻开、过牌；`Esc` 取消。
 - 换牌阶段点击手牌标记，再点「确认换牌」。教团领袖伊莱亚斯会打开步骤式编排弹层。
 - 操作台「♪ 音效 / ♪ 已静音」按钮切换声音；设置存 `localStorage`，首次用户手势才解锁音频。
-- `prefers-reduced-motion: reduce` 时粒子关闭、翻面/脉冲降级为瞬时淡入；静音按钮可完全关闭声音。
+- `prefers-reduced-motion: reduce` 时粒子与全屏天气关闭、立绘呼吸/淡入与翻面/脉冲一并禁用（仅保留静态画面）；静音按钮可完全关闭声音。
 
 ## v1.3 新机制（动态地点 · 混沌袋 · 发掘）
 
@@ -408,6 +408,9 @@ Achievement wall 段。专项测试 `tests/achievements/achievements.test.mjs`�
 - `fx/view-diff.mjs` 纯函数比较前后 `buildView`：入场 uid、理↔狂翻面、理智变化、新封印/腐化、夜切换、终局。
 - `fx/dom-animations.mjs` 只加临时 CSS 类，带超时清理与异常兜底，不阻塞交互。
 - `fx/particles.mjs` 单 rAF + ≤300 固定粒子池的全屏 canvas；页面隐藏暂停，禁用时零发射，确定性 rng。
+  同一 canvas 与 rAF 上叠加**全屏天气层**：雨（斜落雨丝）、雾（大团缓漂）、腐化（上浮孢子），
+  天气粒子出界回绕而非消亡；由 `fx-controller` 按全场腐化 token 数自动切换（0 → 雨，1–3 → 雾，4+ → 腐化）。
+- 立绘与卡片：角色立绘首次淡入并带缓慢“呼吸”微动效，皮肤/竞技场立绘淡入；纯 CSS 实现，不依赖 JS 状态。
 - `fx/fx-controller.mjs` 经 `hooks.afterPaint` / `hooks.onEvents` 接入控制器，不写游戏状态。
 - `audio/audio-engine.mjs` 零音频资源、主音量/静音、首次手势 unlock、峰值压缩；`audio/sound-map.mjs` 纯映射事件→音色。
 
@@ -428,7 +431,7 @@ node --test tests/codex/codex.test.mjs              # 卡牌图鉴纯逻辑
 node --test tests/multiplayer/*.test.mjs            # 锁步 / 多人框架
 node --test tests/tutorial/*.test.mjs               # 交互式教程
 node --test tests/ai-v2/difficulty.test.mjs         # AI 难度选择
-node --test                                         # 全量递归：614 项 = 612 通过 + 2 跳过，0 失败
+node --test                                         # 全量递归：621 项 = 619 通过 + 2 跳过，0 失败
 ```
 
 `npm test` 的脚本只匹配 `tests/*.test.mjs`；子目录套件需按上面的显式 glob 运行。
@@ -470,5 +473,4 @@ node --test                                         # 全量递归：614 项 = 6
 - 正式可玩内容为单机对 AI；联机仅有确定性锁步框架与测试（菜单入口标注“开发中”），没有账号或战绩系统。
 - AI 是启发式评估，不做深度搜索。
 - 浏览器自动播放策略要求首次点击/按键后才会有声音；网页版在 `file://` 下直接打开不可用，桌面版内置本地服务器不受此限制。
-- 粒子仅用于四类关键反馈（理智归零 / 腐化 / 封印 / 出牌），非全屏天气系统。
 - 安装包仅提供 Windows x64（NSIS）；macOS / Linux 未配置打包目标。
