@@ -1,8 +1,8 @@
 /**
  * src/economy/skins.mjs — character skin catalogue (pure data).
  *
- * Each of the six leaders has two skins: a `palette` skin (common) that re-tints
- * the existing portrait through a CSS filter with no new artwork, and an `art`
+ * Each leader has two skins: a `palette` skin (common) that re-tints the
+ * existing portrait through a CSS filter with no new artwork, and an `art`
  * skin (rare/epic) backed by a newly generated painting in assets/skins.
  * Rarity drives gacha weights and duplicate compensation.
  */
@@ -11,7 +11,7 @@ export const SKIN_KIND = Object.freeze({ PALETTE: 'palette', ART: 'art' });
 
 /**
  * Two skins per character. The palette entry is always common; the art entry is
- * rare for four characters and epic for the two flagship leaders.
+ * rare or epic depending on the character's flagship weight.
  */
 export const CHARACTER_SKINS = Object.freeze([
   {
@@ -79,6 +79,17 @@ export const CHARACTER_SKINS = Object.freeze([
     id: 'gregor-pestilence-reaper', characterId: 'gregor-pestilence', name: '敲钟收割者',
     rarity: 'rare', kind: 'art', icon: '💀', theme: '收割',
     description: '钟声一响便开始收割的腐烂使徒',
+  },
+  {
+    id: 'madeline-hale-moon', characterId: 'madeline-hale', name: '月白学者',
+    rarity: 'common', kind: 'palette', icon: '🌙', theme: '月白',
+    filter: 'saturate(0.85) hue-rotate(15deg) brightness(1.08) contrast(0.95)',
+    description: '月光洗过灯塔，学者的白袍泛着冷辉',
+  },
+  {
+    id: 'madeline-hale-radiant', characterId: 'madeline-hale', name: '圣辉引路人',
+    rarity: 'epic', kind: 'art', icon: '✨', theme: '圣辉',
+    description: '圣匣全开的引路人，圣辉令深渊退散',
   },
 ]);
 

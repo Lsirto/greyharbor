@@ -35,7 +35,7 @@ import {
 } from '../../src/economy/skins.mjs';
 
 const CHARACTER_IDS = [
-  'harold-ashby', 'enid-halloway', 'augustus-wayne',
+  'harold-ashby', 'enid-halloway', 'augustus-wayne', 'madeline-hale',
   'elias-thorne', 'vera-crowe', 'gregor-pestilence',
 ];
 
@@ -52,8 +52,8 @@ function seed(storage, patch) {
   storage.setJson(ECONOMY_KEY, { ...readEconomy(storage), ...patch });
 }
 
-test('目录：共 12 款，每角色恰好 2 款且 id 唯一', () => {
-  assert.equal(CHARACTER_SKINS.length, 12);
+test('目录：共 14 款，每角色恰好 2 款且 id 唯一', () => {
+  assert.equal(CHARACTER_SKINS.length, 14);
   const ids = CHARACTER_SKINS.map((s) => s.id);
   assert.equal(new Set(ids).size, ids.length);
   for (const characterId of CHARACTER_IDS) {
@@ -62,13 +62,13 @@ test('目录：共 12 款，每角色恰好 2 款且 id 唯一', () => {
   }
 });
 
-test('目录：6 普通均为调色、4 稀有+2 史诗均为新立绘', () => {
+test('目录：7 普通均为调色、4 稀有+3 史诗均为新立绘', () => {
   const common = CHARACTER_SKINS.filter((s) => s.rarity === 'common');
   const rare = CHARACTER_SKINS.filter((s) => s.rarity === 'rare');
   const epic = CHARACTER_SKINS.filter((s) => s.rarity === 'epic');
-  assert.equal(common.length, 6);
+  assert.equal(common.length, 7);
   assert.equal(rare.length, 4);
-  assert.equal(epic.length, 2);
+  assert.equal(epic.length, 3);
   assert.ok(common.every((s) => s.kind === SKIN_KIND.PALETTE && typeof s.filter === 'string'));
   assert.ok([...rare, ...epic].every((s) => s.kind === SKIN_KIND.ART && !s.filter));
 });

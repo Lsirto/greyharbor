@@ -17,15 +17,15 @@ import {
   renderPresetSelect,
 } from '../../src/ui-v2/menu/templates/index.mjs';
 
-test('角色名册：每阵营 3 名，共 6 个，且均为同阵营领袖卡', () => {
+test('角色名册：学会 4 名、教团 3 名，共 7 个，且均为同阵营领袖卡', () => {
   assert.deepEqual(characterIdsFor('society'), [
-    'harold-ashby', 'enid-halloway', 'augustus-wayne',
+    'harold-ashby', 'enid-halloway', 'augustus-wayne', 'madeline-hale',
   ]);
   assert.deepEqual(characterIdsFor('cult'), [
     'elias-thorne', 'vera-crowe', 'gregor-pestilence',
   ]);
   const all = Object.values(CHARACTER_ROSTER).flat();
-  assert.equal(all.length, 6);
+  assert.equal(all.length, 7);
   for (const meta of all) {
     const card = CARDS[meta.id];
     assert.ok(card, `${meta.id} must exist in the card table`);

@@ -25,6 +25,7 @@ export const CHARACTER_ROSTER = Object.freeze({
     Object.freeze({ id: 'harold-ashby', title: '守夜督察', icon: '🕯', archetype: '稳健 · 封印回复' }),
     Object.freeze({ id: 'enid-halloway', title: '档案召唤师', icon: '📜', archetype: '铺场 · 召唤过牌' }),
     Object.freeze({ id: 'augustus-wayne', title: '驱魔审判官', icon: '⚔', archetype: '进攻 · 群体增益' }),
+    Object.freeze({ id: 'madeline-hale', title: '灯塔学者', icon: '🏮', archetype: '净化 · 群体增益' }),
   ]),
   cult: Object.freeze([
     Object.freeze({ id: 'elias-thorne', title: '深海祭司', icon: '🔔', archetype: '献祭 · 召唤连招' }),
