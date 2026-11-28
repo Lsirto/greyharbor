@@ -1,4 +1,4 @@
-# 平衡补丁 v1.2 实验报告（《灰港三夜》）
+# 平衡补丁 v1.2 实验报告（《灰港夜谭》）
 
 > 引擎 v2.2 / AI v2（只读复用，未修改）；实验台 `scripts/balance-experiment.mjs`、
 > 诊断 `scripts/balance-diagnose.mjs`、消融 `scripts/balance-ablation.mjs`、

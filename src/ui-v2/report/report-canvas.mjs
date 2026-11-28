@@ -135,7 +135,7 @@ export function createReportCanvas(vm) {
   drawDivider(ctx, HEIGHT - 180);
   drawCentered(ctx, `种子 ${vm.seed}`, HEIGHT - 130, `24px ${FONT_UI}`, COLORS.silverFaint);
   drawCentered(ctx, vm.dateLabel, HEIGHT - 92, `24px ${FONT_UI}`, COLORS.silverFaint);
-  drawCentered(ctx, '灰港三夜 · 本地生成', HEIGHT - 56, `22px ${FONT_UI}`, COLORS.silverFaint);
+  drawCentered(ctx, '灰港夜谭 · 本地生成', HEIGHT - 56, `22px ${FONT_UI}`, COLORS.silverFaint);
 
   return canvas;
 }
@@ -145,7 +145,7 @@ export function downloadReport(canvas, filename) {
   if (!canvas || typeof canvas.toDataURL !== 'function') return false;
   const dataUrl = canvas.toDataURL('image/png');
   const link = document.createElement('a');
-  const safeName = typeof filename === 'string' && filename.length > 0 ? filename : '灰港三夜战报.png';
+  const safeName = typeof filename === 'string' && filename.length > 0 ? filename : '灰港夜谭战报.png';
   link.download = safeName.endsWith('.png') ? safeName : `${safeName}.png`;
   link.href = dataUrl;
   document.body.appendChild(link);

@@ -52,7 +52,7 @@ export function createCampaignController(options = {}) {
     <div class="gh2-campaign-view" data-cv="view"></div>
     <div class="gh2-campaign-battle" data-cv="battle" hidden>
       <header class="gh2-campaign-battle-top">
-        <span class="gh2-game-top__tag">灰港三夜 · 战役战斗</span>
+        <span class="gh2-game-top__tag">灰港夜谭 · 战役战斗</span>
       </header>
       <div class="gh2-play-controls-host" data-cv="battle-controls"></div>
       <main class="gh2-board" data-cv="battle-board" aria-label="战役战斗棋盘"></main>

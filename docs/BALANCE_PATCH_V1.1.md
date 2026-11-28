@@ -1,4 +1,4 @@
-# 平衡补丁 v1.1 实验报告（《灰港三夜》）
+# 平衡补丁 v1.1 实验报告（《灰港夜谭》）
 
 > 引擎 v2.4 / AI v2；实验台 `scripts/balance-experiment.mjs`；AI 侧只消费
 > `buildView(pov)`，复用 `src/ai/v2/ai.mjs` 的 `chooseAction`，未修改 AI。

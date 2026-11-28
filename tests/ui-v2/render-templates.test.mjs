@@ -395,7 +395,7 @@ test('真实 buildView 数据可直接驱动整盘模板', () => {
     demo: { enabled: true, seed: 'ui-template-integration', step: 3, running: true, lastAction: 'Mulligan 1 card' },
   });
 
-  assert.match(html, /灰港三夜/);
+  assert.match(html, /灰港夜谭/);
   assert.ok(!html.includes('THREE NIGHTS IN GREYHARBOR'), '界面不再出现英文标题');
   assert.match(html, /data-phase="mulligan"/);
   assert.match(html, /演示模式/);

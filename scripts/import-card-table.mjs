@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 《灰港三夜》卡表导入器 / Greyharbor card-table importer
+ * 《灰港夜谭》卡表导入器 / Greyharbor card-table importer
  *
  * 输入 : card-table-v1.csv（根目录，UTF-8）
  * 输出 : src/data/card-table.normalized.json
@@ -642,7 +642,7 @@ function printReport(cards, extra = {}) {
   const out = [];
   out.push("");
   out.push("========================================================================");
-  out.push("  《灰港三夜》卡表导入审计 / Greyharbor Card Table Import Audit");
+  out.push("  《灰港夜谭》卡表导入审计 / Greyharbor Card Table Import Audit");
   out.push("========================================================================");
   out.push(`  输入: ${CSV_PATH}`);
   out.push(`  输出: ${OUT_PATH}`);

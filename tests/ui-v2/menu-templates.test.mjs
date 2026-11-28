@@ -20,7 +20,7 @@ import {
 
 test('主菜单：标题 / 开始对局 / 各模式入口 / 折叠规则简介', () => {
   const html = renderMainMenu();
-  assert.match(html, /灰港三夜/);
+  assert.match(html, /灰港夜谭/);
   assert.match(html, /data-menu-action="start"/);
   // The self-play demo entry was removed; the menu must no longer link to it.
   assert.ok(!html.includes('game.html'));

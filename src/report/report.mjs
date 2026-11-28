@@ -93,7 +93,7 @@ export function buildReport(info = {}, context = {}) {
     : null;
 
   return Object.freeze({
-    title: '灰港三夜',
+    title: '灰港夜谭',
     subtitle: '对局战报',
     outcome,
     reason: reasonText(result),

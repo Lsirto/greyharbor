@@ -139,7 +139,7 @@ export function renderBoardMarkup(view, options = {}) {
     <header class="gh2-masthead gh2-masthead--compact">
       <div class="gh2-masthead__brand">
         <span class="gh2-masthead__seal">${icon('night')}</span>
-        <div><h1>灰港三夜</h1><p>一场关于理智与真相的三夜对决</p></div>
+        <div><h1>灰港夜谭</h1><p>一场关于理智与真相的三夜对决</p></div>
       </div>
       <div class="gh2-masthead__round">
         <span class="gh2-masthead__night">第 ${escapeHtml(night)} 夜 <small>/ ${escapeHtml(maxNights)}</small></span>

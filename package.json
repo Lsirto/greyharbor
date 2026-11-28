@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "main": "desktop/main.cjs",
-  "description": "Three Nights in Greyharbor — an original Cthulhu-themed card game with deterministic engine, heuristic AI, six investigators and a lockstep multiplayer framework.",
+  "description": "Tales of Grey Harbour — an original Cthulhu-themed card game with deterministic engine, heuristic AI, six investigators and a lockstep multiplayer framework.",
   "scripts": {
     "start": "node server.mjs",
     "desktop": "electron .",
@@ -24,7 +24,7 @@
   },
   "build": {
     "appId": "com.lsirto.greyharbor",
-    "productName": "灰港三夜",
+    "productName": "灰港夜谭",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -52,8 +52,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "灰港三夜",
-      "uninstallDisplayName": "灰港三夜",
+      "shortcutName": "灰港夜谭",
+      "uninstallDisplayName": "灰港夜谭",
       "deleteAppDataOnUninstall": false
     }
   }

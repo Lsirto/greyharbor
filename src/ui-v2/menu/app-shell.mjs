@@ -115,16 +115,16 @@ export function createAppShell(options = {}) {
     <section class="gh2-screen gh2-screen--game" data-screen="in-game" hidden>
       <header class="gh2-game-top">
         <button type="button" class="gh2-back-btn" data-app="menu">← 返回主菜单</button>
-        <span class="gh2-game-top__tag">灰港三夜 · 人机对战</span>
+        <span class="gh2-game-top__tag">灰港夜谭 · 人机对战</span>
       </header>
       <div class="gh2-play-controls-host" data-app="controls"></div>
-      <main class="gh2-board" data-app="board" aria-label="灰港三夜人机对战棋盘"></main>
+      <main class="gh2-board" data-app="board" aria-label="灰港夜谭人机对战棋盘"></main>
       <div class="gh2-result-layer" data-app="result" hidden></div>
     </section>
     <section class="gh2-screen gh2-screen--campaign" data-screen="campaign" hidden>
       <header class="gh2-game-top">
         <button type="button" class="gh2-back-btn" data-app="campaign-menu">← 返回主菜单</button>
-        <span class="gh2-game-top__tag">灰港三夜 · 战役模式</span>
+        <span class="gh2-game-top__tag">灰港夜谭 · 战役模式</span>
       </header>
       <div class="gh2-campaign-host" data-app="campaign"></div>
     </section>
@@ -152,7 +152,7 @@ export function createAppShell(options = {}) {
     <section class="gh2-screen gh2-screen--tutorial" data-screen="tutorial" hidden>
       <header class="gh2-game-top">
         <button type="button" class="gh2-back-btn" data-app="tutorial-menu">← 返回主菜单</button>
-        <span class="gh2-game-top__tag">灰港三夜 · 新手教程</span>
+        <span class="gh2-game-top__tag">灰港夜谭 · 新手教程</span>
       </header>
       <div class="gh2-play-controls-host" data-app="tutorial-controls"></div>
       <main class="gh2-board" data-app="tutorial-board" aria-label="新手教程棋盘"></main>
@@ -160,7 +160,7 @@ export function createAppShell(options = {}) {
     <section class="gh2-screen gh2-screen--multiplayer" data-screen="multiplayer" hidden>
       <header class="gh2-game-top">
         <button type="button" class="gh2-back-btn" data-app="multiplayer-menu">← 返回主菜单</button>
-        <span class="gh2-game-top__tag">灰港三夜 · 多人对战</span>
+        <span class="gh2-game-top__tag">灰港夜谭 · 多人对战</span>
       </header>
       <div class="gh2-mp-lobby">
         <h2 class="gh2-mp-lobby__title">多人对战大厅</h2>
@@ -301,7 +301,7 @@ export function createAppShell(options = {}) {
     try {
       const canvas = createReportCanvas(vm);
       const stamp = typeof opts.now === 'number' && Number.isFinite(opts.now) ? opts.now : Date.now();
-      downloadReport(canvas, `灰港三夜战报-${stamp}`);
+      downloadReport(canvas, `灰港夜谭战报-${stamp}`);
     } catch (error) {
       // 出图失败不应阻断再来一局 / 返回菜单。
     }
@@ -773,7 +773,7 @@ export function createAppShell(options = {}) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `灰港三夜存档-${stampDate(opts.now ?? Date.now())}.json`;
+      link.download = `灰港夜谭存档-${stampDate(opts.now ?? Date.now())}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

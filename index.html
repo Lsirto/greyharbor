@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>灰港三夜 · 克苏鲁主题原创卡牌对局</title>
-  <meta name="description" content="《灰港三夜》：雾锁灰港的三夜牌局，学会与教团在灯火与深渊之间轮番落子。网页即玩，也可下载 Windows 桌面安装包。">
+  <title>灰港夜谭 · 克苏鲁主题原创卡牌对局</title>
+  <meta name="description" content="《灰港夜谭》：雾锁灰港的三夜牌局，学会与教团在灯火与深渊之间轮番落子。网页即玩，也可下载 Windows 桌面安装包。">
 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☠</text></svg>">
   <link rel="stylesheet" href="./src/styles-v2/theme.css">
@@ -322,6 +322,97 @@
       color: var(--gh2-silver-dim);
     }
 
+    /* 导航高亮 CTA */
+    .gh-nav__cta {
+      padding: 8px 18px;
+      color: var(--gh2-ink-1) !important;
+      background: linear-gradient(180deg, var(--gh2-lamp), var(--gh2-lamp-dim));
+      border: 1px solid var(--gh2-lamp-dim);
+      border-radius: var(--gh2-radius);
+      box-shadow: var(--gh2-glow-lamp);
+      letter-spacing: 1px;
+    }
+
+    .gh-nav__cta:hover {
+      transform: translateY(-1px);
+      color: var(--gh2-ink-1) !important;
+    }
+
+    /* 历史版本列表 */
+    .gh-versions {
+      max-width: 820px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .gh-version {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 20px;
+      background: linear-gradient(180deg, var(--gh2-ink-3), var(--gh2-ink-2));
+      border: 1px solid var(--gh2-line-soft);
+      border-radius: var(--gh2-radius);
+      text-decoration: none;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .gh-version:hover {
+      border-color: var(--gh2-lamp-dim);
+      transform: translateY(-1px);
+    }
+
+    .gh-version__main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .gh-version__ver {
+      font-family: var(--gh2-font-display);
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: var(--gh2-lamp);
+    }
+
+    .gh-version__tag {
+      padding: 2px 10px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--gh2-ink-1);
+      background: var(--gh2-lamp);
+      border-radius: 999px;
+    }
+
+    .gh-version__desc {
+      font-size: 13px;
+      color: var(--gh2-silver-dim);
+    }
+
+    .gh-version__side {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .gh-version__date {
+      font-size: 12.5px;
+      color: var(--gh2-silver-faint);
+    }
+
+    .gh-version__dl {
+      font-size: 13px;
+      letter-spacing: 1px;
+      color: var(--gh2-cult-glow);
+      white-space: nowrap;
+    }
+
     /* 下载区 */
     .gh-download {
       max-width: 720px;
@@ -396,6 +487,16 @@
       .gh-nav__links {
         gap: 12px;
       }
+
+      .gh-version {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .gh-version__side {
+        width: 100%;
+        justify-content: space-between;
+      }
     }
   </style>
 </head>
@@ -404,18 +505,19 @@
 
     <!-- ===== 顶部导航 ===== -->
     <nav class="gh-nav wrap">
-      <a class="gh-nav__brand" href="./index.html">☠ 灰港三夜</a>
+      <a class="gh-nav__brand" href="./index.html">☠ 灰港夜谭</a>
       <div class="gh-nav__links">
-        <a href="./app.html">在线游玩</a>
-        <a href="#download">下载</a>
+        <a href="#features">特色</a>
+        <a href="#versions">历史版本</a>
         <a href="https://github.com/Lsirto/greyharbor" target="_blank" rel="noopener">源码仓库</a>
+        <a class="gh-nav__cta" href="./app.html">▶ 开始游戏</a>
       </div>
     </nav>
 
     <!-- ===== 首屏 ===== -->
     <header class="gh-hero wrap">
       <span class="gh-hero__badge">克苏鲁主题 · 原创卡牌对局</span>
-      <h1>灰港三夜</h1>
+      <h1>灰港夜谭</h1>
       <p class="gh-hero__tagline">
         雾锁的灰港，三夜牌局。学会与教团在灯火与深渊之间轮番落子；
         理智耗尽者坠入疯狂，先赢两夜者带走港口。学会追查线索求「真相大白」，
@@ -435,7 +537,7 @@
     </header>
 
     <!-- ===== 特色 ===== -->
-    <section class="gh-section wrap">
+    <section class="gh-section wrap" id="features">
       <h2 class="gh-section__title">游戏特色</h2>
       <p class="gh-section__sub">两条阵营、一套原创规则，多种玩法模式与外观收集</p>
       <div class="gh-features">
@@ -478,7 +580,7 @@
       <p class="gh-section__sub">主菜单、对局棋盘、调查员选择、商店召唤、每日挑战与成就墙</p>
       <div class="gh-gallery">
         <figure class="gh-shot">
-          <img src="./screenshots/menu-v2.png" alt="灰港三夜主菜单">
+          <img src="./screenshots/menu-v2.png" alt="灰港夜谭主菜单">
           <figcaption>主菜单 · 模式入口</figcaption>
         </figure>
         <figure class="gh-shot">
@@ -602,6 +704,82 @@
       </div>
     </section>
 
+    <!-- ===== 历史版本 ===== -->
+    <section class="gh-section wrap" id="versions">
+      <h2 class="gh-section__title">历史版本</h2>
+      <p class="gh-section__sub">全部 Windows 安装包按版本归档，建议使用最新版；点击即可下载</p>
+      <div class="gh-versions">
+
+        <a class="gh-version" href="https://github.com/Lsirto/greyharbor/releases/download/v1.4.0/Setup.1.4.0.exe" target="_blank" rel="noopener">
+          <div class="gh-version__main">
+            <span class="gh-version__ver">v1.4.0</span>
+            <span class="gh-version__tag">最新</span>
+            <span class="gh-version__desc">立绘呼吸动效 + 全屏天气氛围层（雨 / 雾 / 腐化孢子）</span>
+          </div>
+          <div class="gh-version__side">
+            <span class="gh-version__date">2026-11-28</span>
+            <span class="gh-version__dl">下载 ↓</span>
+          </div>
+        </a>
+
+        <a class="gh-version" href="https://github.com/Lsirto/greyharbor/releases/download/v1.3.1/Setup.1.3.1.exe" target="_blank" rel="noopener">
+          <div class="gh-version__main">
+            <span class="gh-version__ver">v1.3.1</span>
+            <span class="gh-version__desc">玛德琳两款皮肤，修复角色选择遗漏</span>
+          </div>
+          <div class="gh-version__side">
+            <span class="gh-version__date">2026-11-28</span>
+            <span class="gh-version__dl">下载 ↓</span>
+          </div>
+        </a>
+
+        <a class="gh-version" href="https://github.com/Lsirto/greyharbor/releases/download/v1.3.0/Setup.1.3.0.exe" target="_blank" rel="noopener">
+          <div class="gh-version__main">
+            <span class="gh-version__ver">v1.3.0</span>
+            <span class="gh-version__desc">新领袖玛德琳 · 黑尔，新增 5 张中立卡</span>
+          </div>
+          <div class="gh-version__side">
+            <span class="gh-version__date">2026-11-28</span>
+            <span class="gh-version__dl">下载 ↓</span>
+          </div>
+        </a>
+
+        <a class="gh-version" href="https://github.com/Lsirto/greyharbor/releases/download/v1.2.0/Setup.1.2.0.exe" target="_blank" rel="noopener">
+          <div class="gh-version__main">
+            <span class="gh-version__ver">v1.2.0</span>
+            <span class="gh-version__desc">调查员生涯页，AI 决策与目标平衡对齐</span>
+          </div>
+          <div class="gh-version__side">
+            <span class="gh-version__date">2026-11-27</span>
+            <span class="gh-version__dl">下载 ↓</span>
+          </div>
+        </a>
+
+        <a class="gh-version" href="https://github.com/Lsirto/greyharbor/releases/download/v1.1.0/Setup.1.1.0.exe" target="_blank" rel="noopener">
+          <div class="gh-version__main">
+            <span class="gh-version__ver">v1.1.0</span>
+            <span class="gh-version__desc">全局战绩记录，一键战报分享图，存档备份</span>
+          </div>
+          <div class="gh-version__side">
+            <span class="gh-version__date">2026-11-27</span>
+            <span class="gh-version__dl">下载 ↓</span>
+          </div>
+        </a>
+
+        <a class="gh-version" href="https://github.com/Lsirto/greyharbor/releases/tag/v1.0.0" target="_blank" rel="noopener">
+          <div class="gh-version__main">
+            <span class="gh-version__ver">v1.0.0</span>
+            <span class="gh-version__desc">首发完整版本（首个发行版未附独立安装包）</span>
+          </div>
+          <div class="gh-version__side">
+            <span class="gh-version__date">2026-11-27</span>
+            <span class="gh-version__dl">查看 ↗</span>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
     <!-- ===== 下载 ===== -->
     <section class="gh-section wrap" id="download">
       <div class="gh-download">
@@ -617,7 +795,7 @@
 
     <!-- ===== 页脚 ===== -->
     <footer class="gh-footer wrap">
-      <p>《灰港三夜》为原创克苏鲁主题卡牌对局 · 原生 ES Modules，零运行时依赖、零构建步骤</p>
+      <p>《灰港夜谭》为原创克苏鲁主题卡牌对局 · 原生 ES Modules，零运行时依赖、零构建步骤</p>
       <p style="margin-top:8px;">
         <a href="https://github.com/Lsirto/greyharbor" target="_blank" rel="noopener">GitHub 仓库</a>
         &nbsp;·&nbsp;
