@@ -2,5 +2,16 @@
   "$schema": "https://cdnstatic.tencentcs.com/edgeone/pages/docs/edgeone.schema.json",
   "outputDirectory": "./",
   "installCommand": "true",
-  "buildCommand": "true"
+  "buildCommand": "true",
+  "headers": [
+    {
+      "source": "/*.mjs",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/javascript"
+        }
+      ]
+    }
+  ]
 }
